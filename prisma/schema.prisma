@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  VOLUNTEER
+  ADMIN
+}
+
+model User {
+  id            String     @id @default(cuid())
+  clerkId       String     @default("placeholder")
+  firstName     String
+  lastName      String
+  email         String?    @unique
+  phone         String
+  dateOfBirth   DateTime?
+  streetAddress String?
+  city          String?
+  state         String?
+  country       String?
+  zipCode       String?
+  hoursWorked   Int         @default(0)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  role          UserRole
+  pending       Boolean    @default(false)
+  inviteID      String     @default("none")
+
+  signups       UserEventSignUp[]
+  waitlists     UserWaitlist[]
+
+  @@map("users")
+}
+
+model Event {
+  id         String             @id @default(cuid())
+  name       String
+  positions  EventPosition[]
+  signups    UserEventSignUp[]
+}
+
+model UserEventSignUp {
+  id          String     @id @default(cuid())
+  userId      String
+  eventId     String
+  positionId  String?
+  guest       Boolean     @default(false)
+  date        DateTime?
+  time        DateTime?
+
+  user        User        @relation(fields: [userId], references: [id])
+  event       Event       @relation(fields: [eventId], references: [id])
+  position    EventPosition? @relation(fields: [positionId], references: [id])
+}
+
+model UserWaitlist {
+  id          String     @id @default(cuid())
+  userId      String
+  positionId  String
+
+  user        User        @relation(fields: [userId], references: [id])
+  position    EventPosition @relation(fields: [positionId], references: [id])
+}
+
+
+model EventPosition {
+  id             String             @id @default(cuid())
+  position       String
+  eventId        String
+  date           DateTime
+  startTime      DateTime
+  endTime        DateTime
+  numberOfPeople Int
+
+  event          Event              @relation(fields: [eventId], references: [id])
+  signups        UserEventSignUp[]
+  waitlists      UserWaitlist[]
+}
+
