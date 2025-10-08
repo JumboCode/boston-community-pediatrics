@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,8 +17,8 @@ model User {
   clerkId       String     @default("placeholder")
   firstName     String
   lastName      String
-  email         String?    @unique
-  phone         String
+  emailAddress  String?    @unique
+  phoneNumber   String
   dateOfBirth   DateTime?
   streetAddress String?
   city          String?
@@ -35,45 +29,50 @@ model User {
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   role          UserRole
-  pending       Boolean    @default(false)
-  inviteID      String     @default("none")
 
-  signups       UserEventSignUp[]
-  waitlists     UserWaitlist[]
+  signups       EventSignup[]
+  waitlists     EventWaitlist[]
 
   @@map("users")
 }
 
 model Event {
-  id         String             @id @default(cuid())
-  name       String
-  positions  EventPosition[]
-  signups    UserEventSignUp[]
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  date        DateTime[]
+  startTime   DateTime
+  endTime     DateTime
+
+  // Location
+  address     String
+  street      String?
+  city        String?
+  state       String?
+  country     String?
+  zipCode     String?
+  lat         Float?
+  lng         Float?
+
+  positions   EventPosition[]
+  signups     EventSignup[]
 }
 
-model UserEventSignUp {
-  id          String     @id @default(cuid())
-  userId      String
-  eventId     String
-  positionId  String?
-  guest       Boolean     @default(false)
-  date        DateTime?
-  time        DateTime?
+model EventSignup {
+  id         String       @id @default(cuid())
+  userId     String?      // null if guest signup only
+  eventId    String
+  positionId String
+  hasGuests    Boolean      @default(false) 
+  date       DateTime?
+  time       DateTime?
+  notes      String?
 
-  user        User        @relation(fields: [userId], references: [id])
-  event       Event       @relation(fields: [eventId], references: [id])
-  position    EventPosition? @relation(fields: [positionId], references: [id])
+  user       User?        @relation(fields: [userId], references: [id])
+  event      Event        @relation(fields: [eventId], references: [id])
+  position   EventPosition @relation(fields: [positionId], references: [id])
+  guests     Guest[]
 }
-
-model UserWaitlist {
-  id          String     @id @default(cuid())
-  userId      String
-  positionId  String
-
-  user        User        @relation(fields: [userId], references: [id])
-  position    EventPosition @relation(fields: [positionId], references: [id])
-}
-
 
 model EventPosition {
   id             String             @id @default(cuid())
@@ -82,10 +81,49 @@ model EventPosition {
   date           DateTime
   startTime      DateTime
   endTime        DateTime
-  numberOfPeople Int
+  description    String
+  filledSlots    Int
+  totalSlots     Int
+  lat            Float?
+  lng            Float?
 
   event          Event              @relation(fields: [eventId], references: [id])
-  signups        UserEventSignUp[]
-  waitlists      UserWaitlist[]
+  signups        EventSignup[]
+  waitlists      EventWaitlist[]
 }
 
+model Guest {
+  id           String      @id @default(cuid())
+  positionId   String
+  firstName    String
+  lastName     String
+  emailAddress String?
+  relation     String?     // relation to main user (friend, family, etc.)
+  phoneNumber  String?
+
+  signupId  String
+  signup    EventSignup @relation(fields: [signupId], references: [id])
+}
+
+
+model EventWaitlist {
+  id         String        @id @default(cuid())
+  userId     String?
+  positionId String
+  isGuest    Boolean       @default(false)
+
+  user       User?         @relation(fields: [userId], references: [id])
+  position   EventPosition @relation(fields: [positionId], references: [id])
+  guests     WaitlistGuest[]
+
+}
+
+model WaitlistGuest {
+  id         String       @id @default(cuid())
+  firstName  String
+  lastName   String
+  email      String?
+  relation   String?
+  waitlistId String
+  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id])
+}
