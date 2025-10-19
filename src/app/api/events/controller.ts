@@ -13,12 +13,12 @@ export const getEventById = async (id: string) => {
 };
 
 // CREATE event
-export const createEvent = async (data: Prisma.EventCreateInput) => {
+export const createEvent = async (data: Prisma.EventUncheckedCreateInput) => {
   return prisma.event.create({ data });
 };
 
 // UPDATE event
-export const updateEvent = async (id: string, data: Prisma.EventUpdateInput) => {
+export const updateEvent = async (id: string, data: Prisma.EventUncheckedCreateInput) => {
   return prisma.event.update({
     where: { id },
     data,
