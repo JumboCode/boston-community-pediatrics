@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import { NextResponse } from 'next/server';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// GET all events\
+// GET all events
 export const getEvents = async () => {
   return prisma.event.findMany();
 };
@@ -14,13 +13,12 @@ export const getEventById = async (id: string) => {
 };
 
 // CREATE event
-export const createEvent = async (data: any) => {
+export const createEvent = async (data: Prisma.EventCreateInput) => {
   return prisma.event.create({ data });
 };
 
-
 // UPDATE event
-export const updateEvent = async (id: string, data: any) => {
+export const updateEvent = async (id: string, data: Prisma.EventUpdateInput) => {
   return prisma.event.update({
     where: { id },
     data,
