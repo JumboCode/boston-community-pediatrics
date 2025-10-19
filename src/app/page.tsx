@@ -1,4 +1,12 @@
-export default function Home() {
+'use client';
+import Button from "@/components/common/buttons/Button";
+
+const Home: React.FC = () => {
+
+  const handleClick = () => {
+    console.log(`Button clicked!`);
+  };
+  
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 bg-gradient-to-br from-blue-400 to-purple-600 text-white">
       {/* Top spacer */}
@@ -9,12 +17,14 @@ export default function Home() {
         <h1 className="text-5xl font-extrabold animate-bounce">
           Welcome to BCP!
         </h1>
+        <Button label={"Default"} onClick={handleClick}/>
         <p className="text-xl text-white/90">
           Your go-to platform for managing volunteers, events, and more.
         </p>
         <button className="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-200 transition-all">
           Get Started
         </button>
+        
       </div>
 
       {/* Bottom spacer */}
@@ -22,3 +32,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default Home;
