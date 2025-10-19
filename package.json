@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "prisma generate && next build --turbopack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -26,6 +26,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "prettier": "^3.6.2",
+    "prisma": "6.17.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
