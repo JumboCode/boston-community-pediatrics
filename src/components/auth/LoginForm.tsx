@@ -103,7 +103,7 @@ const LoginForm = (props: LoginFormProps) => {
                     backgroundColor: "#000000", // color of the line
                 }}
                 ></div>
-                <a href="http://localhost:3000/login"
+                <a href="/login"
                     style={{ 
                         fontSize: "16px",
                         fontFamily: "Avenir, Helvetica, Arial, sans-serif",

@@ -1,5 +1,7 @@
 import Image from "next/image";
-// import { ReactComponent as BackArrow } from "@/assets/icons/heroicons-outline_arrow-left.svg"
+import BackArrow from "@/assets/icons/arrow-left.svg"
+import Link from "next/link";
+
 
 interface SignupFormProps {
   prop1: string;
@@ -26,8 +28,28 @@ const SignupForm = (props: SignupFormProps) => {
             marginTop: "220px",
             marginBottom: "220px",
             width: 792,
+            position: "relative"
             }}>
-            <img src="/public/heroicons-outline_arrow-left.svg"/>
+            <div
+                style={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "flex-start",
+                marginTop: "28px",
+                paddingLeft: "30px",
+                cursor: "pointer"
+            }}>
+                <Link href="/">
+                    <Image
+                        src={BackArrow}
+                        alt="Back arrow"
+                        style={{
+                        width: "30.86px",
+                        height: "24px",
+                        }}
+                    />
+                </Link>
+            </div>
             <h1 style={{ 
                 fontFamily: "Avenir, Helvetica, Arial, sans-serif", 
                 color: "#234254", 
