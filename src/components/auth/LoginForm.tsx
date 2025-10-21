@@ -1,10 +1,4 @@
-interface LoginFormProps {
-  prop1: string;
-  prop2: string;
-}
-
-const LoginForm = (props: LoginFormProps) => {
-  const { prop1, prop2 } = props;
+const LoginForm = () => {
 
   return (
     <div

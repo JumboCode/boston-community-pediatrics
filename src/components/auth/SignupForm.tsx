@@ -2,18 +2,12 @@ import Image from "next/image";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import Link from "next/link";
 
-interface SignupFormProps {
-  prop1: string;
-  prop2: string;
-}
-
 /**
  * Use JSDoc styling right above the header if this component is important.
  * z`
  * Also, the name of the component should capitalized, and the file should be the same.
  * */
-const SignupForm = (props: SignupFormProps) => {
-  const { prop1, prop2 } = props;
+const SignupForm = () => {
 
   return (
     <div
