@@ -17,7 +17,6 @@ const Home: React.FC = () => {
         <h1 className="text-5xl font-extrabold animate-bounce">
           Welcome to BCP!
         </h1>
-        <Button label={"Default"} onClick={handleClick}/>
         <p className="text-xl text-white/90">
           Your go-to platform for managing volunteers, events, and more.
         </p>
