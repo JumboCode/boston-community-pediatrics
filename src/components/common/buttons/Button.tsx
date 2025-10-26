@@ -1,6 +1,6 @@
-// Button component! 
+// Button component!
 import React from "react";
-import Image from 'next/image';
+import Image from "next/image";
 
 interface ButtonProps {
   label: string;
@@ -13,13 +13,31 @@ interface ButtonProps {
   type?: HTMLButtonElement["type"];
 }
 
-const Button: React.FC<ButtonProps> = ({label, onClick, leftIconPath, rightIconPath, altStyle, altTextStyle, disabled, type}) => {
+const Button: React.FC<ButtonProps> = ({
+  label,
+  onClick,
+  leftIconPath,
+  rightIconPath,
+  altStyle,
+  altTextStyle,
+  disabled,
+  type,
+}) => {
   return (
-    <button onClick={onClick} disabled={disabled} className={altStyle ?  altStyle : "text-white-600 bg-[#234254] font-medium rounded text-sm px-5.5 py-3 text-center hover:bg-[#4B7B96]-600 focus:outline-[#1a91d6] focus:bg-[#234254] active:bg-[#071823] disabled:opacity-75 disabled:bg-[#6D808B]"}>
-    
-      {leftIconPath ? <Image src={leftIconPath} alt={altTextStyle ? altTextStyle:""}/>:null}
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={
+        altStyle
+          ? altStyle
+          : "text-white-600 bg-[#234254] font-medium rounded text-sm px-5.5 py-3 text-center hover:bg-[#4B7B96]-600 focus:outline-[#1a91d6] focus:bg-[#234254] active:bg-[#071823] disabled:opacity-75 disabled:bg-[#6D808B]"
+      }
+    >
+      {leftIconPath ? (
+        <Image src={leftIconPath} alt={altTextStyle ? altTextStyle : ""} />
+      ) : null}
       {label}
-      {rightIconPath ? <Image src={rightIconPath} alt=""/>:null}
+      {rightIconPath ? <Image src={rightIconPath} alt="" /> : null}
     </button>
   );
 };
