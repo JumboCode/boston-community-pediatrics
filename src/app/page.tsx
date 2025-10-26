@@ -1,23 +1,35 @@
-import Footer from '../components/Footer';
-import NavBar from '../components/NavBar';
+'use client';
+import Button from "@/components/common/buttons/Button";
 
+const Home: React.FC = () => {
 
-export default function Home() {
+  const handleClick = () => {
+    console.log(`Button clicked!`);
+  };
+  
   return (
-    //Had to make changes to className so that Navbar and Footer aligned - Jeremiah
-    //Just kinda deleted the main content stuff
-    <div className="font-sans min-h-screen flex flex-col">
+    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 bg-gradient-to-br from-blue-400 to-purple-600 text-white">
       {/* Top spacer */}
-      <NavBar  />
+      <div></div>
 
-      {/* Main content */} 
-      <main className="flex-grow">
-      </main>
+      {/* Main content */}
+      <div className="text-center space-y-6">
+        <h1 className="text-5xl font-extrabold animate-bounce">
+          Welcome to BCP!
+        </h1>
+        <p className="text-xl text-white/90">
+          Your go-to platform for managing volunteers, events, and more.
+        </p>
+        <button className="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-200 transition-all">
+          Get Started
+        </button>
+        
+      </div>
 
       {/* Bottom spacer */}
-      <Footer /> 
-      
-    
+      <div></div>
     </div>
   );
 }
+
+export default Home;
