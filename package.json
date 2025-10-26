@@ -12,6 +12,7 @@
     "@clerk/nextjs": "^6.33.3",
     "@prisma/client": "^6.17.0",
     "@stackframe/react": "^2.8.47",
+    "@stackframe/stack": "^2.8.47",
     "clerk": "^0.8.3",
     "next": "15.5.4",
     "react": "19.1.0",
