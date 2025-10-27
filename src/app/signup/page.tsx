@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default function SignupPage() {
-  redirect("/sign-up");
+import { SignUp } from "@stackframe/stack";
+
+export default function LoginPage() {
+  return <SignUp fullPage automaticRedirect={true}/>;
 }
