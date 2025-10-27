@@ -1,28 +1,7 @@
 const LoginForm = () => {
-
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 32,
-        border: "1px solid #6B6B6B",
-        borderRadius: 8,
-        width: 792,
-        padding: "50px 102px 60px", // top, sides, bottom
-        boxSizing: "border-box",
-      }}
-    >
-      <h1
-        style={{
-          fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-          color: "#234254",
-          fontSize: 36,
-          fontWeight: 500,
-          margin: 0,
-        }}
-      >
+    <div className="flex flex-col items-center gap-8 border border-[#6B6B6B] rounded-lg w-[792px] pt-[50px] px-[102px] pb-[60px] box-border">
+      <h1 className="text-[#234254] text-[36px] font-medium m-0">
         Sign In
       </h1>
 
@@ -30,17 +9,7 @@ const LoginForm = () => {
       <input
         placeholder="Email"
         required
-        style={{
-          width: "100%",
-          height: 43,
-          borderRadius: 8,
-          border: "1px solid #6B6B6B",
-          fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-          color: "#6B6B6B",
-          fontSize: 16,
-          fontWeight: 400,
-          padding: 12,
-        }}
+        className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
       />
 
       {/* Password */}
@@ -48,65 +17,19 @@ const LoginForm = () => {
         placeholder="Password"
         required
         type="password"
-        style={{
-          width: "100%",
-          height: 43,
-          borderRadius: 8,
-          border: "1px solid #6B6B6B",
-          fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-          color: "#6B6B6B",
-          fontSize: 16,
-          fontWeight: 400,
-          padding: 12,
-        }}
+        className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
       />
 
       {/* Button Placeholder */}
-      <div
-        style={{
-          width: 174,
-          height: 44,
-          backgroundColor: "#E0E0E0", // placeholder
-          borderRadius: 4,
-        }}
-      ></div>
+      <div className="w-[174px] h-[44px] bg-[#E0E0E0] rounded" />
 
       {/* Footer Links */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 16,
-        }}
-      >
-        <a
-          href="/login"
-          style={{
-            fontSize: 16,
-            fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-            color: "#000000",
-            textDecoration: "none",
-          }}
-        >
+      <div className="flex flex-row items-center gap-4">
+        <a href="/login" className="text-base text-black no-underline hover:underline">
           Create an account
         </a>
-        <div
-          style={{
-            width: 1,
-            height: 22,
-            backgroundColor: "#000000",
-          }}
-        />
-        <a
-          href="/login"
-          style={{
-            fontSize: 16,
-            fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-            color: "#000000",
-            textDecoration: "none",
-          }}
-        >
+        <div className="w-px h-[22px] bg-black" />
+        <a href="/login" className="text-base text-black no-underline hover:underline">
           Forgot your password?
         </a>
       </div>

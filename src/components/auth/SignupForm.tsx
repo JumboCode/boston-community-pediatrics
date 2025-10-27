@@ -1,5 +1,6 @@
 import Image from "next/image";
 import BackArrow from "@/assets/icons/arrow-left.svg";
+import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg"
 import Link from "next/link";
 
 /**
@@ -8,526 +9,222 @@ import Link from "next/link";
  * Also, the name of the component should capitalized, and the file should be the same.
  * */
 const SignupForm = () => {
-
   return (
-    <div
-      style={{
-        alignItems: "center",
-        display: "flex",
-        flexDirection: "column",
-        border: "1px solid #6B6B6B",
-        borderRadius: "8px",
-        marginTop: "220px",
-        marginBottom: "220px",
-        width: 792,
-        position: "relative",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "flex-start",
-          marginTop: "28px",
-          paddingLeft: "30px",
-          cursor: "pointer",
-        }}
-      >
+    <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
+      {/* Back arrow */}
+      <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
         <Link href="/">
-          <Image
-            src={BackArrow}
-            alt="Back arrow"
-            style={{
-              width: "30.86px",
-              height: "24px",
-            }}
-          />
+          <Image src={BackArrow} alt="Back arrow" className="w-[30.86px] h-6" />
         </Link>
       </div>
-      <h1
-        style={{
-          fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-          color: "#234254",
-          fontSize: "36px",
-          fontWeight: 500,
-          marginTop: "74px",
-          marginBottom: "24px",
-          textAlign: "center",
-        }}
-      >
+
+      {/* Heading */}
+      <h1 className="text-[#234254] text-[36px] font-medium mt-[74px] mb-6 text-center leading-tight">
         Welcome to <br /> Boston Community Pediatrics!
       </h1>
-      <p
-        style={{
-          fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-          color: "#000000",
-          fontSize: "24px",
-          fontWeight: 400,
-          fontStyle: "Roman",
-          textAlign: "center",
-          marginBottom: "64px",
-        }}
-      >
+      <p className="text-black text-2xl font-normal text-center mb-16">
         Create an account to start volunteering
       </p>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 40,
-          marginLeft: "102px",
-          marginRight: "102px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 60,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "left",
-            }}
-          >
+
+      {/* Form fields */}
+      <div className="flex flex-col gap-10 mx-[102px]">
+        {/* First / Last */}
+        <div className="flex flex-row gap-[60px]">
+          <div className="flex flex-col items-start">
             <label
-              htmlFor="first name"
-              style={{
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                fontSize: "16px",
-                fontWeight: 400,
-                fontStyle: "Roman",
-                color: "#6B6B6B",
-              }}
+              htmlFor="first-name"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
             >
               First Name
             </label>
             <input
+              id="first-name"
               required
-              style={{
-                width: 264,
-                height: 43,
-                borderRadius: 8,
-                border: "1px solid #6B6B6B",
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                color: "#6B6B6B",
-                fontSize: "16px",
-                fontWeight: 400,
-                padding: 12,
-              }}
-            ></input>
+              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "left",
-            }}
-          >
+
+          <div className="flex flex-col items-start">
             <label
-              htmlFor="last name"
-              style={{
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                fontSize: "16px",
-                fontStyle: "Roman",
-                fontWeight: 400,
-                color: "#6B6B6B",
-              }}
+              htmlFor="last-name"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
             >
               Last Name
             </label>
             <input
+              id="last-name"
               required
-              style={{
-                width: 264,
-                height: 43,
-                borderRadius: 8,
-                border: "1px solid #6B6B6B",
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                color: "#6B6B6B",
-                fontSize: "16px",
-                fontWeight: 400,
-                padding: 12,
-              }}
-            ></input>
+              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
           </div>
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        {/* Email */}
+        <div className="flex flex-col items-start">
           <label
             htmlFor="email"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Email
           </label>
           <input
+            id="email"
+            type="email"
             required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        {/* Phone */}
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="phone number"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            htmlFor="phone"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Phone Number
           </label>
           <input
+            id="phone"
+            type="tel"
             required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        {/* DOB */}
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="date of birth"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            htmlFor="dob"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Date of Birth
           </label>
           <input
+            id="dob"
+            type="date"
             required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        {/* Street Address */}
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="street address"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            htmlFor="street"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Street Address (optional)
           </label>
           <input
-            required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            id="street"
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        {/* Apt/Suite */}
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="apt, suit, etc"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            htmlFor="apt"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Apt, suite, etc (optional)
           </label>
           <input
-            required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            id="apt"
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        {/* City */}
+        <div className="flex flex-col items-start">
           <label
             htmlFor="city"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             City (optional)
           </label>
           <input
-            required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            id="city"
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 60,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "left",
-            }}
-          >
+
+        {/* State / Zip */}
+        <div className="flex flex-row gap-[60px]">
+          <div className="flex flex-col items-start">
             <label
-              htmlFor="first name"
-              style={{
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                fontSize: "16px",
-                fontWeight: 400,
-                fontStyle: "Roman",
-                color: "#6B6B6B",
-              }}
+              htmlFor="state"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
             >
               State (optional)
             </label>
             <input
-              required
-              style={{
-                width: 264,
-                height: 43,
-                borderRadius: 8,
-                border: "1px solid #6B6B6B",
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                color: "#6B6B6B",
-                fontSize: "16px",
-                fontWeight: 400,
-                padding: 12,
-              }}
-            ></input>
+              id="state"
+              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "left",
-            }}
-          >
+
+          <div className="flex flex-col items-start">
             <label
-              htmlFor="zip code"
-              style={{
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                fontSize: "16px",
-                fontStyle: "Roman",
-                fontWeight: 400,
-                color: "#6B6B6B",
-              }}
+              htmlFor="zip"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
             >
               Zip code (optional)
             </label>
             <input
-              required
-              style={{
-                width: 264,
-                height: 43,
-                borderRadius: 8,
-                border: "1px solid #6B6B6B",
-                fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-                color: "#6B6B6B",
-                fontSize: "16px",
-                fontWeight: 400,
-                padding: 12,
-              }}
-            ></input>
+              id="zip"
+              inputMode="numeric"
+              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
           </div>
         </div>
-        <p
-          style={{
-            marginLeft: 324,
-            marginTop: 105,
-            marginBottom: 105,
-            fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-            fontSize: "20px",
-            fontStyle: "Roman",
-            fontWeight: 400,
-            color: "#000000",
-          }}
-        >
+
+        {/* Upload helper text */}
+        <p className="flex items-center gap-[60px] text-[20px] text-[#6B6B6B]">
+          <Image
+            src={ProfilePlaceholder}
+            alt="Profile placeholder"
+            className="w-[264px] h-[264px] left"
+          />
+        <span>
           Upload a profile photo <br /> (optional)
-        </p>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+        </span>
+      </p>
+
+        {/* Password */}
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="street address"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            htmlFor="password"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
-            Create Password
+            Create password
           </label>
           <input
+            id="password"
+            type="password"
             required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "left",
-          }}
-        >
+
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="street address"
-            style={{
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              fontSize: "16px",
-              fontStyle: "Roman",
-              fontWeight: 400,
-              color: "#6B6B6B",
-            }}
+            htmlFor="confirm-password"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
           >
-            Confirm Password
+            Confirm password
           </label>
           <input
+            id="confirm-password"
+            type="password"
             required
-            style={{
-              width: 588,
-              height: 43,
-              borderRadius: 8,
-              border: "1px solid #6B6B6B",
-              fontFamily: "Avenir, Helvetica, Arial, sans-serif",
-              color: "#6B6B6B",
-              fontSize: "16px",
-              fontWeight: 400,
-              padding: 12,
-            }}
-          ></input>
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
         </div>
       </div>
-      <p
-        style={{
-          // filler for button
-          marginTop: "90px",
-          marginBottom: "70px",
-          fontSize: "16px",
-        }}
-      >
-        button
-      </p>
+
+      {/* Button placeholder */}
+      <p className="mt-[90px] mb-[70px] text-base">button</p>
     </div>
   );
 };
