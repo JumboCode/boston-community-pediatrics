@@ -113,6 +113,20 @@ const SignupForm = () => {
             htmlFor="street"
             className="text-base font-normal text-[#6B6B6B] mb-1"
           >
+            Languages Spoken
+          </label>
+          <input
+            id="street"
+            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+          />
+        </div>
+
+        {/* Street Address */}
+        <div className="flex flex-col items-start">
+          <label
+            htmlFor="street"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
             Street Address (optional)
           </label>
           <input
