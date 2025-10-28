@@ -8,8 +8,6 @@ import {
   updateUser,
 } from "./controller";
 
-// TODO: CORRECT ERROR CODES and STATUS
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
@@ -21,7 +19,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
           {
             code: "NOT_FOUND",
-            message: "Users not found",
+            message: "User not found",
           },
           { status: 404 }
         );
@@ -82,7 +80,7 @@ export async function POST(req: NextRequest) {
     if (!newUser) {
       return NextResponse.json(
         {
-          code: "NOT_FOUND",
+          code: "ERROR",
           message: "User not created",
         },
         { status: 500 }
@@ -93,7 +91,7 @@ export async function POST(req: NextRequest) {
         code: "SUCCESS",
         data: { newUser },
       },
-      { status: 200 }
+      { status: 201 }
     );
   } catch (error) {
     console.error("Error:", error);
@@ -117,7 +115,7 @@ export async function PUT(req: NextRequest) {
           code: "NOT_FOUND",
           message: "User not updated",
         },
-        { status: 500 }
+        { status: 404 }
       );
     }
     return NextResponse.json(
@@ -149,7 +147,7 @@ export async function DELETE(req: NextRequest) {
           code: "NOT_FOUND",
           message: "User not deleted",
         },
-        { status: 500 }
+        { status: 404 }
       );
     }
     return NextResponse.json(
