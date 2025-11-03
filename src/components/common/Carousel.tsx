@@ -1,6 +1,12 @@
 'use client'
 
 import Image from "next/image";
+import image6 from '@/assets/images/image6.jpg';
+import image5 from '@/assets/images/image5.jpg';
+import image4 from '@/assets/images/image4.jpg';
+import image3 from '@/assets/images/image3.jpg';
+import image2 from '@/assets/images/image2.jpg';
+import image1 from '@/assets/images/image1.jpg';
 import { useEffect, useState } from "react";
 
 interface ComponentProps {
@@ -18,76 +24,164 @@ interface ComponentProps {
 
 const Carousel = () => {
   const [index, setIndex] = useState(0);
-  //const slideCount = images.length;
+  const slideCount = 6;
 
   useEffect(() => {
     const id = setInterval(() => {
-      setIndex((i) => (i + 1) % 5);
-    }, 5000); // auto-advance every 5s
+      setIndex((i) => (i + 1) % slideCount);
+    }, 3000); // auto-advance every 1s
     return () => clearInterval(id);
   }, []);
 
-  const prev = () => setIndex((i) => (i - 1 + 5) % 5);
+  const prev = () => setIndex((i) => (i - 1 + slideCount) % 5);
   const next = () => setIndex((i) => (i + 1) % 5);
   const goTo = (i: number) => setIndex(i);
 
   return (
 
-    <div id="default-carousel" className="relative w-full" data-carousel="slide">
-        {/*<!-- Carousel wrapper -->*/}
-        
-        <div className="relative w-full h-56 md:h-96">
-            {/*<!-- Item 1 -->*/}
-            <div className="duration-700 ease-in-out" data-carousel-item>
-                <Image src="/assets/images/image1.jpg" fill className="object-cover" alt="..." />
-            </div>
-            {/*<!-- Item 2 -->*/}
-            
-            <div className="duration-700 ease-in-out" data-carousel-item>
-                <Image src="/assets/images/image2.jpg" fill className="w-[1000px] h-[360px] center" alt="Slide 3" />
-            </div>
-  
-            {/*<!-- Item 3 -->*/}
-            <div className="duration-700 ease-in-out" data-carousel-item>
-                <Image src="/assets/images/image3.jpg" fill className="w-[1000px] h-[360px] center" alt="Slide 3" />
-            </div>
-            {/*<!-- Item 4 -->*/}
-            <div className="duration-700 ease-in-out" data-carousel-item>
-                <Image src="/assets/images/image4.jpg" fill className="w-[1000px] h-[360px] center" alt="Slide 4" />
-            </div>
-            {/*<!-- Item 5 -->*/}
-            <div className="duration-700 ease-in-out" data-carousel-item>
-                <Image src="/assets/images/image5.jpg" fill className="w-[1000px] h-[360px] center" alt="Slide 5" />
+    <div className="relative w-[1000px] h-[360px] mt-[64px]">
+       
+    {/* Slide 1 */}
+        <div
+            data-carousel-item
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 0 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
+            aria-hidden={index !== 0}
+        >
+            <div className="relative w-[1000px] h-[360px]">
+                <Image src={image1} alt="Slide 1" fill className="object-cover" />
             </div>
         </div>
-        {/*-- Slider indicators --*/}
-        <div className="absolute z-30 flex -translate-x-1/2 bottom-5 left-1/2 space-x-3 rtl:space-x-reverse">
-            <button type="button" className="w-3 h-3 rounded-full" aria-current="true" aria-label="Slide 1" data-carousel-slide-to="0"></button>
-            <button type="button" className="w-3 h-3 rounded-full" aria-current="false" aria-label="Slide 2" data-carousel-slide-to="1"></button>
-            <button type="button" className="w-3 h-3 rounded-full" aria-current="false" aria-label="Slide 3" data-carousel-slide-to="2"></button>
-            <button type="button" className="w-3 h-3 rounded-full" aria-current="false" aria-label="Slide 4" data-carousel-slide-to="3"></button>
-            <button type="button" className="w-3 h-3 rounded-full" aria-current="false" aria-label="Slide 5" data-carousel-slide-to="4"></button>
+
+    {/* Slide 2 */}
+        <div
+            data-carousel-item
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 1 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
+            aria-hidden={index !== 1}
+        >
+            <div className="relative w-full h-full">
+                <Image src={image2} alt="Slide 2" fill className="object-cover" />
+            </div>
         </div>
-        {/*-- Slider controls -->
-        <button type="button" className="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-                <svg className="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 1 1 5l4 4"/>
-                </svg>
-                <span className="sr-only">Previous</span>
-            </span>
-        </button>
-        <button type="button" className="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
-                <svg className="w-4 h-4 text-white dark:text-gray-800 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
-                </svg>
-                <span className="sr-only">Next</span>
-            </span>
-        </button> */}
+
+    {/* Slide 3 */}
+        <div
+            data-carousel-item
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 2 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
+            aria-hidden={index !== 2}
+        >
+            <div className="relative w-full h-full">
+                <Image src={image3} alt="Slide 3" fill className="object-cover" />
+            </div>
+        </div>
+
+    {/* Slide 4 */}
+        <div
+            data-carousel-item
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 3 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
+            aria-hidden={index !== 3}
+        >
+            <div className="relative w-full h-full">
+                <Image src={image4} alt="Slide 4" fill className="object-cover" />
+            </div>
+        </div>
+
+    {/* Slide 5 */}
+        <div
+            data-carousel-item
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 4 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
+            aria-hidden={index !== 4}
+        >
+            <div className="relative w-full h-full flex-shrink-0 relative">
+                <Image src={image5} alt="Slide 5" fill className="object-cover" />
+            </div>
+        </div>
+
+    {/* Slide 6 */}
+        <div
+            data-carousel-item
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 5 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
+            aria-hidden={index !== 5}
+        >
+            <div className="relative w-full h-full flex-shrink-0 relative">
+                <Image src={image6} alt="Slide 6" fill className="object-cover" />
+            </div>
+        </div>
+
+    {/*indicators */}
+    <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 space-x-3 z-20"> 
+    
+        <button 
+            className={`w-3 h-3 rounded-full ${index === 0 ? "bg-white" : "bg-gray-400"}
+            hover:bg-white/50
+            active:bg-white
+            transition-colors duration-200
+            `}
+            aria-current={index === 0}
+            aria-label="Slide 1"
+            onClick={() => setIndex(0)}
+      />
+      <button 
+            className={`w-3 h-3 rounded-full ${index === 1 ? "bg-white" : "bg-gray-400"}
+            hover:bg-white/50
+            active:bg-white
+            transition-colors duration-200
+            `}
+            aria-current={index === 1}
+            aria-label="Slide 1"
+            onClick={() => setIndex(1)}
+      />
+      <button 
+            className={`w-3 h-3 rounded-full ${index === 2 ? "bg-white" : "bg-gray-400"}
+            hover:bg-white/50
+            active:bg-white
+            transition-colors duration-200
+            `}
+            aria-current={index === 2}
+            aria-label="Slide 1"
+            onClick={() => setIndex(2)}
+      />
+      <button 
+            className={`w-3 h-3 rounded-full ${index === 3 ? "bg-white" : "bg-gray-400"}
+            hover:bg-white/50
+            active:bg-white
+            transition-colors duration-200
+            `}
+            aria-current={index === 3}
+            aria-label="Slide 1"
+            onClick={() => setIndex(3)}
+      />
+      <button 
+            className={`w-3 h-3 rounded-full ${index === 4 ? "bg-white" : "bg-gray-400"}
+            hover:bg-white/50
+            active:bg-white
+            transition-colors duration-200
+            `}
+            aria-current={index === 4}
+            aria-label="Slide 1"
+            onClick={() => setIndex(4)}
+      />
+      <button 
+            className={`w-3 h-3 rounded-full ${index === 5 ? "bg-white" : "bg-gray-400"}
+            hover:bg-white/50
+            active:bg-white
+            transition-colors duration-200
+            `}
+            aria-current={index === 5}
+            aria-label="Slide 1"
+            onClick={() => setIndex(5)}
+      />
+    
     </div>
 
-  );
+    <div className="relative z-30 mt-[444px] w-[486px]">
+        <h2 className="text-[#234254] text-[36px]">JumboCode Event</h2>
+        <p className="text-[#234254] text-[24px]">Details about the event can go here.</p>
+    </div>
+
+    </div>
+
+    );
+
 };
 
 export default Carousel;
