@@ -39,7 +39,7 @@ const Carousel = () => {
 
   return (
 
-    <div className="relative w-[1000px] h-[360px] mt-[64px]">
+    <div className="relative w-[1000px] min-h-[360px] mt-[64px]">
        
     {/* Slide 1 */}
         <div
@@ -47,7 +47,7 @@ const Carousel = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 0 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
             aria-hidden={index !== 0}
         >
-            <div className="relative w-[1000px] h-[360px]">
+            <div className="relative w-full h-[360px]">
                 <Image src={image1} alt="Slide 1" fill className="object-cover" />
             </div>
         </div>
@@ -58,7 +58,7 @@ const Carousel = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 1 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
             aria-hidden={index !== 1}
         >
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-[360px]">
                 <Image src={image2} alt="Slide 2" fill className="object-cover" />
             </div>
         </div>
@@ -69,7 +69,7 @@ const Carousel = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 2 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
             aria-hidden={index !== 2}
         >
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-[360px]">
                 <Image src={image3} alt="Slide 3" fill className="object-cover" />
             </div>
         </div>
@@ -80,7 +80,7 @@ const Carousel = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 3 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
             aria-hidden={index !== 3}
         >
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-[360px]">
                 <Image src={image4} alt="Slide 4" fill className="object-cover" />
             </div>
         </div>
@@ -91,7 +91,7 @@ const Carousel = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 4 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
             aria-hidden={index !== 4}
         >
-            <div className="relative w-full h-full flex-shrink-0 relative">
+            <div className="relative w-full h-[360px] flex-shrink-0 relative">
                 <Image src={image5} alt="Slide 5" fill className="object-cover" />
             </div>
         </div>
@@ -102,7 +102,7 @@ const Carousel = () => {
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 5 ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"}`}
             aria-hidden={index !== 5}
         >
-            <div className="relative w-full h-full flex-shrink-0 relative">
+            <div className="relative w-full h-[360px] flex-shrink-0 relative">
                 <Image src={image6} alt="Slide 6" fill className="object-cover" />
             </div>
         </div>
@@ -175,7 +175,15 @@ const Carousel = () => {
 
     <div className="relative z-30 mt-[444px] w-[486px]">
         <h2 className="text-[#234254] text-[36px]">JumboCode Event</h2>
-        <p className="text-[#234254] text-[24px]">Details about the event can go here.</p>
+    </div>
+    <div className="relative z-30 mt-[8px] w-[486px]">
+        <h2 className="text-[#234254] text-[24px]">October 12–14, 2025</h2>
+    </div>
+    <div className="relative z-30 mt-[8px] w-[486px]">
+        <h2 className="text-[#234254] text-[16px]">123 ABC Street, Boston MA 12345</h2>
+    </div>
+    <div className="relative z-30 mt-[56px] w-[996px]">
+        <h2 className="text-[#234254] text-[16px]">Lorem ipsum dolor sit amet consectetur. Neque tellus bibendum etiam purus volutpat amet faucibus nibh nunc. Lacus quam pretium vitae dignissim. Nibh et tempus venenatis scelerisque enim egestas vestibulum tempor. Aliquam sit pretium tellus at molestie diam erat eget eget. Sagittis aliquam orci feugiat vitae. Sed a lectus porttitor mattis cursus viverra ut nisl mauris. Vitae faucibus ultrices volutpat fringilla in commodo. Massa augue malesuada consequat ac.</h2>
     </div>
 
     </div>
