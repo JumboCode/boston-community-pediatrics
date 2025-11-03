@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { UserButton } from '@stackframe/stack';
 
 export default function Home() {
   const router = useRouter();
@@ -12,6 +13,19 @@ export default function Home() {
       >
         Get Started
       </button>
+      <UserButton
+        showUserInfo={true}
+        colorModeToggle={() => {
+          console.log('color mode toggle clicked');
+        }}
+        // extraItems={[
+        //   {
+        //     text: 'Custom Action',
+        //     icon: <CustomIcon />,
+        //     onClick: () => console.log('Custom action clicked'),
+        //   },
+        // ]}
+      />
     </div>
   );
 }
