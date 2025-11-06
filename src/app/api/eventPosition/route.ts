@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPositionsByEventId, createEventPosition } from "./controller";
+import {
+  getPositionsByEventId,
+  createEventPosition,
+  updateEventPosition,
+  deleteEventPosition,
+} from "./controller";
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -8,17 +13,20 @@ export async function GET(req: NextRequest) {
     const eventId = searchParams.get("eventId");
 
     if (eventId) {
-      const event = await getPositionsByEventId(eventId);
-      if (!event)
-        return NextResponse.json({ error: "Event not found" }, { status: 404 });
-      return NextResponse.json(event, { status: 200 });
+      const eventPositions = await getPositionsByEventId(eventId);
+      if (!eventPositions)
+        return NextResponse.json(
+          { error: "Event positions not found" },
+          { status: 404 }
+        );
+      return NextResponse.json(eventPositions, { status: 200 });
     } else {
       return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to fetch events" },
+      { error: "Failed to fetch event positions" },
       { status: 500 }
     );
   }
@@ -28,12 +36,42 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const newEvent = await createEventPosition(data);
-    return NextResponse.json(newEvent, { status: 201 });
+    const newEventPosition = await createEventPosition(data);
+    return NextResponse.json(newEventPosition, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: "Failed to create event position" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT handler
+export async function PUT(req: NextRequest) {
+  try {
+    const { id, data } = await req.json();
+    const updatedEventPosition = await updateEventPosition(id, data);
+    return NextResponse.json(updatedEventPosition, { status: 201 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Failed to update event position" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE handler
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = await req.json();
+    const deletedEventPosition = await deleteEventPosition(id);
+    return NextResponse.json(deletedEventPosition, { status: 201 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Failed to delete event signup position" },
       { status: 500 }
     );
   }

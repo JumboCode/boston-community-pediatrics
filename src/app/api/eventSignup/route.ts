@@ -13,17 +13,17 @@ export async function GET(req: NextRequest) {
     const eventId = searchParams.get("eventId");
 
     if (eventId) {
-      const event = await getSignupsByEventId(eventId);
-      if (!event)
-        return NextResponse.json({ error: "Event not found" }, { status: 404 });
-      return NextResponse.json(event, { status: 200 });
+      const eventSignups = await getSignupsByEventId(eventId);
+      if (!eventSignups)
+        return NextResponse.json({ error: "Event signups not found" }, { status: 404 });
+      return NextResponse.json(eventSignups, { status: 200 });
     } else {
       return NextResponse.json({ error: "Missing event Id" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to fetch events" },
+      { error: "Failed to fetch event signups" },
       { status: 500 }
     );
   }
@@ -33,12 +33,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const newEvent = await createEventSignup(data);
-    return NextResponse.json(newEvent, { status: 201 });
+    const newEventSignup = await createEventSignup(data);
+    return NextResponse.json(newEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: "Failed to create event signup" },
       { status: 500 }
     );
   }
@@ -48,12 +48,12 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { id, data } = await req.json();
-    const updatedEvent = await updateEventSignup(id, data);
-    return NextResponse.json(updatedEvent, { status: 201 });
+    const updatedEventSignup = await updateEventSignup(id, data);
+    return NextResponse.json(updatedEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to update event" },
+      { error: "Failed to update event signup" },
       { status: 500 }
     );
   }
@@ -63,12 +63,12 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const id = await req.json();
-    const deletedEvent = await deleteEventSignup(id);
-    return NextResponse.json(deletedEvent, { status: 201 });
+    const deletedEventSignup = await deleteEventSignup(id);
+    return NextResponse.json(deletedEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to delete event" },
+      { error: "Failed to delete event signup" },
       { status: 500 }
     );
   }

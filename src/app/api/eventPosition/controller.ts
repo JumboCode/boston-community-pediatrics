@@ -16,3 +16,19 @@ export const createEventPosition = async (
 ) => {
   return prisma.eventPosition.create({ data });
 };
+
+// Update eventPosition
+export const updateEventPosition = async (
+  id: string,
+  data: Prisma.EventPositionUpdateInput
+) => {
+  return prisma.eventPosition.update({
+    where: { id },
+    data,
+  });
+};
+
+// Delete eventPosition
+export const deleteEventPosition = async (id: string) => {
+  return prisma.eventPosition.delete({ where: { id } });
+};
