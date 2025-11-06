@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
     if (eventId) {
       const eventSignups = await getSignupsByEventId(eventId);
       if (!eventSignups)
-        return NextResponse.json({ error: "Event signups not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Event signups not found" },
+          { status: 404 }
+        );
       return NextResponse.json(eventSignups, { status: 200 });
     } else {
       return NextResponse.json({ error: "Missing event Id" }, { status: 400 });
@@ -47,7 +50,13 @@ export async function POST(req: NextRequest) {
 // PUT handler
 export async function PUT(req: NextRequest) {
   try {
-    const { id, data } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+    const data = await req.json();
     const updatedEventSignup = await updateEventSignup(id, data);
     return NextResponse.json(updatedEventSignup, { status: 201 });
   } catch (err) {
@@ -62,7 +71,13 @@ export async function PUT(req: NextRequest) {
 // DELETE handler
 export async function DELETE(req: NextRequest) {
   try {
-    const id = await req.json();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
     const deletedEventSignup = await deleteEventSignup(id);
     return NextResponse.json(deletedEventSignup, { status: 201 });
   } catch (err) {

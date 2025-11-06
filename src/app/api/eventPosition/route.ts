@@ -50,7 +50,14 @@ export async function POST(req: NextRequest) {
 // PUT handler
 export async function PUT(req: NextRequest) {
   try {
-    const { id, data } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    const data = await req.json();
     const updatedEventPosition = await updateEventPosition(id, data);
     return NextResponse.json(updatedEventPosition, { status: 201 });
   } catch (err) {
@@ -65,7 +72,12 @@ export async function PUT(req: NextRequest) {
 // DELETE handler
 export async function DELETE(req: NextRequest) {
   try {
-    const id = await req.json();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
     const deletedEventPosition = await deleteEventPosition(id);
     return NextResponse.json(deletedEventPosition, { status: 201 });
   } catch (err) {
