@@ -10,7 +10,7 @@ import {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const eventId = searchParams.get('eventId');
+    const eventId = searchParams.get("eventId");
 
     if (eventId) {
       const event = await getSignupsByEventId(eventId);
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
       return NextResponse.json(event, { status: 200 });
     } else {
-        return NextResponse.json({ error: 'Missing event Id'}, { status: 400 });
+      return NextResponse.json({ error: "Missing event Id" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);

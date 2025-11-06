@@ -1,22 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getPositionsByEventId, createEventPosition } from './controller';
+import { NextRequest, NextResponse } from "next/server";
+import { getPositionsByEventId, createEventPosition } from "./controller";
 
 // GET handler
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const eventId = searchParams.get('eventId');
+    const eventId = searchParams.get("eventId");
 
     if (eventId) {
       const event = await getPositionsByEventId(eventId);
-      if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      if (!event)
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
       return NextResponse.json(event, { status: 200 });
     } else {
-        return NextResponse.json({ error: 'Wrong event query' }, { status: 400 });
+      return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch events" },
+      { status: 500 }
+    );
   }
 }
 
@@ -28,6 +32,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newEvent, { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    );
   }
 }
