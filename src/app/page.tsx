@@ -77,6 +77,10 @@ const Home: React.FC = () => {
       prev.map((v) => (v.id === id ? { ...v, selected: !v.selected } : v))
     );
   };
+'use client';
+import Button from "@/components/common/buttons/Button";
+
+const Home: React.FC = () => {
 
   const handleClick = () => {
     console.log(`Button clicked!`);
@@ -124,11 +128,13 @@ const Home: React.FC = () => {
         ></EventAdminTable>
         {/* Bottom spacer */}
         <div></div>
+        </button>
+        
       </div>
     </div>
     </div>
     </div>
   );
-};
+}
 
 export default Home;
