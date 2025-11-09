@@ -128,7 +128,7 @@ const EventAdminTable: React.FC<EventPosition> = ({
             </div>
           </div>
         )}
-        
+
       </div>
     </div>
   );
