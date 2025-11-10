@@ -23,8 +23,14 @@ const Home: React.FC = () => {
         <button className="bg-white text-blue-600 font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-200 transition-all">
           Get Started
         </button>
-        <EventVolunteerTable label="hello" onClick={() => {console.log("Whoops!")}}></EventVolunteerTable>
       </div>
+
+      <EventVolunteerTable positionTitle="Position Name" 
+                           streetAddress="=123 Tufts Street, Boston, 02155"
+                           startTime="12:30PM"
+                           endTime="3:30PM"
+      
+      ></EventVolunteerTable>
 
       {/* Bottom spacer */}
       <div></div>
