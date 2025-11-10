@@ -16,28 +16,13 @@ export async function GET(req: NextRequest) {
     try {
       const user = await getUserById(id);
       if (!user) {
-        return NextResponse.json(
-          {
-            code: "NOT_FOUND",
-            message: "User not found",
-          },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
-      return NextResponse.json(
-        {
-          code: "SUCCESS",
-          data: { user },
-        },
-        { status: 200 }
-      );
+      return NextResponse.json(user, { status: 200 });
     } catch (error) {
       console.error("Error:", error);
       return NextResponse.json(
-        {
-          code: "ERROR",
-          message: error,
-        },
+        { error: "Failed to fetch user" },
         { status: 500 }
       );
     }
@@ -46,28 +31,13 @@ export async function GET(req: NextRequest) {
   try {
     const users = await getUsers();
     if (!users) {
-      return NextResponse.json(
-        {
-          code: "NOT_FOUND",
-          message: "Users not found",
-        },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Users not found" }, { status: 404 });
     }
-    return NextResponse.json(
-      {
-        code: "SUCCESS",
-        data: { users },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(users, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
-      {
-        code: "ERROR",
-        message: error,
-      },
+      { error: "Failed to fetch users" },
       { status: 500 }
     );
   }
@@ -78,28 +48,13 @@ export async function POST(req: NextRequest) {
     const { user } = await req.json();
     const newUser = await createUser(user);
     if (!newUser) {
-      return NextResponse.json(
-        {
-          code: "ERROR",
-          message: "User not created",
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "User not created" }, { status: 500 });
     }
-    return NextResponse.json(
-      {
-        code: "SUCCESS",
-        data: { newUser },
-      },
-      { status: 201 }
-    );
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
-      {
-        code: "ERROR",
-        message: error,
-      },
+      { error: "Failed to create user" },
       { status: 500 }
     );
   }
@@ -110,28 +65,13 @@ export async function PUT(req: NextRequest) {
     const { id, user } = await req.json();
     const updatedUser = await updateUser(id, user);
     if (!updatedUser) {
-      return NextResponse.json(
-        {
-          code: "NOT_FOUND",
-          message: "User not updated",
-        },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not updated" }, { status: 404 });
     }
-    return NextResponse.json(
-      {
-        code: "SUCCESS",
-        data: { updatedUser },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(updatedUser, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
-      {
-        code: "ERROR",
-        message: error,
-      },
+      { error: "Failed to update user" },
       { status: 500 }
     );
   }
@@ -142,28 +82,13 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json();
     const deletedUser = await deleteUser(id);
     if (!deletedUser) {
-      return NextResponse.json(
-        {
-          code: "NOT_FOUND",
-          message: "User not deleted",
-        },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not deleted" }, { status: 404 });
     }
-    return NextResponse.json(
-      {
-        code: "SUCCESS",
-        data: { deletedUser },
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(deletedUser, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
-      {
-        code: "ERROR",
-        message: error,
-      },
+      { error: "Failed to delete user" },
       { status: 500 }
     );
   }
