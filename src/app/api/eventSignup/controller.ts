@@ -10,6 +10,14 @@ export const getSignupsByEventId = async (eventId: string) => {
   return signups;
 };
 
+// Fetch signups by event position
+export const getSignupsByPositionId = async (positionId: string) => {
+  const signups = await prisma.eventSignup.findMany({
+    where: { positionId },
+  });
+  return signups;
+};
+
 // Create event signup
 export const createEventSignup = async (
   data: Prisma.EventSignupCreateInput

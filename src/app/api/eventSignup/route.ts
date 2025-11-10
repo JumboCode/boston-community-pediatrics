@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getSignupsByEventId,
+  getSignupsByPositionId,
   createEventSignup,
   updateEventSignup,
   deleteEventSignup,
@@ -11,8 +12,17 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get("eventId");
+    const positionId = searchParams.get("positionId");
 
-    if (eventId) {
+    if (positionId) {
+      const eventSignups = await getSignupsByPositionId(positionId);
+      if (!eventSignups)
+        return NextResponse.json(
+          { error: "Event signups not found" },
+          { status: 404 }
+        );
+      return NextResponse.json(eventSignups, { status: 200 });
+    } else if (eventId) {
       const eventSignups = await getSignupsByEventId(eventId);
       if (!eventSignups)
         return NextResponse.json(
@@ -21,7 +31,7 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventSignups, { status: 200 });
     } else {
-      return NextResponse.json({ error: "Missing event Id" }, { status: 400 });
+      return NextResponse.json({ error: "Missing event or position Id" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);
