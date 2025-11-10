@@ -1,9 +1,7 @@
 const LoginForm = () => {
   return (
     <div className="flex flex-col items-center gap-8 border border-[#6B6B6B] rounded-lg w-[792px] pt-[50px] px-[102px] pb-[60px] box-border">
-      <h1 className="text-[#234254] text-[36px] font-medium m-0">
-        Sign In
-      </h1>
+      <h1 className="text-[#234254] text-[36px] font-medium m-0">Sign In</h1>
 
       {/* Email */}
       <input
@@ -25,11 +23,17 @@ const LoginForm = () => {
 
       {/* Footer Links */}
       <div className="flex flex-row items-center gap-4">
-        <a href="/login" className="text-base text-black no-underline hover:underline">
+        <a
+          href="/login"
+          className="text-base text-black no-underline hover:underline"
+        >
           Create an account
         </a>
         <div className="w-px h-[22px] bg-black" />
-        <a href="/login" className="text-base text-black no-underline hover:underline">
+        <a
+          href="/forgot-password"
+          className="text-base text-black no-underline hover:underline"
+        >
           Forgot your password?
         </a>
       </div>

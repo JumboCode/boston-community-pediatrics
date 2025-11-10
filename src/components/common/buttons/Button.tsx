@@ -30,7 +30,7 @@ const Button: React.FC<ButtonProps> = ({
       className={
         altStyle
           ? altStyle
-          : "text-white-600 bg-[#234254] font-medium rounded text-sm px-5.5 py-3 text-center hover:bg-[#4B7B96]-600 focus:outline-[#1a91d6] focus:bg-[#234254] active:bg-[#071823] disabled:opacity-75 disabled:bg-[#6D808B]"
+          : "text-white bg-[#234254] font-medium rounded text-sm px-5.5 py-3 text-center hover:bg-[#4B7B96]-600 focus:outline-[#1a91d6] focus:bg-[#234254] active:bg-[#071823] disabled:opacity-75 disabled:bg-[#6D808B]"
       }
     >
       {leftIconPath ? (
