@@ -5,11 +5,7 @@ import Button from "../common/buttons/Button";
 import arrowLeft from "@/assets/icons/arrow-left.svg";
 import Link from "next/link";
 
-interface ForgotProps {
-  setEmail: () => void;
-}
-
-const ForgotPasswordForm: React.FC<ForgotProps> = ({ setEmail }) => {
+export default function ForgotPasswordForm() {
   // set this with backend logic
   const [isError, setIsError] = useState(false);
   const [sentEmail, setSentEmail] = useState(false);
@@ -82,6 +78,4 @@ const ForgotPasswordForm: React.FC<ForgotProps> = ({ setEmail }) => {
       </Link>
     </div>
   );
-};
-
-export default ForgotPasswordForm;
+}
