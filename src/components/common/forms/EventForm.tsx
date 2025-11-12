@@ -1,10 +1,19 @@
+'use client';
 import Image from "next/image";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg"
 import Link from "next/link";
 import Button from "@/components/common/buttons/Button";
+import { useState } from "react";
 
 const EventForm = () => {
+    const [posDateEqualsEvent, setPosDatetoEvent] = useState(false);
+    const [posTimeEqualsEvent, setPosTimetoEvent] = useState(false);
+
+    const toggleDate = () => setPosDatetoEvent(prev => !prev);
+    const toggleTime = () => setPosTimetoEvent(prev => !prev);
+
+
     return (
         <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
       {/* Back arrow */}
@@ -191,10 +200,13 @@ const EventForm = () => {
         <Button
             label="Same as event"
             altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+            onClick={toggleDate}
             // onClick={handleCheckboxChange}
         />
         <input
             type="checkbox"
+            checked={posDateEqualsEvent}
+            onChange ={toggleDate}
             className="w-5 h-5 accent-[#234254] cursor-pointer"
         />
         </div>
@@ -205,6 +217,7 @@ const EventForm = () => {
         id="position-date"
         type="date"
         required
+        disabled={posDateEqualsEvent}
         className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
     />
     </div>
@@ -224,10 +237,13 @@ const EventForm = () => {
         <Button
             label="Same as event"
             altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+            onClick={toggleTime}
             // onClick={handleCheckboxChange}
         />
         <input
             type="checkbox"
+            checked={posTimeEqualsEvent}
+            onChange ={toggleTime}
             className="w-5 h-5 accent-[#234254] cursor-pointer"
         />
         </div>
@@ -238,6 +254,7 @@ const EventForm = () => {
         id="position-time"
         type="time"
         required
+        disabled={posTimeEqualsEvent}
         className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
     />
     </div>
@@ -365,8 +382,9 @@ const EventForm = () => {
             label=" + Add another position"
             altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[201px] h-[44px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3]"
         />
+        
       </div>
-
+        
     </div>
     );
 };
