@@ -13,7 +13,9 @@ interface EventVolunteerTableProps {
   totalSpots: number;
   filledSpots: number;
 }
-
+git add . 
+git commit -m "commit here"
+git push 
 function EventVolunteerTable(props: EventVolunteerTableProps) {
   const { positionTitle, streetAddress, startTime, endTime, date, description, 
           totalSpots, filledSpots} = props;
