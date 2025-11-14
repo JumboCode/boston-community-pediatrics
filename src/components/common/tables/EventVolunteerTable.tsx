@@ -13,9 +13,7 @@ interface EventVolunteerTableProps {
   totalSpots: number;
   filledSpots: number;
 }
-git add . 
-git commit -m "commit here"
-git push 
+
 function EventVolunteerTable(props: EventVolunteerTableProps) {
   const { positionTitle, streetAddress, startTime, endTime, date, description, 
           totalSpots, filledSpots} = props;
@@ -40,10 +38,7 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
         </div>
 
         <div className="mt-[12px] text-[#234254] text-[14px] font-normal font-avenir leading-[1.4]">
-          Lorem ipsum dolor sit amet consectetur. Neque tellus bibendum etiam
-          purus volutpat amet faucibus nibh nunc. Lacus quam pretium vitae
-          dignissim. Nibh et tempus venenatis scelerisque enim egestas
-          vestibulum tempor.
+          {description}
         </div>
 
         <Button
@@ -58,7 +53,7 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
         className={`border-l border-gray-300 w-[225px] relative transition-all duration-300 p-[20px] ${expanded ? "h-auto" : "h-[250px]"}`}
       >
         <div className="text-[#234254] text-[20px] font-medium font-avenir text-right">
-          12/23 Spots Filled
+          {filledSpots} / {totalSpots}
         </div>
 
         <div className="mt-[20px] space-y-[12px]">
