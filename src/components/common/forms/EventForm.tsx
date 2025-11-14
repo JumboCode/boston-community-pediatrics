@@ -1,18 +1,53 @@
 'use client';
 import Image from "next/image";
 import BackArrow from "@/assets/icons/arrow-left.svg";
-import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg"
 import Link from "next/link";
 import Button from "@/components/common/buttons/Button";
 import { useState } from "react";
 
 const EventForm = () => {
-    const [posDateEqualsEvent, setPosDatetoEvent] = useState(false);
-    const [posTimeEqualsEvent, setPosTimetoEvent] = useState(false);
+    //const [posDateEqualsEvent, setPosDatetoEvent] = useState(false);
+    //const [posTimeEqualsEvent, setPosTimetoEvent] = useState(false);
 
-    const toggleDate = () => setPosDatetoEvent(prev => !prev);
-    const toggleTime = () => setPosTimetoEvent(prev => !prev);
-
+    //const toggleDate = () => setPosDatetoEvent(prev => !prev);
+    //const toggleTime = () => setPosTimetoEvent(prev => !prev);
+    const [positions, setPositions] = useState([
+      { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "" , sameAsDate: false, sameAsTime: false, sameAsEvent: false},
+    ]);
+  
+    // Function to add a new position
+    const addPosition = () => {
+      setPositions((prevPositions) => [
+        ...prevPositions,
+        { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "", sameAsDate: false, sameAsTime: false, sameAsEvent: false },
+      ]);
+    };
+  
+    // Function to handle input changes for a specific position
+    const handleInputChange = (index: number, field: string, value: string) => {
+      const updatedPositions = positions.map((position, i) =>
+        i === index ? { ...position, [field]: value } : position
+      );
+      setPositions(updatedPositions);
+    };
+    const toggleSameAsEvent = (index: number) => {
+      const updatedPositions = positions.map((position, i) =>
+        i === index ? { ...position, sameAsEvent: !position.sameAsEvent} : position
+      );
+      setPositions(updatedPositions);
+    };
+    const toggleSameAsDate = (index: number) => {
+      const updatedPositions = positions.map((position, i) =>
+        i === index ? { ...position, sameAsDate: !position.sameAsDate } : position
+      );
+      setPositions(updatedPositions);
+    };
+    const toggleSameAsTime = (index: number) => {
+      const updatedPositions = positions.map((position, i) =>
+        i === index ? { ...position, sameAsTime: !position.sameAsTime } : position
+      );
+      setPositions(updatedPositions);
+    };
 
     return (
         <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
@@ -30,6 +65,7 @@ const EventForm = () => {
       <p className="text-black text-2xl font-normal text-center mb-16">
         Add carousel and button component here later...
       </p>
+
 
       {/* Form fields */}
       <div className="flex flex-col gap-10 mx-[102px]">
@@ -167,7 +203,166 @@ const EventForm = () => {
           </div>
         </div>
 
-        {/* Position name */}
+
+        {positions.map((position, index) => (
+  <div key={index} className="flex flex-col gap-[] mb-6">
+    
+    {/* Position Name */}
+    <div className="flex flex-col items-start">
+      <label
+        htmlFor={`position-name-${index}`}
+        className="text-base font-normal text-[#6B6B6B] mb-1"
+      >
+        Position name
+      </label>
+      <input
+        id={`position-name-${index}`}
+        type="text"
+        value={position.name}
+        onChange={(e) => handleInputChange(index, "name", e.target.value)}
+        className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+      />
+    </div>
+
+   
+    {/* Position Date */}
+<div className="flex flex-col ">
+  {/* Top row: label on left, button + checkbox on right */}
+  <div className="flex items-center justify-between">
+    <label
+      htmlFor={`position-date-${index}`}
+      className="text-base font-normal text-[#6B6B6B] mt-10"
+    >
+      Position date
+    </label>
+    <div className="flex items-center gap-2 mt-10">
+      <Button
+        label="Same as event"
+        altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+        onClick={() => toggleSameAsDate(index)}
+      />
+      <input
+        type="checkbox"
+        checked={position.sameAsDate}
+        onChange={() => toggleSameAsDate(index)}
+        className="w-5 h-5 accent-[#234254] cursor-pointer"
+      />
+    </div>
+  </div>
+
+  {/* Input below */}
+  <input
+    id={`position-date-${index}`}
+    type="date"
+    value={position.date}
+    onChange={(e) => handleInputChange(index, "date", e.target.value)}
+    className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+  />
+</div>
+
+
+    {/* Position Time */}
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between">
+      <label
+        htmlFor={`position-time-${index}`}
+        className="text-base font-normal text-[#6B6B6B] mb-1 mt-10"
+      >
+        Position time
+      </label>
+      <div className="flex items-center gap-2 mt-10">
+      <Button
+        label="Same as event"
+        altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+        onClick={() => toggleSameAsTime(index)}
+      />
+      <input
+        type="checkbox"
+        checked={position.sameAsTime}
+        onChange={() => toggleSameAsTime(index)}
+        className="w-5 h-5 accent-[#234254] cursor-pointer"
+      />
+    </div>
+  </div>
+      <input
+        id={`position-time-${index}`}
+        type="time"
+        value={position.time}
+        onChange={(e) => handleInputChange(index, "time", e.target.value)}
+        className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+      />
+    </div>
+  
+
+    {/* Position Title */}
+    <div className="flex flex-col">
+      <label
+        htmlFor={`position-title-${index}`}
+        className="text-base font-normal text-[#6B6B6B] mb-1 mt-10"
+      >
+        Position description
+      </label>
+      <input
+        id={`position-title-${index}`}
+        type="text"
+        value={position.title}
+        onChange={(e) => handleInputChange(index, "title", e.target.value)}
+        className="w-[588px] h-[175px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+      />
+    </div>
+
+    {/* Position Address */}
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between">
+      <label
+        htmlFor={`street-address-${index}`}
+        className="text-base font-normal text-[#6B6B6B] mb-1 mt-10"
+      >
+        Street address
+      </label>
+      <div className="flex items-center gap-2 mt-10">
+      <Button
+        label="Same as event"
+        altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+        onClick={() => toggleSameAsEvent(index)}
+      />
+      <input
+        type="checkbox"
+        checked={position.sameAsEvent}
+        onChange={() => toggleSameAsEvent(index)}
+        className="w-5 h-5 accent-[#234254] cursor-pointer"
+      />
+    </div>
+  </div>
+      <input
+        id={`street-address-${index}`}
+        type="address"
+        value={position.time}
+        onChange={(e) => handleInputChange(index, "address", e.target.value)}
+        className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+      />
+    </div>
+
+    {/* Apt / Suite */}
+    <div className="flex flex-col">
+      <label
+        htmlFor={`position-apt-${index}`}
+        className="text-base font-normal text-[#6B6B6B] mb-1 mt-10"
+      >
+        Apt, suite, etc (optional)
+      </label>
+      <input
+        id={`position-apt-${index}`}
+        type="text"
+        value={position.apt || ""}
+        onChange={(e) => handleInputChange(index, "apt", e.target.value)}
+        className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+      />
+    </div>
+  </div>
+))}
+
+        {/* Position name 
         <div className="flex flex-row gap-[60px]">
             <div className="flex flex-col items-start">
                 <label
@@ -185,9 +380,9 @@ const EventForm = () => {
             </div>
         </div>
 
-    {/* Position date */}
+    {/* Position date 
     <div className="flex flex-col gap-2">
-    {/* Top row: label on left, checkbox + text on right */}
+    {/* Top row: label on left, checkbox + text on right 
     <div className="flex items-center justify-between">
         <label
         htmlFor="position-date"
@@ -200,31 +395,31 @@ const EventForm = () => {
         <Button
             label="Same as event"
             altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-            onClick={toggleDate}
+            //onClick={toggleDate}
             // onClick={handleCheckboxChange}
         />
         <input
             type="checkbox"
-            checked={posDateEqualsEvent}
-            onChange ={toggleDate}
+            //checked={posDateEqualsEvent}
+            //onChange ={toggleDate}
             className="w-5 h-5 accent-[#234254] cursor-pointer"
         />
         </div>
     </div>
 
-    {/* Date input below */}
+    {/* Date input below 
     <input
         id="position-date"
         type="date"
         required
-        disabled={posDateEqualsEvent}
+        //disabled={posDateEqualsEvent}
         className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
     />
     </div>
     
-        {/* Position time */}
+        {/* Position time 
     <div className="flex flex-col gap-2">
-    {/* Top row: label on left, checkbox + text on right */}
+    {/* Top row: label on left, checkbox + text on right 
     <div className="flex items-center justify-between">
         <label
         htmlFor="position-time"
@@ -237,29 +432,28 @@ const EventForm = () => {
         <Button
             label="Same as event"
             altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-            onClick={toggleTime}
+            //onClick={toggleTime}
             // onClick={handleCheckboxChange}
         />
         <input
             type="checkbox"
-            checked={posTimeEqualsEvent}
-            onChange ={toggleTime}
+            //checked={posTimeEqualsEvent}
+            //onChange ={toggleTime}
             className="w-5 h-5 accent-[#234254] cursor-pointer"
         />
         </div>
     </div>
 
-    {/* Date input below */}
+    {/* Date input below 
     <input
         id="position-time"
         type="time"
         required
-        disabled={posTimeEqualsEvent}
+        //disabled={posTimeEqualsEvent}
         className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
     />
     </div>
         
-
         <div className="flex flex-col items-start">
           <label
             htmlFor="street"
@@ -272,9 +466,9 @@ const EventForm = () => {
             className="w-[588px] h-[175px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
-         {/* Street Address */}
+         {/* Street Address 
     <div className="flex flex-col gap-2">
-    {/* Top row: label on left, checkbox + text on right */}
+    {/* Top row: label on left, checkbox + text on right 
     <div className="flex items-center justify-between">
         <label
         htmlFor="position-street"
@@ -296,7 +490,7 @@ const EventForm = () => {
         </div>
     </div>
 
-    {/* Street input below */}
+    {/* Street input below *
     <input
         id="position-street"
         type="street"
@@ -305,7 +499,7 @@ const EventForm = () => {
     />
     </div>
 
-        {/* Apt/Suite */}
+        {/* Apt/Suite 
         <div className="flex flex-col items-start">
           <label
             htmlFor="apt"
@@ -319,7 +513,7 @@ const EventForm = () => {
           />
         </div>
 
-        {/* City */}
+        {/* City 
         <div className="flex flex-col items-start">
           <label
             htmlFor="city"
@@ -333,7 +527,7 @@ const EventForm = () => {
           />
         </div>
 
-        {/* State / Zip */}
+        {/* State / Zip 
         <div className="flex flex-row gap-[60px]">
           <div className="flex flex-col items-start">
             <label
@@ -377,14 +571,16 @@ const EventForm = () => {
       </div>
 
       {/* Button placeholder */}
-      <div className="flex flex-col items-start mt-[56px] mb-[56px]">
+      <div className="flex flex-col items-center mt-[56px] mb-[56px]">
         <Button
             label=" + Add another position"
             altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[201px] h-[44px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3]"
+            onClick={addPosition}
         />
         
       </div>
         
+    </div>
     </div>
     );
 };
