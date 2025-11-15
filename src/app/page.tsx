@@ -2,6 +2,8 @@
 import React from "react";
 import Button from "@/components/common/buttons/Button";
 import EventAdminTable from "@/components/common/tables/EventAdminTable";
+import EventVolunteerTable from "@/components/common/tables/EventVolunteerTable";
+
 
 const Home: React.FC = () => {
   const handleClick = () => {
@@ -24,7 +26,19 @@ const Home: React.FC = () => {
         <button className='bg-white text-blue-600 font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-200 transition-all'>
           Get Started
         </button> */}
-      <div className="min-h-screen flex items-center justify-center p-6">
+
+       <EventVolunteerTable positionTitle="Position Name" 
+                           streetAddress="123 Tufts Street, Boston, 02155"
+                           startTime="12:30PM"
+                           endTime="3:30PM"
+                           date="November 11"
+                           description = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                           totalSpots={23}
+                           filledSpots={12}
+                           positionId=""
+      ></EventVolunteerTable> 
+
+      {/* <div className="min-h-screen flex items-center justify-center p-6">
         <EventAdminTable
           position="Position Name"
           startTime="10:00 AM"
@@ -42,7 +56,7 @@ const Home: React.FC = () => {
         {/* Bottom spacer */}
         <div></div>
         
-        </div>
+       {/* </div> */}
       </div>
   );
 }

@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventSignups, { status: 200 });
     } else if (eventId) {
+      
       const eventSignups = await getSignupsByEventId(eventId);
       if (!eventSignups)
         return NextResponse.json(
