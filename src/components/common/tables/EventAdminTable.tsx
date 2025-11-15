@@ -1,7 +1,10 @@
+bcp-16-event-details-volunteer
 // Code for Event Admin Table
 
-<<<<<<< Updated upstream
-=======
+
+"use client";
+import React, { useState, useEffect } from "react";
+
 interface User {
   id: string;
   firstName: string;
@@ -19,7 +22,6 @@ interface EventAdminTableProps {
   filledSlots: number;
   totalSlots: number;
   location: string;
-  //volunteers: User[]; 
 }
 
 const EventAdminTable = (props: EventAdminTableProps) => {
@@ -38,7 +40,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   useEffect(() => {
     const mockData: User[] = [
       {
-        // accessing items in array: console.log(User[index])
         id: "1",
         firstName: "Participant",
         lastName: "Name",
@@ -214,4 +215,4 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 };
 
 export default EventAdminTable;
->>>>>>> Stashed changes
+main
