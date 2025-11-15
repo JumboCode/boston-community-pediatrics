@@ -26,9 +26,13 @@ const Home: React.FC = () => {
       </div>
 
       <EventVolunteerTable positionTitle="Position Name" 
-                           streetAddress="=123 Tufts Street, Boston, 02155"
+                           streetAddress="123 Tufts Street, Boston, 02155"
                            startTime="12:30PM"
                            endTime="3:30PM"
+                           date="November 11"
+                           description = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                           totalSpots={23}
+                           filledSpots={12}
       
       ></EventVolunteerTable>
 

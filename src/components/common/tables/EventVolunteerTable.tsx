@@ -26,7 +26,7 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
       className={`border border-gray-300 w-[800px] ml-[50px] mt-0 flex flex-row relative bg-[#FFFFFF] transition-all duration-300 ${expanded ? "h-auto" : "h-[250px]"}`}
     >
       {/* Box 1 */}
-      <div className="w-[575px] h-[250px] relative p-[20px]">
+      <div className="w-[575px] relative p-[20px]">
         <div className="text-[#234254] text-[20px] font-medium font-avenir leading-[1.25]">
           {positionTitle}
         </div>
@@ -37,8 +37,8 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
           {date}, {startTime} - {endTime}
         </div>
 
-        <div className="mt-[12px] text-[#234254] text-[14px] font-normal font-avenir leading-[1.4]">
-          {description}
+        <div className="mt-[12px] break-words text-[#234254] text-[14px] font-normal font-avenir leading-[1.4]">
+        {description}
         </div>
 
         <Button
@@ -64,9 +64,11 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
               </span>
 
               <Image
+                width={28}
+                height={28}
                 src={defaultPfp.src}
                 alt="Profile"
-                className="w-[28px] h-[28px] rounded-full"
+                className="rounded-full"
               />
             </div>
           ))}
