@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+` import { NextRequest, NextResponse } from 'next/server';
 import { getEvents, getEventById, createEvent, updateEvent, deleteEvent } from './controller';
 
 // GET handler

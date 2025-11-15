@@ -1,3 +1,4 @@
+import EventVolunteerTable from "@/components/common/tables/EventVolunteerTable";
 'use client';
 import React from "react";
 import Button from "@/components/common/buttons/Button";
@@ -23,6 +24,23 @@ const Home: React.FC = () => {
         </p>
         <button className='bg-white text-blue-600 font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-200 transition-all'>
           Get Started
+        </button>
+      </div>
+
+      <EventVolunteerTable positionTitle="Position Name" 
+                           streetAddress="123 Tufts Street, Boston, 02155"
+                           startTime="12:30PM"
+                           endTime="3:30PM"
+                           date="November 11"
+                           description = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                           totalSpots={23}
+                           filledSpots={12}
+      
+      ></EventVolunteerTable>
+
+      {/* Bottom spacer */}
+      <div></div>
+    </div>
         </button> */}
       <div className="min-h-screen flex items-center justify-center p-6">
         <EventAdminTable
@@ -45,6 +63,6 @@ const Home: React.FC = () => {
         </div>
       </div>
   );
-}
+};
 
 export default Home;
