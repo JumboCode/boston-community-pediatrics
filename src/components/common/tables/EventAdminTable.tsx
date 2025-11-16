@@ -1,5 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import type { EventPosition } from "@prisma/client";
+//import type { User } from "@prisma/client";
+import useSWR from 'swr'
+
 
 interface User {
   id: string;
@@ -9,31 +13,91 @@ interface User {
   phoneNumber: string;
   selected: boolean;
 }
+// model User {
+//   id            String     @id @default(cuid())
+//   clerkId       String     @default("placeholder")
+//   firstName     String
+//   lastName      String
+//   emailAddress  String?    @unique
+//   phoneNumber   String
+//   dateOfBirth   DateTime?
+//   streetAddress String?
+//   city          String?
+//   state         String?
+//   country       String?
+//   zipCode       String?
+//   hoursWorked   Int         @default(0)
+//   createdAt     DateTime   @default(now()) @map("created_at")
+//   updatedAt     DateTime   @updatedAt @map("updated_at")
+//   role          UserRole
+
+//   signups       EventSignup[]
+//   waitlists     EventWaitlist[]
+
+//   @@map("users")
+// }
 
 interface EventAdminTableProps {
   position: string;
-  startTime: string;
-  endTime: string;
+  startTime: Date | string;
+  endTime: Date | string;
   description: string;
   filledSlots: number;
   totalSlots: number;
   location: string;
+  positionId: string; 
 }
 
 const EventAdminTable = (props: EventAdminTableProps) => {
   const {
-    position,
+    position, //pos name
     startTime,
     endTime,
     description,
     filledSlots,
     totalSlots,
     location,
+    positionId, 
   } = props;
+  const fetcher = (url: string) => fetch(url).then(res => res.json());
+  const { data, error, isLoading } = useSWR<User[]>(
+  positionId ? `/api/eventSignup?positionId=${positionId}` : null,
+    fetcher
+  );
+  // easier debugging: print object instead of string concatenation
+  console.log(position, 'data:', data, 'error:', error);
 
   const [volunteers, setVolunteers] = useState<User[]>([]);
+  //const eventSignups = await getSignupsByPositionId(positionID);
+  // eventSignUps is an array of all of the signups in this position 
 
   useEffect(() => {
+
+    // {eventSignUps.map((volunteers) => (
+    //         <EventAdminTable
+    //           firstName={volunteers.firstName}
+    //           lastName={volunteers.lastName}
+    //           email={volunteers.emailAddress}
+    //           streetAddress={volunteers.streetAddress}
+    //           birthday 
+    //           /*
+    //           emailAddress  String?    @unique
+    //           phoneNumber   String
+    //           dateOfBirth   DateTime?
+    //           streetAddress String?
+    //           city          String?
+    //           state         String?
+    //           country       String?
+    //           zipCode       String?
+    //           role          UserRole
+
+    //           signups       EventSignup[]
+    //           waitlists     EventWaitlist[]
+    //                       */
+    //           />
+    //       ))}
+
+
     const mockData: User[] = [
       {
         id: "1",
@@ -93,6 +157,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       },
     ];
 
+    //setVolunteers(eventSignUps);
     setVolunteers(mockData);
   }, []);
 
@@ -125,7 +190,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             <h1 className="text-[24px] font-semibold">{position}</h1>
             <p className="text-[16px] pt-2">{location}</p>
             <p className="text-[16px]">
-              {startTime} - {endTime}
+              {startTime.toString()} - {endTime.toString()}
             </p>
             <p className="text-[24px] pt-5">
               {filledSlots}/{totalSlots} Spots Filled

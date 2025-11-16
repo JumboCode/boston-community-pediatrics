@@ -37,7 +37,8 @@ const Home: React.FC = () => {
           filledSlots={12}
           totalSlots={23}
           location="123 ABC Street, Boston MA 12345"
-        ></EventAdminTable>
+          positionId=""
+        />
         
         {/* Bottom spacer */}
         <div></div>
