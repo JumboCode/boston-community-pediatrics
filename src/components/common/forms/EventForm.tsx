@@ -50,16 +50,16 @@ const EventForm = () => {
     };
 
     return (
-        <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
+        <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[120px] mb-[138px] w-[792px] relative">
       {/* Back arrow */}
-      <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
+      <div className="w-full flex justify-start mt-[28px] pl-[30px] cursor-pointer">
         <Link href="/">
-          <Image src={BackArrow} alt="Back arrow" className="w-[30.86px] h-6" />
+          <Image src={BackArrow} alt="Back arrow" className="w-[30.86px] h-[24px]" />
         </Link>
       </div>
 
       {/* Heading */}
-      <h1 className="text-[#234254] text-[36px] font-medium mt-[74px] mb-6 text-center leading-tight">
+      <h1 className="text-[#234254] text-[36px] font-medium mt-[22px] mb-6 text-center leading-tight">
         Create a new event
       </h1>
       <p className="text-black text-2xl font-normal text-center mb-16">
@@ -205,7 +205,7 @@ const EventForm = () => {
 
 
         {positions.map((position, index) => (
-  <div key={index} className="flex flex-col gap-[] mb-6">
+  <div key={index} className="flex flex-col">
     
     {/* Position Name */}
     <div className="flex flex-col items-start">
@@ -231,7 +231,7 @@ const EventForm = () => {
   <div className="flex items-center justify-between">
     <label
       htmlFor={`position-date-${index}`}
-      className="text-base font-normal text-[#6B6B6B] mt-10"
+      className="text-base font-normal text-[#6B6B6B] mb-1 mt-10"
     >
       Position date
     </label>
@@ -571,16 +571,28 @@ const EventForm = () => {
       </div>
 
       {/* Button placeholder */}
+      </div>
       <div className="flex flex-col items-center mt-[56px] mb-[56px]">
         <Button
-            label=" + Add another position"
+            label="+ Add another position"
             altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[201px] h-[44px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3]"
             onClick={addPosition}
         />
-        
       </div>
-        
-    </div>
+
+      {/* Buttons at bottom of page - they don't do anything yet */}
+      <div className="flex flex-col items-center mt-[56px] mb-[71px]">
+        <div className="flex flex-row items-center">
+          <Button
+            label="Save as draft"
+            altStyle="bg-[#FFFFFF] text-[#000000] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2] mr-[15px] border border-[#000000]"
+          />
+          <Button
+            label="Create event"
+            altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
+          />
+        </div>
+      </div>      
     </div>
     );
 };
