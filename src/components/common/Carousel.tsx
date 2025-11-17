@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import placeholder from "@/assets/images/image-place-holder.svg";
 
 interface CarouselProps {
-  images: StaticImageData[];
+  images: (StaticImageData | string) [];
 };
 
 const Carousel = ({ images }: CarouselProps) => {
@@ -29,6 +29,9 @@ const Carousel = ({ images }: CarouselProps) => {
     return () => clearInterval(id);
   }, [slideCount, paused, showDots]);
 
+  const getSrcKey = (src: StaticImageData | string) =>
+    typeof src === "string" ? src : src.src;
+
   return (
     <div className="w-[1000px]">
       {/* Image box */}
@@ -36,13 +39,18 @@ const Carousel = ({ images }: CarouselProps) => {
         {hasImages ? (
           images.map((src, i) => (
           <div
-            key={`${src.src}-${i}`}
+            key={`${getSrcKey(src)}-${i}`}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
               index === i ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
             }`}
             aria-hidden={index !== i}
           >
-            <Image src={src} alt={`Slide ${i + 1}`} fill className="object-cover" />
+            <Image
+              src={getSrcKey(src)}
+              alt={`Slide ${i + 1}`}
+              fill
+              className="object-cover"
+            />
           </div>
         ))
         ) : (

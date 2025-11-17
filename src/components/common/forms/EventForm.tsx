@@ -12,6 +12,7 @@ const EventForm = () => {
     //const [posDateEqualsEvent, setPosDatetoEvent] = useState(false);
     //const [posTimeEqualsEvent, setPosTimetoEvent] = useState(false);
 
+    
     //const toggleDate = () => setPosDatetoEvent(prev => !prev);
     //const toggleTime = () => setPosTimetoEvent(prev => !prev);
     const [positions, setPositions] = useState([
@@ -62,7 +63,7 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
         { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "", sameAsDate: false, sameAsTime: false, sameAsEvent: false },
       ]);
     };
-  
+
     // Function to handle input changes for a specific position
     const handleInputChange = (index: number, field: string, value: string) => {
       const updatedPositions = positions.map((position, i) =>
@@ -104,7 +105,7 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
       </h1>
       {/* Carousel + Add photos */}
 <div className="w-full flex flex-col items-center mb-16">
-  <div className="flex justify-center">
+  <div className="flex justify-center scale-[0.588] origin-top">
     <Carousel images={carouselImages} />
   </div>
 
@@ -121,7 +122,7 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
   {/* Add photos button */}
   <Button
     label="+ Add photos"
-    altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[160px] h-[40px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3] mt-4"
+    altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[160px] h-[40px] font-mrun devedium px-4 py-2 rounded-lg hover:bg-[#b9c0c3] mt-4"
     onClick={handleAddPhotosClick}
   />
 </div>
