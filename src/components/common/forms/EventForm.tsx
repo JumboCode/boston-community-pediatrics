@@ -16,12 +16,12 @@ const EventForm = () => {
     //const toggleDate = () => setPosDatetoEvent(prev => !prev);
     //const toggleTime = () => setPosTimetoEvent(prev => !prev);
     const [positions, setPositions] = useState([
-      { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "" , sameAsDate: false, sameAsTime: false, sameAsEvent: false},
+      { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "" , sameAsDate: false, sameAsTime: false, sameAsEvent: false, sameAsAddress: false},
     ]);
     const [event, setEvent] = useState({
       title: "",
       date: "",
-      time: "",
+      time: "12:30",
       description: "",
       address: "",
       apt: "",
@@ -70,7 +70,7 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
     const addPosition = () => {
       setPositions((prevPositions) => [
         ...prevPositions,
-        { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "", sameAsDate: false, sameAsTime: false, sameAsEvent: false },
+        { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "", sameAsDate: false, sameAsTime: false, sameAsEvent: false, sameAsAddress: false},
       ]);
     };
     
@@ -105,6 +105,32 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
       );
       setPositions(updatedPositions);
     };
+    const toggleSameAsAddress = (index: number) => {
+      setPositions((prevPositions) =>
+        prevPositions.map((position, i) => {
+          if (i !== index) return position;
+
+          const nextSame = !position.sameAsAddress;
+
+          if (!nextSame) {
+            // turning OFF – keep whatever values are already in position.*
+            return { ...position, sameAsAddress: nextSame };
+          }
+
+          // turning ON – copy fields from event into this position
+          return {
+            ...position,
+            sameAsAddress: nextSame,
+            address: event.address,
+            apt: event.apt,
+            city: event.city,
+            state: event.state,
+            zip: event.zip,
+          };
+        })
+      );
+    };
+
 
     return (
       <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[120px] mb-[138px] w-[792px] relative">
@@ -136,7 +162,7 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
   />
 
   {/* Add photos button */}
-  <div className="mt-[25px] mb-[24px]"> 
+  <div className="mt-[61px] mb-[24px]"> 
     <Button
       label="Add photos"
       altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[118px] h-[44px] rounded-lg hover:bg-[#386a80]"
@@ -203,13 +229,13 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
         {/* Street Address */}
         <div className="flex flex-col items-start">
           <label
-            htmlFor="street"
+            htmlFor="description"
             className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Event description
           </label>
           <input
-            id="street"
+            id="description"
             className="w-[588px] h-[175px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -217,42 +243,54 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
         {/* Street Address */}
         <div className="flex flex-col items-start">
           <label
-            htmlFor="street"
+            htmlFor="event-street"
             className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Street Address
           </label>
           <input
-            id="street"
+            id="event-street"
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            value={event.address}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, address: e.target.value }))
+            }
           />
         </div>
 
         {/* Apt/Suite */}
         <div className="flex flex-col items-start">
           <label
-            htmlFor="apt"
+            htmlFor="event-apt"
             className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             Apt, suite, etc
           </label>
           <input
-            id="apt"
+            id="event-apt"
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            value={event.apt}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, apt: e.target.value }))
+            }
           />
         </div>
 
         {/* City */}
         <div className="flex flex-col items-start">
           <label
-            htmlFor="city"
+            htmlFor="event-city"
             className="text-base font-normal text-[#6B6B6B] mb-1"
           >
             City
           </label>
           <input
-            id="city"
+            id="event-city"
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            value={event.city}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, city: e.target.value }))
+            }
           />
         </div>
 
@@ -260,28 +298,36 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
         <div className="flex flex-row gap-[60px]">
           <div className="flex flex-col items-start">
             <label
-              htmlFor="state"
+              htmlFor="event-state"
               className="text-base font-normal text-[#6B6B6B] mb-1"
             >
               State
             </label>
             <input
-              id="state"
+              id="event-state"
               className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              value={event.state}
+              onChange={(e) =>
+                setEvent((prev) => ({ ...prev, state: e.target.value }))
+              }
             />
           </div>
 
           <div className="flex flex-col items-start">
             <label
-              htmlFor="zip"
+              htmlFor="event-zip"
               className="text-base font-normal text-[#6B6B6B] mb-1"
             >
               Zip code 
             </label>
             <input
-              id="zip"
+              id="event-zip"
               inputMode="numeric"
               className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              value={event.zip}
+              onChange={(e) =>
+                setEvent((prev) => ({ ...prev, zip: e.target.value }))
+              }
             />
           </div>
         </div>
@@ -411,22 +457,23 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
       <Button
         label="Same as event"
         altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-        onClick={() => toggleSameAsEvent(index)}
+        onClick={() => toggleSameAsAddress(index)}
       />
       <input
         type="checkbox"
-        checked={position.sameAsEvent}
-        onChange={() => toggleSameAsEvent(index)}
+        checked={position.sameAsAddress}
+        onChange={() => toggleSameAsAddress(index)}
         className="w-5 h-5 accent-[#234254] cursor-pointer"
       />
     </div>
   </div>
       <input
-        id={`street-address-${index}`}
-        type="address"
-        value={position.address}
+        id={`position-street-${index}`}
+        type="text"
+        value={position.sameAsAddress ? event.address : position.address}
+        disabled={position.sameAsAddress}
         onChange={(e) => handleInputChange(index, "address", e.target.value)}
-        className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+        className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
       />
     </div>
 
