@@ -18,7 +18,17 @@ const EventForm = () => {
     const [positions, setPositions] = useState([
       { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "" , sameAsDate: false, sameAsTime: false, sameAsEvent: false},
     ]);
-    
+    const [event, setEvent] = useState({
+      title: "",
+      date: "",
+      time: "",
+      description: "",
+      address: "",
+      apt: "",
+      city: "",
+      state: "",
+      zip: "",
+    });
     const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
 
 const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -63,6 +73,12 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
         { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "", sameAsDate: false, sameAsTime: false, sameAsEvent: false },
       ]);
     };
+    
+    const removePosition = () =>{
+      setPositions((prevPositions) => 
+        prevPositions.slice(0, -1)
+      );
+    }
 
     // Function to handle input changes for a specific position
     const handleInputChange = (index: number, field: string, value: string) => {
@@ -100,12 +116,12 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
       </div>
 
       {/* Heading */}
-      <h1 className="text-[#234254] text-[36px] font-medium mt-[22px] mb-6 text-center leading-tight">
+      <h1 className="text-[#234254] text-[36px] font-medium mt-[22px] text-center leading-tight">
         Create a new event
       </h1>
       {/* Carousel + Add photos */}
-<div className="w-full flex flex-col items-center mb-16">
-  <div className="flex justify-center scale-[0.588] origin-top">
+<div className="w-full flex flex-col items-center">
+  <div className="flex justify-center scale-[0.588] h-[212px] origin-top mt-[26px]">
     <Carousel images={carouselImages} />
   </div>
 
@@ -120,17 +136,15 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
   />
 
   {/* Add photos button */}
-  <Button
-    label="+ Add photos"
-    altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[160px] h-[40px] font-mrun devedium px-4 py-2 rounded-lg hover:bg-[#b9c0c3] mt-4"
-    onClick={handleAddPhotosClick}
-  />
+  <div className="mt-[25px] mb-[24px]"> 
+    <Button
+      label="Add photos"
+      altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[118px] h-[44px] rounded-lg hover:bg-[#386a80]"
+      onClick={handleAddPhotosClick}
+    />
+  </div>
+  
 </div>
-        {/*<Button
-          label="Create event"
-          altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80]"
-        />/*}
-
 
       {/* Form fields */}
       <div className="flex flex-col gap-10 mx-[102px]">
@@ -162,6 +176,8 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
             id="event date"
             type="date"
             required
+            value={event.date}
+            onChange={(e) => setEvent(prev => ({ ...prev, date: e.target.value }))}
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -178,6 +194,8 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
             id="event time"
             type="time"
             required
+            value={event.time}
+            onChange={(e) => setEvent(prev => ({ ...prev, time: e.target.value }))}
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -319,9 +337,10 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
   <input
     id={`position-date-${index}`}
     type="date"
-    value={position.date}
+    value={position.sameAsDate ? event.date : position.date}
+    disabled={position.sameAsDate}
     onChange={(e) => handleInputChange(index, "date", e.target.value)}
-    className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+    className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
   />
 </div>
 
@@ -352,9 +371,12 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
       <input
         id={`position-time-${index}`}
         type="time"
-        value={position.time}
+        value={position.sameAsTime ? event.time : position.time}
+        disabled={position.sameAsTime}
+        //disabled={position.sameAsTime}
+        //value={position.time}
         onChange={(e) => handleInputChange(index, "time", e.target.value)}
-        className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+        className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
       />
     </div>
   
@@ -637,12 +659,19 @@ const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
 
       {/* Button placeholder */}
       </div>
-      <div className="flex flex-col items-center mt-[56px] mb-[56px]">
-        <Button
-            label="+ Add another position"
-            altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[201px] h-[44px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3]"
-            onClick={addPosition}
-        />
+      <div className="flex flex-col items-center mt-[56px] mb-[71px]">
+        <div className="flex flex-row items-center">
+          <Button
+            label="Remove position"
+            altStyle="bg-[#FFFFFF] text-[#234254] text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2] mr-[11px]"
+            onClick={removePosition}
+          />
+          <Button
+              label="+ Add another position"
+              altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[201px] h-[44px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3] ml-[11px]"
+              onClick={addPosition}
+          />
+        </div>
       </div>
 
       {/* Buttons at bottom of page - they don't do anything yet */}
