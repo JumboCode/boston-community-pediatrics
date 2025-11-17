@@ -3,7 +3,10 @@ import Image from "next/image";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import Link from "next/link";
 import Button from "@/components/common/buttons/Button";
-import { useState } from "react";
+import { useState, useRef, ChangeEvent } from "react";
+import Carousel from "../Carousel";
+import type { StaticImageData } from "next/image";
+
 
 const EventForm = () => {
     //const [posDateEqualsEvent, setPosDatetoEvent] = useState(false);
@@ -14,6 +17,43 @@ const EventForm = () => {
     const [positions, setPositions] = useState([
       { date: "", name: "", time: "", title: "", apt: "", city: "", state: "", address: "" , sameAsDate: false, sameAsTime: false, sameAsEvent: false},
     ]);
+    
+    const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
+
+const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+const createStaticImageData = (url: string): StaticImageData => {
+  return {
+    src: url,
+    height: 0,
+    width: 0,
+    blurDataURL: "",
+    blurWidth: 0,
+    blurHeight: 0,
+  } as StaticImageData;
+};
+
+const handleAddPhotosClick = () => {
+  fileInputRef.current?.click();
+};
+
+const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (!files) return;
+
+  const newImages: StaticImageData[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const url = URL.createObjectURL(file); // preview URL
+    newImages.push(createStaticImageData(url));
+  }
+
+  setCarouselImages((prev) => [...prev, ...newImages]);
+
+  // Allow selecting the same file again later
+  e.target.value = "";
+};
+
   
     // Function to add a new position
     const addPosition = () => {
@@ -50,7 +90,7 @@ const EventForm = () => {
     };
 
     return (
-        <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[120px] mb-[138px] w-[792px] relative">
+      <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[120px] mb-[138px] w-[792px] relative">
       {/* Back arrow */}
       <div className="w-full flex justify-start mt-[28px] pl-[30px] cursor-pointer">
         <Link href="/">
@@ -62,9 +102,33 @@ const EventForm = () => {
       <h1 className="text-[#234254] text-[36px] font-medium mt-[22px] mb-6 text-center leading-tight">
         Create a new event
       </h1>
-      <p className="text-black text-2xl font-normal text-center mb-16">
-        Add carousel and button component here later...
-      </p>
+      {/* Carousel + Add photos */}
+<div className="w-full flex flex-col items-center mb-16">
+  <div className="flex justify-center">
+    <Carousel images={carouselImages} />
+  </div>
+
+  {/* Hidden file input */}
+  <input
+    type="file"
+    accept="image/*"
+    multiple
+    ref={fileInputRef}
+    className="hidden"
+    onChange={handleFilesSelected}
+  />
+
+  {/* Add photos button */}
+  <Button
+    label="+ Add photos"
+    altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[160px] h-[40px] font-medium px-4 py-2 rounded-lg hover:bg-[#b9c0c3] mt-4"
+    onClick={handleAddPhotosClick}
+  />
+</div>
+        {/*<Button
+          label="Create event"
+          altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80]"
+        />/*}
 
 
       {/* Form fields */}
@@ -337,7 +401,7 @@ const EventForm = () => {
       <input
         id={`street-address-${index}`}
         type="address"
-        value={position.time}
+        value={position.address}
         onChange={(e) => handleInputChange(index, "address", e.target.value)}
         className="w-[588px] h-[43px] rounded-lg border p-3 text-base placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
       />
