@@ -10,7 +10,7 @@ import Carousel from "../Carousel";
 const createStaticImageData = (url: string): StaticImageData =>
   ({ src: url, height: 0, width: 0, blurDataURL: "", blurWidth: 0, blurHeight: 0 } as StaticImageData);
 const EventForm = () => {
-  const [event, setEvent] = useState({title: "", date: "", time: "", description: "", resourcesLink: "", address: "", apt: "", city: "", state: "", zip: "",});
+  const [event, setEvent] = useState({title: "", date: "", time: "12:30", description: "", resourcesLink: "", address: "", apt: "", city: "", state: "", zip: "",});
   const [positions, setPositions] = useState([{name: "", date: "", time: "", description: "", address: "", apt: "", city: "", state: "", zip: "", participants: "", sameAsDate: false, sameAsTime: false, sameAsAddress: false,},]);
   const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
