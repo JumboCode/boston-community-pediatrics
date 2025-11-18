@@ -1,5 +1,5 @@
 "use client";
-
+import { eventSchema } from "@/lib/schemas/eventSchema";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useState, useRef, type ChangeEvent } from "react";
@@ -8,10 +8,44 @@ import Button from "@/components/common/buttons/Button";
 import Carousel from "../Carousel";
 
 const createStaticImageData = (url: string): StaticImageData =>
-  ({ src: url, height: 0, width: 0, blurDataURL: "", blurWidth: 0, blurHeight: 0 } as StaticImageData);
+  ({
+    src: url,
+    height: 0,
+    width: 0,
+    blurDataURL: "",
+    blurWidth: 0,
+    blurHeight: 0,
+  }) as StaticImageData;
 const EventForm = () => {
-  const [event, setEvent] = useState({title: "", date: "", time: "12:30", description: "", resourcesLink: "", address: "", apt: "", city: "", state: "", zip: "",});
-  const [positions, setPositions] = useState([{name: "", date: "", time: "", description: "", address: "", apt: "", city: "", state: "", zip: "", participants: "", sameAsDate: false, sameAsTime: false, sameAsAddress: false,},]);
+  const [event, setEvent] = useState({
+    title: "",
+    date: "",
+    time: "",
+    description: "",
+    resourcesLink: "",
+    address: "",
+    apt: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
+  const [positions, setPositions] = useState([
+    {
+      name: "",
+      date: "",
+      time: "",
+      description: "",
+      address: "",
+      apt: "",
+      city: "",
+      state: "",
+      zip: "",
+      participants: "",
+      sameAsDate: false,
+      sameAsTime: false,
+      sameAsAddress: false,
+    },
+  ]);
   const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleAddPhotosClick = () => fileInputRef.current?.click();
@@ -28,11 +62,31 @@ const EventForm = () => {
     e.target.value = "";
   };
   const addPosition = () =>
-    setPositions((prev) => [...prev, 
-      {name: "", date: "", time: "", description: "", address: "", apt: "", city: "", state: "", zip: "", participants: "", sameAsDate: false, sameAsTime: false, sameAsAddress: false,}, 
+    setPositions((prev) => [
+      ...prev,
+      {
+        name: "",
+        date: "",
+        time: "",
+        description: "",
+        address: "",
+        apt: "",
+        city: "",
+        state: "",
+        zip: "",
+        participants: "",
+        sameAsDate: false,
+        sameAsTime: false,
+        sameAsAddress: false,
+      },
     ]);
-  const removePosition = () => setPositions((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
-  const handlePositionChange = (index: number, field: string, value: string | boolean) =>
+  const removePosition = () =>
+    setPositions((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
+  const handlePositionChange = (
+    index: number,
+    field: string,
+    value: string | boolean
+  ) =>
     setPositions((prev) =>
       prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
     );
@@ -41,14 +95,54 @@ const EventForm = () => {
   const toggleSameAsTime = (index: number) =>
     handlePositionChange(index, "sameAsTime", !positions[index].sameAsTime);
   const toggleSameAsAddress = (index: number) =>
-    handlePositionChange(index, "sameAsAddress", !positions[index].sameAsAddress);
+    handlePositionChange(
+      index,
+      "sameAsAddress",
+      !positions[index].sameAsAddress
+    );
+
+  const handleCreateEvent = () => {
+    // Normalize positions
+    const normalizedPositions = positions.map((p) => ({
+      ...p,
+      date: p.sameAsDate ? event.date : p.date,
+      time: p.sameAsTime ? event.time : p.time,
+      address: p.sameAsAddress ? event.address : p.address,
+      apt: p.sameAsAddress ? event.apt : p.apt,
+      city: p.sameAsAddress ? event.city : p.city,
+      state: p.sameAsAddress ? event.state : p.state,
+      zip: p.sameAsAddress ? event.zip : p.zip,
+    }));
+
+    const formData = {
+      ...event,
+      positions: normalizedPositions,
+    };
+
+    const parseResult = eventSchema.safeParse(formData);
+
+    if (!parseResult.success) {
+      parseResult.error.issues.forEach((issue) => {
+        console.error(issue.path.join("."), issue.message);
+      });
+      alert("Please fix the errors in the form");
+      return;
+    }
+
+    // form is valid — send to API
+    console.log("Validated event data:", parseResult.data);
+  };
 
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
         <Link href="/" className="cursor-pointer">
-          <Image src={BackArrow} alt="Back arrow" className="h-[24px] w-[30.86px]" />
+          <Image
+            src={BackArrow}
+            alt="Back arrow"
+            className="h-[24px] w-[30.86px]"
+          />
         </Link>
       </div>
       {/* title */}
@@ -91,7 +185,9 @@ const EventForm = () => {
             id="event-title"
             type="text"
             value={event.title}
-            onChange={(e) => setEvent((prev) => ({ ...prev, title: e.target.value }))}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, title: e.target.value }))
+            }
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -107,7 +203,9 @@ const EventForm = () => {
             id="event-date"
             type="date"
             value={event.date}
-            onChange={(e) => setEvent((prev) => ({ ...prev, date: e.target.value }))}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, date: e.target.value }))
+            }
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -123,7 +221,9 @@ const EventForm = () => {
             id="event-time"
             type="time"
             value={event.time}
-            onChange={(e) => setEvent((prev) => ({ ...prev, time: e.target.value }))}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, time: e.target.value }))
+            }
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -190,7 +290,9 @@ const EventForm = () => {
           <input
             id="event-apt"
             value={event.apt}
-            onChange={(e) => setEvent((prev) => ({ ...prev, apt: e.target.value }))}
+            onChange={(e) =>
+              setEvent((prev) => ({ ...prev, apt: e.target.value }))
+            }
             className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
           />
         </div>
@@ -382,7 +484,9 @@ const EventForm = () => {
               <input
                 id={`position-street-${index}`}
                 type="text"
-                value={position.sameAsAddress ? event.address : position.address}
+                value={
+                  position.sameAsAddress ? event.address : position.address
+                }
                 disabled={position.sameAsAddress}
                 onChange={(e) =>
                   handlePositionChange(index, "address", e.target.value)
@@ -516,6 +620,7 @@ const EventForm = () => {
             altStyle="bg-[#FFFFFF] text-[#000000] text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-[#000000] hover:bg-[#f2f2f2] mr-[15px]"
           />
           <Button
+            onClick={handleCreateEvent}
             label="Create event"
             altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
           />
