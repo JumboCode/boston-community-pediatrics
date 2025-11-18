@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -18,7 +18,10 @@ export const createEvent = async (data: Prisma.EventCreateInput) => {
 };
 
 // UPDATE event
-export const updateEvent = async (id: string, data: Prisma.EventUpdateInput) => {
+export const updateEvent = async (
+  id: string,
+  data: Prisma.EventUpdateInput
+) => {
   return prisma.event.update({
     where: { id },
     data,
