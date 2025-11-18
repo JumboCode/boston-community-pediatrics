@@ -215,4 +215,3 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 };
 
 export default EventAdminTable;
-main
