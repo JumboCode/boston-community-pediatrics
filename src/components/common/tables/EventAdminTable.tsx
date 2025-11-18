@@ -1,8 +1,3 @@
-bcp-16-event-details-volunteer
-// Code for Event Admin Table
-
-
-"use client";
 import React, { useState, useEffect } from "react";
 
 interface User {
