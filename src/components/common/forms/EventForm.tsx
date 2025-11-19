@@ -20,7 +20,7 @@ const EventForm = () => {
   const [event, setEvent] = useState({
     title: "",
     date: "",
-    time: "",
+    time: "12:30", //the time lowk only works (when we do same as event) when we set a default time here
     description: "",
     resourcesLink: "",
     address: "",
@@ -132,6 +132,41 @@ const EventForm = () => {
     // form is valid — send to API
     console.log("Validated event data:", parseResult.data);
   };
+
+  const ConditionalInput = ({
+    id, label, type, value, fallbackValue, disabled, onToggle, onChange, className
+  }: {
+    id: string; label: string; type: "text" | "date" | "time" | "number" | "url"; value: string; fallbackValue: string; disabled: boolean; onToggle: () => void; onChange: (value: string) => void; className?: string;
+  }) => (
+    <div className="flex flex-col">
+    <div className="mt-10 flex items-center justify-between">
+      <label htmlFor={id} className="mb-1 text-base font-normal text-[#6B6B6B]">
+        {label}
+      </label>
+      <div className="mb-1 flex items-center gap-[11px]">
+        <Button
+          label="Same as event"
+          altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+          onClick={onToggle}
+        />
+        <input
+          type="checkbox"
+          checked={disabled}
+          onChange={onToggle}
+          className="h-[16px] w-[16px] cursor-pointer accent-[#234254]"
+        />
+      </div>
+    </div>
+    <input
+      id={id}
+      type={type}
+      value={disabled ? fallbackValue : value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className={className || "w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"}
+    />
+  </div>
+  );
 
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
@@ -374,73 +409,27 @@ const EventForm = () => {
               />
             </div>
             {/* position date */}
-            <div className="flex flex-col">
-              <div className="mt-10 flex items-center justify-between">
-                <label
-                  htmlFor={`position-date-${index}`}
-                  className="mb-1 text-base font-normal text-[#6B6B6B]"
-                >
-                  Position date
-                </label>
-                <div className="mt-10 flex items-center gap-2">
-                  <Button
-                    label="Same as event"
-                    altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-                    onClick={() => toggleSameAsDate(index)}
-                  />
-                  <input
-                    type="checkbox"
-                    checked={position.sameAsDate}
-                    onChange={() => toggleSameAsDate(index)}
-                    className="h-5 w-5 cursor-pointer accent-[#234254]"
-                  />
-                </div>
-              </div>
-              <input
-                id={`position-date-${index}`}
-                type="date"
-                value={position.sameAsDate ? event.date : position.date}
-                disabled={position.sameAsDate}
-                onChange={(e) =>
-                  handlePositionChange(index, "date", e.target.value)
-                }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
-              />
-            </div>
+            <ConditionalInput 
+              id={`position-date-${index}`}
+              label="Position date"
+              type="date"
+              value={position.date}
+              fallbackValue={event.date}
+              disabled={position.sameAsDate}
+              onToggle={() => toggleSameAsDate(index)}
+              onChange={(val) => handlePositionChange(index, "date", val)}
+            />
             {/* position time */}
-            <div className="flex flex-col">
-              <div className="mt-10 flex items-center justify-between">
-                <label
-                  htmlFor={`position-time-${index}`}
-                  className="mb-1 text-base font-normal text-[#6B6B6B]"
-                >
-                  Position time
-                </label>
-                <div className="mt-10 flex items-center gap-2">
-                  <Button
-                    label="Same as event"
-                    altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-                    onClick={() => toggleSameAsTime(index)}
-                  />
-                  <input
-                    type="checkbox"
-                    checked={position.sameAsTime}
-                    onChange={() => toggleSameAsTime(index)}
-                    className="h-5 w-5 cursor-pointer accent-[#234254]"
-                  />
-                </div>
-              </div>
-              <input
-                id={`position-time-${index}`}
-                type="time"
-                value={position.sameAsTime ? event.time : position.time}
-                disabled={position.sameAsTime}
-                onChange={(e) =>
-                  handlePositionChange(index, "time", e.target.value)
-                }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
-              />
-            </div>
+            <ConditionalInput 
+              id={`position-time-${index}`}
+              label="Position time"
+              type="time"
+              value={position.time}
+              fallbackValue={event.time}
+              disabled={position.sameAsTime}
+              onToggle={() => toggleSameAsTime(index)}
+              onChange={(val) => handlePositionChange(index, "time", val)}
+            />
             {/* position description */}
             <div className="flex flex-col">
               <label
@@ -459,41 +448,16 @@ const EventForm = () => {
               />
             </div>
             {/* position street */}
-            <div className="flex flex-col">
-              <div className="mt-10 flex items-center justify-between">
-                <label
-                  htmlFor={`position-street-${index}`}
-                  className="mb-1 text-base font-normal text-[#6B6B6B]"
-                >
-                  Street address
-                </label>
-                <div className="mt-10 flex items-center gap-2">
-                  <Button
-                    label="Same as event"
-                    altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-                    onClick={() => toggleSameAsAddress(index)}
-                  />
-                  <input
-                    type="checkbox"
-                    checked={position.sameAsAddress}
-                    onChange={() => toggleSameAsAddress(index)}
-                    className="h-5 w-5 cursor-pointer accent-[#234254]"
-                  />
-                </div>
-              </div>
-              <input
-                id={`position-street-${index}`}
-                type="text"
-                value={
-                  position.sameAsAddress ? event.address : position.address
-                }
-                disabled={position.sameAsAddress}
-                onChange={(e) =>
-                  handlePositionChange(index, "address", e.target.value)
-                }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
-              />
-            </div>
+            <ConditionalInput 
+              id={`position-address-${index}`}
+              label="Street address"
+              type="text"
+              value={position.address}
+              fallbackValue={event.address}
+              disabled={position.sameAsAddress}
+              onToggle={() => toggleSameAsAddress(index)}
+              onChange={(val) => handlePositionChange(index, "street", val)}
+            />
             {/* position apt */}
             <div className="flex flex-col">
               <label
