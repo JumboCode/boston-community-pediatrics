@@ -22,9 +22,9 @@ const EventForm = () => {
     date: "",
     time: "12:30", //the time lowk only works (when we do same as event) when we set a default time here
     description: "",
-    resourcesLink: "",
+    resourcesLink: "" as string | undefined,
     address: "",
-    apt: "",
+    apt: "" as string | undefined,
     city: "",
     state: "",
     zip: "",
@@ -122,10 +122,16 @@ const EventForm = () => {
     const parseResult = eventSchema.safeParse(formData);
 
     if (!parseResult.success) {
-      parseResult.error.issues.forEach((issue) => {
+      /*parseResult.error.issues.forEach((issue) => {
         console.error(issue.path.join("."), issue.message);
       });
       alert("Please fix the errors in the form");
+      return;*/
+      const errorMessages = parseResult.error.issues
+      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+      .join("\n");
+  
+      window.alert(`Please fix these errors:\n\n${errorMessages}`);
       return;
     }
 
@@ -290,7 +296,7 @@ const EventForm = () => {
           <input
             id="event-resources"
             type="url"
-            value={event.resourcesLink}
+            value={event.resourcesLink || ""}
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }))
             }
