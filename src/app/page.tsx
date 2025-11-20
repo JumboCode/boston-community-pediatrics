@@ -1,9 +1,8 @@
-'use client';
+"use client";
 import React from "react";
 import Button from "@/components/common/buttons/Button";
 import EventAdminTable from "@/components/common/tables/EventAdminTable";
 import EventVolunteerTable from "@/components/common/tables/EventVolunteerTable";
-
 
 const Home: React.FC = () => {
   const handleClick = () => {
@@ -14,7 +13,7 @@ const Home: React.FC = () => {
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 bg-gradient-to-br from-blue-400 to-purple-600 text-white">
       {/* Top spacer */}
       <div></div>
-      
+
       {/* Main content */}
       {/* <div className='text-center space-y-6'>
         <h1 className='text-5xl font-extrabold animate-bounce'>
@@ -27,16 +26,17 @@ const Home: React.FC = () => {
           Get Started
         </button> */}
 
-       <EventVolunteerTable positionTitle="Position Name" 
-                           streetAddress="123 Tufts Street, Boston, 02155"
-                           startTime="12:30PM"
-                           endTime="3:30PM"
-                           date="November 11"
-                           description = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-                           totalSpots={23}
-                           filledSpots={12}
-                           positionId=""
-      ></EventVolunteerTable> 
+      <EventVolunteerTable
+        positionTitle="Position Name"
+        streetAddress="123 Tufts Street, Boston, 02155"
+        startTime="12:30PM"
+        endTime="3:30PM"
+        date="November 11"
+        description="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        totalSpots={23}
+        filledSpots={12}
+        positionId="cmhmsjgw20006iwkgfvvzszlr"
+      ></EventVolunteerTable>
 
       {/* <div className="min-h-screen flex items-center justify-center p-6">
         <EventAdminTable
@@ -54,11 +54,11 @@ const Home: React.FC = () => {
         ></EventAdminTable>
         
         {/* Bottom spacer */}
-        <div></div>
-        
-       {/* </div> */}
-      </div>
+      <div></div>
+
+      {/* </div> */}
+    </div>
   );
-}
+};
 
 export default Home;

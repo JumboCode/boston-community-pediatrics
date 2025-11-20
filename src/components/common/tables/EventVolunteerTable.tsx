@@ -2,51 +2,52 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import defaultPfp from "@/assets/icons/empty-profile-picture.svg";
+import useSWR from "swr";
+import { User } from "@prisma/client";
 
 interface EventVolunteerTableProps {
   positionTitle: string;
   streetAddress: string;
-  startTime: string; //change to DateTime? 
+  startTime: string; //change to DateTime?
   endTime: string;
-  date: string; // Change to dateTime? 
+  date: string; // Change to dateTime?
   description: string;
   totalSpots: number;
   filledSpots: number;
   positionId: string;
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 function EventVolunteerTable(props: EventVolunteerTableProps) {
-  const { positionTitle, streetAddress, startTime, endTime, date, description, 
-          totalSpots, filledSpots, positionId} = props;
+  const {
+    positionTitle,
+    streetAddress,
+    startTime,
+    endTime,
+    date,
+    description,
+    totalSpots,
+    filledSpots,
+    positionId,
+  } = props;
   const [expanded, setExpanded] = useState(false);
-  const [volunteers, setVolunteers] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const signups = Array.from({ length: 23 }, (_, i) => `First Last`);
 
-  useEffect(() => {
-    const fetchVolunteers = async () => {
-      try {
-        const res = await fetch(`/api/eventSignups?positionId=${positionId}`);
+  // Use SWR to fetch volunteers for this position
+  const { data: volunteers, error } = useSWR(
+    positionId ? `/api/eventSignup?positionId=${positionId}` : null,
+    fetcher,
+    {
+      errorRetryCount: 1, // one retry
+      errorRetryInterval: 5000, // wait 5s between retries
+    }
+  );
 
-        if (!res.ok) {
-          throw new Error("Failed to fetch volunteers");
-        }
-
-        const data = await res.json();
-
-        // Expecting: [{ id, userId, ... }]
-        // You can adjust this depending on your shape
-        const names = data.map((signup: any) => signup.userName || "Unknown User");
-
-        setVolunteers(names);
-      } catch (err: any) {
-        console.error("Error fetching volunteers:", err);
-        setError(err.message);
-      }
-    };
-
-    fetchVolunteers();
-  }, [positionId]);
+  const volunteerNames: string[] =
+    volunteers?.map(
+      (signup: User) =>
+        signup.firstName + " " + signup.lastName || "Unknown User"
+    ) || [];
 
   return (
     <div
@@ -65,7 +66,7 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
         </div>
 
         <div className="mt-[12px] break-words text-[#234254] text-[14px] font-normal font-avenir leading-[1.4]">
-        {description}
+          {description}
         </div>
 
         <Button
@@ -80,29 +81,33 @@ function EventVolunteerTable(props: EventVolunteerTableProps) {
         className={`border-l border-gray-300 w-[225px] relative transition-all duration-300 p-[20px] ${expanded ? "h-auto" : "h-[250px]"}`}
       >
         <div className="text-[#234254] text-[20px] font-medium font-avenir text-right">
-          {volunteers.length} / {totalSpots}
+          {volunteerNames.length} / {totalSpots}
         </div>
 
-         {error && (
-          <p className="text-red-500 text-right mt-2 text-sm">{error}</p>
+        {error && (
+          <p className="text-red-500 text-right mt-2 text-sm">
+            {"Failed to load volunteers"}
+          </p>
         )}
 
         <div className="mt-[20px] space-y-[12px]">
-          {(expanded ? volunteers : volunteers.slice(0, 4)).map((name, i) => (
-            <div key={i} className="flex items-center gap-2 justify-end">
-              <span className="text-[#234254] text-[15px] font-normal font-avenir">
-                {name}
-              </span>
+          {(expanded ? volunteerNames : volunteerNames.slice(0, 4)).map(
+            (name, i) => (
+              <div key={i} className="flex items-center gap-2 justify-end">
+                <span className="text-[#234254] text-[15px] font-normal font-avenir">
+                  {name}
+                </span>
 
-              <Image
-                width={28}
-                height={28}
-                src={defaultPfp.src}
-                alt="Profile"
-                className="rounded-full"
-              />
-            </div>
-          ))}
+                <Image
+                  width={28}
+                  height={28}
+                  src={defaultPfp.src}
+                  alt="Profile"
+                  className="rounded-full"
+                />
+              </div>
+            )
+          )}
         </div>
 
         <div
