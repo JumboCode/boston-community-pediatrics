@@ -1,11 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import type { EventPosition } from "@prisma/client";
-//import type { User } from "@prisma/client";
-import useSWR from 'swr'
+import React, { useState, useEffect, useMemo } from "react";
+import type { EventPosition, EventSignup } from "@prisma/client";
+import type { User } from "@prisma/client";
+import useSWR from "swr";
 
-
-interface User {
+interface LocalUser {
   id: string;
   firstName: string;
   lastName: string;
@@ -13,6 +12,7 @@ interface User {
   phoneNumber: string;
   selected: boolean;
 }
+
 // model User {
 //   id            String     @id @default(cuid())
 //   clerkId       String     @default("placeholder")
@@ -37,6 +37,22 @@ interface User {
 //   @@map("users")
 // }
 
+// model EventSignup {
+//   id         String       @id @default(cuid())
+//   userId     String?      // null if guest signup only
+//   eventId    String
+//   positionId String
+//   hasGuests    Boolean      @default(false)
+//   date       DateTime?
+//   time       DateTime?
+//   notes      String?
+
+//   user       User?        @relation(fields: [userId], references: [id])
+//   event      Event        @relation(fields: [eventId], references: [id])
+//   position   EventPosition @relation(fields: [positionId], references: [id])
+//   guests     Guest[]
+// }
+
 interface EventAdminTableProps {
   position: string;
   startTime: Date | string;
@@ -45,7 +61,7 @@ interface EventAdminTableProps {
   filledSlots: number;
   totalSlots: number;
   location: string;
-  positionId: string; 
+  positionId: string;
 }
 
 const EventAdminTable = (props: EventAdminTableProps) => {
@@ -57,109 +73,51 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     filledSlots,
     totalSlots,
     location,
-    positionId, 
+    positionId,
   } = props;
-  const fetcher = (url: string) => fetch(url).then(res => res.json());
-  const { data, error, isLoading } = useSWR<User[]>(
-  positionId ? `/api/eventSignup?positionId=${positionId}` : null,
+
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+  // 1. Fetch signups for the position
+  const { data: signups, error: signupError } = useSWR<EventSignup[]>(
+    positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
-  // easier debugging: print object instead of string concatenation
-  console.log(position, 'data:', data, 'error:', error);
+  // 2. Fetch all users
+  const { data: users, error: userError } = useSWR<User[]>(
+    "/api/users",
+    fetcher
+  );
 
-  const [volunteers, setVolunteers] = useState<User[]>([]);
-  //const eventSignups = await getSignupsByPositionId(positionID);
-  // eventSignUps is an array of all of the signups in this position 
+  const localUsers: LocalUser[] = useMemo(() => {
+    if (!signups || !users) return [];
 
+    // Build map for users
+    const userMap = new Map<string, User>(users.map((u) => [u.id, u]));
+
+    return signups.map((s): LocalUser => {
+      const u = s.userId ? userMap.get(s.userId) : undefined;
+
+      return {
+        id: u?.id ?? "",
+        firstName: u?.firstName ?? "",
+        lastName: u?.lastName ?? "",
+        emailAddress: u?.emailAddress ?? "",
+        phoneNumber: u?.phoneNumber ?? "",
+        selected: false,
+      };
+    });
+  }, [signups, users]);
+
+  console.log("position: ", position);
+  console.log("localUsers:", localUsers);
+
+  const [volunteers, setVolunteers] = useState<LocalUser[]>([]);
+
+  
   useEffect(() => {
-
-    // {eventSignUps.map((volunteers) => (
-    //         <EventAdminTable
-    //           firstName={volunteers.firstName}
-    //           lastName={volunteers.lastName}
-    //           email={volunteers.emailAddress}
-    //           streetAddress={volunteers.streetAddress}
-    //           birthday 
-    //           /*
-    //           emailAddress  String?    @unique
-    //           phoneNumber   String
-    //           dateOfBirth   DateTime?
-    //           streetAddress String?
-    //           city          String?
-    //           state         String?
-    //           country       String?
-    //           zipCode       String?
-    //           role          UserRole
-
-    //           signups       EventSignup[]
-    //           waitlists     EventWaitlist[]
-    //                       */
-    //           />
-    //       ))}
-
-
-    const mockData: User[] = [
-      {
-        id: "1",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-      {
-        id: "2",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-      {
-        id: "3",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-      {
-        id: "4",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-      {
-        id: "5",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-      {
-        id: "6",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-      {
-        id: "7",
-        firstName: "Participant",
-        lastName: "Name",
-        emailAddress: "participant@email.com",
-        phoneNumber: "123-456-7890",
-        selected: false,
-      },
-    ];
-
-    //setVolunteers(eventSignUps);
-    setVolunteers(mockData);
-  }, []);
+    setVolunteers(localUsers);
+  }, [localUsers]);
 
   const toggleSelect = (id: string) => {
     setVolunteers((prev) =>
@@ -174,7 +132,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     );
   };
 
-  
   const anySelected = volunteers.some((v) => v.selected);
 
   return (
