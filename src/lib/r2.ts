@@ -21,7 +21,7 @@ export const S3 = new S3Client({
 });
 
 export async function getPresignedURL(filename: string) {
-  const url = getSignedUrl(
+  const url = await getSignedUrl(
     S3,
     new PutObjectCommand({
       Bucket: BUCKET,
