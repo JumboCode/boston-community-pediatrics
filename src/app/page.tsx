@@ -32,7 +32,11 @@ const Home: React.FC = () => {
         startTime="12:30PM"
         endTime="3:30PM"
         date="November 11"
-        description="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        description="Lorem ipsum dolor sit amet consectetur. Neque tellus bibendum
+              etiam purus volutpat amet faucibus nibh nunc. Lacus quam pretium
+              vitae dignissim. Nibh et tempus venenatis scelerisque enim egestas
+              vestibulum tempor. Aliquam sit pretium tellus at molestie diam
+              erat eget eget. Sagittis aliquam orci feugiat vitae."
         totalSpots={23}
         filledSpots={12}
         positionId="cmhmsjgw20006iwkgfvvzszlr"
