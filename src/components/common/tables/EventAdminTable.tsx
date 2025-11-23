@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import type { EventPosition, EventSignup } from "@prisma/client";
+import type { EventSignup } from "@prisma/client";
+import { useRouter } from "next/navigation";
 import type { User } from "@prisma/client";
 import useSWR from "swr";
+import Button from "@/components/common/buttons/Button";
 
 interface FrontEndUser {
   userId: string;
@@ -13,46 +15,6 @@ interface FrontEndUser {
   phoneNumber: string;
   selected: boolean;
 }
-
-// model User {
-//   id            String     @id @default(cuid())
-//   clerkId       String     @default("placeholder")
-//   firstName     String
-//   lastName      String
-//   emailAddress  String?    @unique
-//   phoneNumber   String
-//   dateOfBirth   DateTime?
-//   streetAddress String?
-//   city          String?
-//   state         String?
-//   country       String?
-//   zipCode       String?
-//   hoursWorked   Int         @default(0)
-//   createdAt     DateTime   @default(now()) @map("created_at")
-//   updatedAt     DateTime   @updatedAt @map("updated_at")
-//   role          UserRole
-
-//   signups       EventSignup[]
-//   waitlists     EventWaitlist[]
-
-//   @@map("users")
-// }
-
-// model EventSignup {
-//   id         String       @id @default(cuid())
-//   userId     String?      // null if guest signup only
-//   eventId    String
-//   positionId String
-//   hasGuests    Boolean      @default(false)
-//   date       DateTime?
-//   time       DateTime?
-//   notes      String?
-
-//   user       User?        @relation(fields: [userId], references: [id])
-//   event      Event        @relation(fields: [eventId], references: [id])
-//   position   EventPosition @relation(fields: [positionId], references: [id])
-//   guests     Guest[]
-// }
 
 interface EventAdminTableProps {
   position: string;
@@ -95,7 +57,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     if (!signups || !users) return [];
 
     // Build map for users
-    // string representing the userId (NOT THE SIGNUPID) -> User
+    // string representing the userId (NOT the signupid) -> User
     const userMap = new Map<string, User>(users.map((u) => [u.id, u]));
 
     return signups.map((signUp): FrontEndUser => {
@@ -117,7 +79,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   // console.log("localUsers:", localUsers);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
-  const [filled, setFilled] = useState<number>(filledSlots);
+  const router = useRouter();
   
   useEffect(() => {
     setVolunteers(frontEndUsers);
@@ -148,6 +110,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           console.log(`Successfully deleted signup for user ${vol.userId}`);
           // Update local state to remove the volunteer
           setVolunteers((prev) => prev.filter((v) => v.userId !== vol.userId));
+          router.refresh();
         } else {
           console.log("res:", res);
           console.error(`Failed to delete signup for user ${vol.userId}`);
@@ -243,12 +206,15 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         {anySelected && (
           <div className="border-t border-gray-200 bg-gray-50 w-full">
             <div className="flex justify-between px-6 py-4">
-              <button className="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]">
-                Send Email
-              </button>
-              <button className="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400" onClick={handleDelete}>
-                Remove from Event
-              </button>
+              <Button
+                label="Send Email" 
+                altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+              />
+              <Button 
+                label="Remove from Event" 
+                altStyle="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400" 
+                onClick={handleDelete}
+              />
             </div>
           </div>
         )}
