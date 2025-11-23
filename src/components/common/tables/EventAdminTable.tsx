@@ -80,7 +80,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const router = useRouter();
-  
+
   useEffect(() => {
     setVolunteers(frontEndUsers);
   }, [frontEndUsers]);
@@ -102,10 +102,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const handleDelete = () => {
     // For each volunteer to delete, call the delete API
-    const volunteersToDel:FrontEndUser[] = volunteers.filter((v) => v.selected === true);
+    const volunteersToDel: FrontEndUser[] = volunteers.filter(
+      (v) => v.selected === true
+    );
     volunteersToDel.forEach(async (vol) => {
       try {
-        const res = await fetch(`/api/eventSignup?id=${vol.signUpId}`, { method: "DELETE" });
+        const res = await fetch(`/api/eventSignup?id=${vol.signUpId}`, {
+          method: "DELETE",
+        });
         if (res.ok) {
           console.log(`Successfully deleted signup for user ${vol.userId}`);
           // Update local state to remove the volunteer
@@ -119,8 +123,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         console.error(`Error deleting signup for user ${vol.userId}:`, error);
       }
     });
-
-  }
+  };
 
   return (
     <div className="flex items-center justify-center p-6">
@@ -207,12 +210,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="border-t border-gray-200 bg-gray-50 w-full">
             <div className="flex justify-between px-6 py-4">
               <Button
-                label="Send Email" 
+                label="Send Email"
                 altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
               />
-              <Button 
-                label="Remove from Event" 
-                altStyle="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400" 
+              <Button
+                label="Remove from Event"
+                altStyle="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
                 onClick={handleDelete}
               />
             </div>
