@@ -18,7 +18,7 @@ export default async function EventDetailsPage(props: { params: { id: string } }
   const posRes = await fetch(`http:/localhost:3000/api/eventPosition?eventId=${eventId}`);
   const positions = await posRes.json();
 
-  // console.log(eventRes);
+  // console.log("Peter's event: ",event);
 
 
   const hardCodedEvent = {

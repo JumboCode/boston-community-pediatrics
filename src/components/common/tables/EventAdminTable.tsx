@@ -4,8 +4,9 @@ import type { EventPosition, EventSignup } from "@prisma/client";
 import type { User } from "@prisma/client";
 import useSWR from "swr";
 
-interface LocalUser {
-  id: string;
+interface FrontEndUser {
+  userId: string;
+  signUpId: string;
   firstName: string;
   lastName: string;
   emailAddress: string;
@@ -78,28 +79,31 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  // 1. Fetch signups for the position
+  // Fetch signups for the position
   const { data: signups, error: signupError } = useSWR<EventSignup[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
-  // 2. Fetch all users
+  // Fetch all users
   const { data: users, error: userError } = useSWR<User[]>(
     "/api/users",
     fetcher
   );
 
-  const localUsers: LocalUser[] = useMemo(() => {
+  // Each signup is mapped to a user in the backend
+  const frontEndUsers: FrontEndUser[] = useMemo(() => {
     if (!signups || !users) return [];
 
     // Build map for users
+    // string representing the userId (NOT THE SIGNUPID) -> User
     const userMap = new Map<string, User>(users.map((u) => [u.id, u]));
 
-    return signups.map((s): LocalUser => {
-      const u = s.userId ? userMap.get(s.userId) : undefined;
+    return signups.map((signUp): FrontEndUser => {
+      const u = signUp.userId ? userMap.get(signUp.userId) : undefined;
 
       return {
-        id: u?.id ?? "",
+        signUpId: signUp.id,
+        userId: u?.id ?? "",
         firstName: u?.firstName ?? "",
         lastName: u?.lastName ?? "",
         emailAddress: u?.emailAddress ?? "",
@@ -109,19 +113,19 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     });
   }, [signups, users]);
 
-  console.log("position: ", position);
-  console.log("localUsers:", localUsers);
+  // console.log("position: ", position);
+  // console.log("localUsers:", localUsers);
 
-  const [volunteers, setVolunteers] = useState<LocalUser[]>([]);
-
+  const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
+  const [filled, setFilled] = useState<number>(filledSlots);
   
   useEffect(() => {
-    setVolunteers(localUsers);
-  }, [localUsers]);
+    setVolunteers(frontEndUsers);
+  }, [frontEndUsers]);
 
   const toggleSelect = (id: string) => {
     setVolunteers((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, selected: !v.selected } : v))
+      prev.map((v) => (v.userId === id ? { ...v, selected: !v.selected } : v))
     );
   };
 
@@ -133,6 +137,27 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   const anySelected = volunteers.some((v) => v.selected);
+
+  const handleDelete = () => {
+    // For each volunteer to delete, call the delete API
+    const volunteersToDel:FrontEndUser[] = volunteers.filter((v) => v.selected === true);
+    volunteersToDel.forEach(async (vol) => {
+      try {
+        const res = await fetch(`/api/eventSignup?id=${vol.signUpId}`, { method: "DELETE" });
+        if (res.ok) {
+          console.log(`Successfully deleted signup for user ${vol.userId}`);
+          // Update local state to remove the volunteer
+          setVolunteers((prev) => prev.filter((v) => v.userId !== vol.userId));
+        } else {
+          console.log("res:", res);
+          console.error(`Failed to delete signup for user ${vol.userId}`);
+        }
+      } catch (error) {
+        console.error(`Error deleting signup for user ${vol.userId}:`, error);
+      }
+    });
+
+  }
 
   return (
     <div className="flex items-center justify-center p-6">
@@ -189,7 +214,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <tbody>
             {volunteers.map((p, i) => (
               <tr
-                key={p.id}
+                key={p.userId}
                 className={`border-t border-gray-300 border-b transition-colors duration-200 ${
                   p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
                 }`}
@@ -205,7 +230,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <input
                     type="checkbox"
                     checked={p.selected}
-                    onChange={() => toggleSelect(p.id)}
+                    onChange={() => toggleSelect(p.userId)}
                     className="w-5 h-5 accent-[#234254] cursor-pointer"
                   />
                 </td>
@@ -221,7 +246,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <button className="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]">
                 Send Email
               </button>
-              <button className="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400">
+              <button className="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400" onClick={handleDelete}>
                 Remove from Event
               </button>
             </div>
