@@ -13,6 +13,7 @@ const SignupForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false); // New success state
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,46 +40,68 @@ const SignupForm = () => {
         password,
       });
 
-      // 2. Check for error in the result object
-      if (result.status === "error") {
+      if (result.status === 'error') {
         throw new Error(result.error.message);
       }
 
-      // 3. Fetch the newly signed-in user
-      const user = await app.getUser();
-
-      // 4. Update the user profile
-      if (user) {
-        await user.update({
-          displayName: `${firstName} ${lastName}`,
-          clientMetadata: {
-            phone: formData.get("phone") as string,
-            dob: formData.get("dob") as string,
-            languages: formData.get("languages") as string,
-            address: {
-              street: formData.get("street") as string,
-              apt: formData.get("apt") as string,
-              city: formData.get("city") as string,
-              state: formData.get("state") as string,
-              zip: formData.get("zip") as string,
-            },
-          },
-        });
-
-        router.push("/");
+      // 2. Attempt to update profile (Best Effort)
+      // If this fails (because user isn't logged in yet due to verification), we ignore it so the user still sees the success screen.
+      try {
+        const user = await app.getUser();
+        if (user) {
+          await user.update({
+            displayName: `${firstName} ${lastName}`,
+            clientMetadata: {
+               phone: formData.get("phone") as string,
+               dob: formData.get("dob") as string,
+               languages: formData.get("languages") as string,
+               address: {
+                 street: formData.get("street") as string,
+                 apt: formData.get("apt") as string,
+                 city: formData.get("city") as string,
+                 state: formData.get("state") as string,
+                 zip: formData.get("zip") as string,
+               }
+            }
+          });
+        }
+      } catch (profileError) {
+        console.log(profileError);
+        console.warn("Could not update profile metadata immediately (likely waiting for email verification).", profileError);
       }
+
+      // 3. Force Success Message (No matter what happened with the profile update)
+      setSuccess(true);
+
     } catch (err: any) {
+      console.error("Signup error:", err);
       setError(err.message || "Failed to sign up");
     } finally {
       setLoading(false);
     }
   };
 
+  // RENDER SUCCESS STATE
+  // if (success) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] h-[400px] relative p-10">
+  //       <h1 className="text-[#234254] text-[36px] font-medium mb-6 text-center leading-tight">
+  //         Check your email
+  //       </h1>
+  //       <p className="text-black text-2xl font-normal text-center mb-8">
+  //         We've sent a verification link to your email address. <br/>
+  //         Please verify your account to continue.
+  //       </p>
+  //       <Link href="/" className="text-[#234254] underline text-lg">
+  //         Return to Home
+  //       </Link>
+  //     </div>
+  //   );
+  // }
+
+  // RENDER FORM
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
       {/* Back arrow */}
       <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
         <Link href="/">
@@ -99,12 +122,7 @@ const SignupForm = () => {
         {/* First / Last */}
         <div className="flex flex-row gap-[60px]">
           <div className="flex flex-col items-start">
-            <label
-              htmlFor="first-name"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
-            >
-              First Name
-            </label>
+            <label htmlFor="first-name" className="text-base font-normal text-[#6B6B6B] mb-1">First Name</label>
             <input
               name="first-name"
               id="first-name"
@@ -114,12 +132,7 @@ const SignupForm = () => {
           </div>
 
           <div className="flex flex-col items-start">
-            <label
-              htmlFor="last-name"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
-            >
-              Last Name
-            </label>
+            <label htmlFor="last-name" className="text-base font-normal text-[#6B6B6B] mb-1">Last Name</label>
             <input
               name="last-name"
               id="last-name"
@@ -131,12 +144,7 @@ const SignupForm = () => {
 
         {/* Email */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="email"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Email
-          </label>
+          <label htmlFor="email" className="text-base font-normal text-[#6B6B6B] mb-1">Email</label>
           <input
             name="email"
             id="email"
@@ -148,12 +156,7 @@ const SignupForm = () => {
 
         {/* Phone */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="phone"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Phone Number
-          </label>
+          <label htmlFor="phone" className="text-base font-normal text-[#6B6B6B] mb-1">Phone Number</label>
           <input
             name="phone"
             id="phone"
@@ -165,12 +168,7 @@ const SignupForm = () => {
 
         {/* DOB */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="dob"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Date of Birth
-          </label>
+          <label htmlFor="dob" className="text-base font-normal text-[#6B6B6B] mb-1">Date of Birth</label>
           <input
             name="dob"
             id="dob"
@@ -182,12 +180,7 @@ const SignupForm = () => {
 
         {/* Languages */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="languages"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Languages Spoken
-          </label>
+          <label htmlFor="languages" className="text-base font-normal text-[#6B6B6B] mb-1">Languages Spoken</label>
           <input
             name="languages"
             id="languages"
@@ -197,12 +190,7 @@ const SignupForm = () => {
 
         {/* Street Address */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="street"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Street Address (optional)
-          </label>
+          <label htmlFor="street" className="text-base font-normal text-[#6B6B6B] mb-1">Street Address (optional)</label>
           <input
             name="street"
             id="street"
@@ -212,12 +200,7 @@ const SignupForm = () => {
 
         {/* Apt/Suite */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="apt"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Apt, suite, etc (optional)
-          </label>
+          <label htmlFor="apt" className="text-base font-normal text-[#6B6B6B] mb-1">Apt, suite, etc (optional)</label>
           <input
             name="apt"
             id="apt"
@@ -227,12 +210,7 @@ const SignupForm = () => {
 
         {/* City */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="city"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            City (optional)
-          </label>
+          <label htmlFor="city" className="text-base font-normal text-[#6B6B6B] mb-1">City (optional)</label>
           <input
             name="city"
             id="city"
@@ -243,12 +221,7 @@ const SignupForm = () => {
         {/* State / Zip */}
         <div className="flex flex-row gap-[60px]">
           <div className="flex flex-col items-start">
-            <label
-              htmlFor="state"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
-            >
-              State (optional)
-            </label>
+            <label htmlFor="state" className="text-base font-normal text-[#6B6B6B] mb-1">State (optional)</label>
             <input
               name="state"
               id="state"
@@ -257,12 +230,7 @@ const SignupForm = () => {
           </div>
 
           <div className="flex flex-col items-start">
-            <label
-              htmlFor="zip"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
-            >
-              Zip code (optional)
-            </label>
+            <label htmlFor="zip" className="text-base font-normal text-[#6B6B6B] mb-1">Zip code (optional)</label>
             <input
               name="zip"
               id="zip"
@@ -286,12 +254,7 @@ const SignupForm = () => {
 
         {/* Password */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="password"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Create password
-          </label>
+          <label htmlFor="password" className="text-base font-normal text-[#6B6B6B] mb-1">Create password</label>
           <input
             name="password"
             id="password"
@@ -302,12 +265,7 @@ const SignupForm = () => {
         </div>
 
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="confirm-password"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
-          >
-            Confirm password
-          </label>
+          <label htmlFor="confirm-password" className="text-base font-normal text-[#6B6B6B] mb-1">Confirm password</label>
           <input
             name="confirm-password"
             id="confirm-password"
