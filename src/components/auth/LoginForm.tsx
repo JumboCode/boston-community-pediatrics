@@ -47,7 +47,6 @@ const LoginForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      // Removed 'bg-white' so it respects your dark mode / transparency
       className="flex flex-col items-center gap-8 border border-[#6B6B6B] rounded-lg w-[792px] pt-[50px] px-[102px] pb-[60px] box-border"
     >
       <h1 className="text-[#234254] text-[36px] font-medium m-0">Sign In</h1>

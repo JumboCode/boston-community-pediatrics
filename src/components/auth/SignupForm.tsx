@@ -22,6 +22,21 @@ const SignupForm = () => {
   // Store form data here so we can use it AFTER verification
   const [savedFormData, setSavedFormData] = useState<any>(null);
 
+  // --- 1. GOOGLE SIGN UP FLOW ---
+  const handleGoogleSignUp = async () => {
+    if (!isLoaded) return;
+    try {
+      await signUp.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/onboarding", // Goes to onboarding to finish profile
+      });
+    } catch (err: any) {
+      console.error("Google sign up error:", err);
+      setError("Failed to initiate Google sign up.");
+    }
+  };
+
   // --- HANDLER 1: SUBMIT FORM ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -200,6 +215,26 @@ const SignupForm = () => {
       <p className="text-black text-2xl font-normal text-center mb-16">
         Create an account to start volunteering
       </p>
+
+       <div className="w-[588px] mb-8">
+        <button
+          onClick={handleGoogleSignUp}
+          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-[#6B6B6B] rounded text-black hover:bg-gray-50 transition-colors font-medium"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M23.52 12.29C23.52 11.43 23.47 10.51 23.3 9.60999H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.94 21.1C22.2 19.01 23.52 15.92 23.52 12.29Z" fill="#4285F4"/>
+            <path d="M12 24C15.24 24 17.96 22.92 19.94 21.09L16.08 18.09C15.01 18.81 13.63 19.25 12 19.25C8.87 19.25 6.22 17.14 5.28 14.29L1.27 17.4C3.26 21.36 7.37 24 12 24Z" fill="#34A853"/>
+            <path d="M5.28 14.29C4.78 12.8 4.78 11.2 5.28 9.70999L1.27 6.60999C-0.42 9.96999 -0.42 14.03 1.27 17.39L5.28 14.29Z" fill="#FBBC05"/>
+            <path d="M12 4.75C13.73 4.72 15.4 5.36 16.66 6.56999L20.04 3.19C17.84 1.12 14.98 -0.03 12 0C7.37 0 3.26 2.64 1.27 6.60999L5.28 9.70999C6.22 6.86 8.87 4.75 12 4.75Z" fill="#EA4335"/>
+          </svg>
+          Sign up with Google
+        </button>
+        <div className="w-full flex items-center gap-4 mt-6">
+          <div className="h-px bg-[#6B6B6B] flex-1" />
+          <span className="text-[#6B6B6B] text-sm">OR</span>
+          <div className="h-px bg-[#6B6B6B] flex-1" />
+        </div>
+      </div>
 
       {/* Form fields */}
       <div className="flex flex-col gap-10 mx-[102px]">
