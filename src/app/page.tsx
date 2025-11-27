@@ -38,7 +38,7 @@ const Home: React.FC = () => {
               vestibulum tempor. Aliquam sit pretium tellus at molestie diam
               erat eget eget. Sagittis aliquam orci feugiat vitae."
         totalSpots={23}
-        filledSpots={12}
+        filledSpots={5}
         positionId="cmhmsjgw20006iwkgfvvzszlr"
       ></EventVolunteerTable>
 

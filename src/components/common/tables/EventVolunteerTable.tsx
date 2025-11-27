@@ -1,26 +1,21 @@
 import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import defaultPfp from "@/assets/icons/empty-profile-picture.svg";
-import useSWR from "swr";
 import { User } from "@prisma/client";
 import { getUsersByPositionId } from "@/app/api/eventSignup/controller";
-import type { PublicUser } from "@/app/api/eventSignup/controller";  
-
-
+import type { PublicUser } from "@/app/api/eventSignup/controller";
 
 interface EventVolunteerTableProps {
   positionTitle: string;
   streetAddress: string;
-  startTime: string; //change to DateTime?
+  startTime: string;
   endTime: string;
-  date: string; // Change to dateTime?
+  date: string;
   description: string;
   totalSpots: number;
   filledSpots: number;
   positionId: string;
 }
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 async function EventVolunteerTable(props: EventVolunteerTableProps) {
   const {
@@ -35,33 +30,23 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
     positionId,
   } = props;
 
-  // Use SWR to fetch volunteers for this position
-  // const { data: volunteers, error } = useSWR(
-  //   positionId ? `/api/eventSignup?positionId=${positionId}` : null,
-  //   fetcher,
-  //   {
-  //     errorRetryCount: 1, // one retry
-  //     errorRetryInterval: 5000, // wait 5s between retries
-  //   }
-  // );
+  let volunteers: PublicUser[] = [];
+  let error: string | null = null;
 
-   let volunteers: PublicUser[] = [];
-   let error: string | null = null;
-
-    try {
-        if (positionId) {
-          volunteers = await getUsersByPositionId(positionId);
-        }
-    } catch (err) {
-        console.error("Failed to load volunteers:", err);
-        error = "Failed to load volunteers";
+  try {
+    if (positionId) {
+      volunteers = await getUsersByPositionId(positionId);
     }
+  } catch (err) {
+    console.error("Failed to load volunteers:", err);
+    error = "Failed to load volunteers";
+  }
 
-const volunteerNames = volunteers.map(
-    (v) => `${v.firstName} ${v.lastName}` // can safely use properties
-  );
-    volunteerNames.push("Priyanka Onta");
-    volunteerNames.push("Eddy Hernandez");
+  const volunteerNames = volunteers.map((v) => `${v.firstName} ${v.lastName}`);
+  volunteerNames.push("Priyanka Onta");
+  volunteerNames.push("Ava Sim");
+  volunteerNames.push("Eddy Hernandez");
+  volunteerNames.push("Julia Shen");
 
   return (
     <div
@@ -95,7 +80,7 @@ const volunteerNames = volunteers.map(
         className={`border-l border-gray-300 w-[225px] relative transition-all duration-300 p-[20px]`}
       >
         <div className="text-[#234254] text-[20px] font-medium font-avenir text-right">
-          {volunteerNames.length} / {totalSpots}
+          {filledSpots} / {totalSpots}
         </div>
 
         {error && (
@@ -104,24 +89,23 @@ const volunteerNames = volunteers.map(
           </p>
         )}
 
-   <div className="mt-[20px] space-y-[12px] max-h-[150px] overflow-y-auto pr-1">
-  {volunteerNames.map((name, i) => (
-    <div key={i} className="flex items-center gap-2 justify-end">
-      <span className="text-[#234254] text-[15px] font-normal font-avenir">
-        {name}
-      </span>
+        <div className="mt-[20px] space-y-[12px] max-h-[150px] overflow-y-auto pr-1">
+          {volunteerNames.map((name, i) => (
+            <div key={i} className="flex items-center gap-2 justify-end">
+              <span className="text-[#234254] text-[15px] font-normal font-avenir">
+                {name}
+              </span>
 
-      <Image
-        width={28}
-        height={28}
-        src={defaultPfp.src}
-        alt="Profile"
-        className="rounded-full"
-      />
-    </div>
-  ))}
-</div>
-
+              <Image
+                width={28}
+                height={28}
+                src={defaultPfp.src}
+                alt="Profile"
+                className="rounded-full"
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
