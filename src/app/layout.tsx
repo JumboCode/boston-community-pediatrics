@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { StackProvider, StackTheme } from "@stackframe/stack";
-import { stackClientApp } from "../stack/client";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
@@ -27,16 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      ><StackProvider app={stackClientApp}><StackTheme> 
-      <NavBar />
-      {children}
-      <Footer />
-      
-       
-      </StackTheme></StackProvider></body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <NavBar />
+          {children}
+          <Footer />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

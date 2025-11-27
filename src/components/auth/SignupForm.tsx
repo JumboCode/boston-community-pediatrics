@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStackApp } from "@stackframe/stack";
+import { useSignUp } from "@clerk/nextjs"; // Clerk Hook
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,14 +9,23 @@ import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 
 const SignupForm = () => {
-  const app = useStackApp();
+  const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false); // New success state
+  
+  // State to switch between Form and Verification
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
 
+  // Store form data here so we can use it AFTER verification
+  const [savedFormData, setSavedFormData] = useState<any>(null);
+
+  // --- HANDLER 1: SUBMIT FORM ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isLoaded) return;
     setLoading(true);
     setError("");
 
@@ -34,72 +43,147 @@ const SignupForm = () => {
     }
 
     try {
-      // 1. Sign up
-      const result = await app.signUpWithCredential({
-        email,
+      // 1. Create the SignUp on Clerk
+      await signUp.create({
+        emailAddress: email,
         password,
+        firstName,
+        lastName,
       });
 
-      if (result.status === 'error') {
-        throw new Error(result.error.message);
-      }
+      // 2. Send the OTP
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // 2. Attempt to update profile (Best Effort)
-      // If this fails (because user isn't logged in yet due to verification), we ignore it so the user still sees the success screen.
-      try {
-        const user = await app.getUser();
-        if (user) {
-          await user.update({
-            displayName: `${firstName} ${lastName}`,
-            clientMetadata: {
-               phone: formData.get("phone") as string,
-               dob: formData.get("dob") as string,
-               languages: formData.get("languages") as string,
-               address: {
-                 street: formData.get("street") as string,
-                 apt: formData.get("apt") as string,
-                 city: formData.get("city") as string,
-                 state: formData.get("state") as string,
-                 zip: formData.get("zip") as string,
-               }
-            }
-          });
-        }
-      } catch (profileError) {
-        console.log(profileError);
-        console.warn("Could not update profile metadata immediately (likely waiting for email verification).", profileError);
-      }
+      // 3. Save the extra data (phone, dob, addr) to state for later
+      setSavedFormData({
+        firstName,
+        lastName,
+        email,
+        phone: formData.get("phone"),
+        dob: formData.get("dob"),
+        languages: formData.get("languages"),
+        street: formData.get("street"),
+        apt: formData.get("apt"),
+        city: formData.get("city"),
+        state: formData.get("state"),
+        zip: formData.get("zip"),
+      });
 
-      // 3. Force Success Message (No matter what happened with the profile update)
-      setSuccess(true);
-
+      // 4. Switch UI to Verification Mode
+      setPendingVerification(true);
     } catch (err: any) {
-      console.error("Signup error:", err);
-      setError(err.message || "Failed to sign up");
+      // console.error(JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || "Error creating account");
     } finally {
       setLoading(false);
     }
   };
 
-  // RENDER SUCCESS STATE
-  // if (success) {
-  //   return (
-  //     <div className="flex flex-col items-center justify-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] h-[400px] relative p-10">
-  //       <h1 className="text-[#234254] text-[36px] font-medium mb-6 text-center leading-tight">
-  //         Check your email
-  //       </h1>
-  //       <p className="text-black text-2xl font-normal text-center mb-8">
-  //         We've sent a verification link to your email address. <br/>
-  //         Please verify your account to continue.
-  //       </p>
-  //       <Link href="/" className="text-[#234254] underline text-lg">
-  //         Return to Home
-  //       </Link>
-  //     </div>
-  //   );
-  // }
+  // --- HANDLER 2: VERIFY OTP & SYNC DB ---
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded) return;
+    setLoading(true);
 
-  // RENDER FORM
+    try {
+      // 1. Verify the code
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code,
+      });
+
+      if (completeSignUp.status !== "complete") {
+        console.log(JSON.stringify(completeSignUp, null, 2));
+        setError("Verification incomplete. Please check your code.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Verification Successful - Clerk User Created!
+      const clerkUserId = completeSignUp.createdUserId;
+
+      if (clerkUserId) {
+        // 3. Sync to YOUR Postgres DB via your existing API
+        // We use the clerkUserId as the Primary Key 'id'
+        const dbResponse = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user: {
+              id: clerkUserId, // <--- IMPORTANT: Using Clerk ID as DB ID
+              firstName: savedFormData.firstName,
+              lastName: savedFormData.lastName,
+              emailAddress: savedFormData.email,
+              phoneNumber: savedFormData.phone,
+              dateOfBirth: savedFormData.dob, // sends string "YYYY-MM-DD"
+              languages: savedFormData.languages,
+              streetAddress: savedFormData.street, // Map 'street' to 'streetAddress'
+              city: savedFormData.city,
+              state: savedFormData.state,
+              zipCode: savedFormData.zip, // Map 'zip' to 'zipCode'
+              role: "VOLUNTEER",
+              // clerkId is optional since we used it as PK, but if your schema needs it:
+              clerkId: clerkUserId 
+            },
+          }),
+        });
+
+        if (!dbResponse.ok) {
+          console.error("Failed to sync user to database");
+          // Optional: Handle DB error (maybe retry logic or alert admin)
+        }
+      }
+
+      // 4. Set active session (Log them in)
+      await setActive({ session: completeSignUp.createdSessionId });
+      
+      // 5. Redirect
+      router.push("/dashboard"); // or wherever you want them to go
+      
+    } catch (err: any) {
+      // console.error(JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.message || "Verification failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- RENDER: VERIFICATION FORM ---
+  if (pendingVerification) {
+    return (
+      <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[600px] p-10 relative">
+        <h1 className="text-[#234254] text-[36px] font-medium mb-6 text-center">Verify your Email</h1>
+        <p className="text-black text-xl mb-10 text-center">
+          We sent a code to <span className="font-bold">{savedFormData?.email}</span>
+        </p>
+        
+        <form onSubmit={handleVerify} className="flex flex-col gap-6 w-full px-10">
+          <div className="flex flex-col items-start">
+            <label htmlFor="code" className="text-base font-normal text-[#6B6B6B] mb-1">Verification Code</label>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              name="code"
+              id="code"
+              placeholder="123456"
+              className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
+          </div>
+          
+          {error && <p className="text-red-500">{error}</p>}
+          
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-[#234254] text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors"
+          >
+            {loading ? "Verifying..." : "Verify & Create Account"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // --- RENDER: SIGN UP FORM (Original) ---
   return (
     <form onSubmit={handleSubmit} className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
       {/* Back arrow */}
@@ -281,12 +365,13 @@ const SignupForm = () => {
 
       {/* Button */}
       <div className="mt-[90px] mb-[70px]">
+        <div id="clerk-captcha" />
         <button
           type="submit"
           disabled={loading}
           className="px-6 py-2 bg-[#234254] text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors"
         >
-          {loading ? "Creating Account..." : "Create Account"}
+          {loading ? "Please wait..." : "Create Account"}
         </button>
       </div>
     </form>
