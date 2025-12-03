@@ -86,7 +86,7 @@ const Home: React.FC = () => {
         <span className="mx-4 text-[#234254] text-3xl font-bold">About Us</span>
         <div className="flex-grow border-t-2 border-[#234254]"></div>
       </div>
-      <div className="flex items-center my-10 justify-center w-[90%] mx-auto gap-20">
+      <div className="flex items-center my-5 justify-center w-[90%] mx-auto gap-20 mb-20">
         <div className="text-[#234254] text-lg font-normal w-[60%]">
           <b>Lorem ipsum dolor</b> sit amet consectetur. At leo auctor nam metus
           tincidunt phasellus volutpat id pulvinar. Accumsan amet id pulvinar
