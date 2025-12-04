@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import defaultPfp from "@/assets/icons/empty-profile-picture.svg";
-import { User } from "@prisma/client";
 import { getUsersByPositionId } from "@/app/api/eventSignup/controller";
 import type { PublicUser } from "@/app/api/eventSignup/controller";
 
@@ -43,16 +42,11 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   }
 
   const volunteerNames = volunteers.map((v) => `${v.firstName} ${v.lastName}`);
-  volunteerNames.push("Priyanka Onta");
-  volunteerNames.push("Ava Sim");
-  volunteerNames.push("Eddy Hernandez");
-  volunteerNames.push("Julia Shen");
 
   return (
     <div
       className={`border border-gray-300 w-[800px] ml-[50px] mt-0 flex flex-row relative bg-[#FFFFFF] transition-all duration-300`}
     >
-      {/* Box 1 */}
       <div className="w-[575px] relative p-[20px]">
         <div className="text-[#234254] text-[20px] font-medium font-avenir leading-[1.25]">
           {positionTitle}
@@ -75,7 +69,6 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
         />
       </div>
 
-      {/* Box 2 */}
       <div
         className={`border-l border-gray-300 w-[225px] relative transition-all duration-300 p-[20px]`}
       >
