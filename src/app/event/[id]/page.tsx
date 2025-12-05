@@ -8,17 +8,17 @@ import image2 from "@/assets/images/image2.jpg";
 import image1 from "@/assets/images/image1.jpg";
 import EventAdminTable from "@/components/common/tables/EventAdminTable";
 import type { EventPosition } from "@prisma/client";
+import { getEventById } from "@/app/api/events/controller";
+
 
 
 export default async function EventDetailsPage(props: { params: { id: string } }) {
   const { params } = await props;
-  const eventId = params.id;
-  const eventRes = await fetch(`http:/localhost:3000/api/events?id=${eventId}`);
-  const event = await eventRes.json();
-  const posRes = await fetch(`http:/localhost:3000/api/eventPosition?eventId=${eventId}`);
+  const eventId = await params.id;
+  const event = await getEventById(eventId);
+  const posRes = await fetch(`http://localhost:3000/api/eventPosition?eventId=${eventId}`);
   const positions = await posRes.json();
 
-  // console.log("Peter's event: ",event);
 
 
   const hardCodedEvent = {
@@ -31,7 +31,7 @@ export default async function EventDetailsPage(props: { params: { id: string } }
   };
 
   return (
-    (eventRes.status == 200) ? 
+    (event) ? 
     <>
       <main className="min-h-screen pt-16 pb-24 flex flex-col items-center">
         {/* Carousel at the top */}
@@ -40,13 +40,17 @@ export default async function EventDetailsPage(props: { params: { id: string } }
         {/* Event details */}
         <section className="w-[1000px] mt-[56px]">
           <h1 className="text-[#234254] text-[36px] leading-[44px]">
-            {event.name}
+            {event.name ? event.name : "Event Name"}
           </h1>
-          <p className="mt-[8px] text-[#234254] text-[24px] leading-[32px]">
-            {event.date[0]} - {event.date[1]}
+          <p className="mt-[8px] text-[#234254] text-[24px] leading-[24px]">
+            {event.address} {event.city} {event.state} {event.country} {event.zipCode}
           </p>
-          <p className="mt-[8px] text-[#234254] text-[16px] leading-[24px]">
-            {event.address}, {event.city}, {event.state}, {event.country}, {event.zip}
+          <p className="mt-[8px] text-[#234254] text-[24px] leading-[32px]">
+            {event.date[0].toLocaleDateString() == event.date[1].toLocaleDateString() ? 
+              `${event.date[0].toLocaleDateString()} ${event.startTime.toLocaleTimeString()} - ${event.endTime.getHours()}:${event.endTime.getMinutes()}` :
+              `${event.date[0].toLocaleDateString()} ${event.startTime.toLocaleTimeString()} - ${event.date[1].toLocaleDateString()} ${event.endTime.toLocaleTimeString()}`
+            }
+            
           </p>
           <p className="mt-[32px] text-[#234254] text-[16px] leading-[24px]">
             {event.description}
@@ -60,8 +64,8 @@ export default async function EventDetailsPage(props: { params: { id: string } }
             <EventAdminTable
               key={item.id}
               position={item.position}
-              startTime={item.startTime}
-              endTime={item.endTime} 
+              startTime={item.startTime.toString()}
+              endTime={item.endTime.toString()} 
               description={item.description} 
               filledSlots={item.filledSlots}
               totalSlots={item.totalSlots}
@@ -76,6 +80,6 @@ export default async function EventDetailsPage(props: { params: { id: string } }
       </div>
     </>
 
-    : <p>Event does not exist, Status: {eventRes.status}</p>
+    : <p>Event does not exist</p>
   );
 }

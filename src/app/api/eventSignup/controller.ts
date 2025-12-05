@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import { User } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,29 @@ export const getSignupsByPositionId = async (positionId: string) => {
   });
   return signups;
 };
+
+// Fetch user signups by event position
+export async function getUsersByPositionId(positionId: string) {
+  const signups = await prisma.eventSignup.findMany({
+    where: { positionId },
+    include: { user: true },
+  });
+  
+
+   const users = signups
+    .map((s) => s.user)
+    .filter((u): u is User => u !== null) 
+    .map(publicUser);
+  return users;
+}
+
+function publicUser(user: User) {
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
+}
 
 // Create event signup
 export const createEventSignup = async (

@@ -18,8 +18,8 @@ interface FrontEndUser {
 
 interface EventAdminTableProps {
   position: string;
-  startTime: Date | string;
-  endTime: Date | string;
+  startTime: string;
+  endTime: string;
   description: string;
   filledSlots: number;
   totalSlots: number;
@@ -75,8 +75,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     });
   }, [signups, users]);
 
-  // console.log("position: ", position);
-  // console.log("localUsers:", localUsers);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const router = useRouter();
@@ -87,7 +85,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const toggleSelect = (id: string) => {
     setVolunteers((prev) =>
-      prev.map((v) => (v.userId === id ? { ...v, selected: !v.selected } : v))
+      prev.map((v) => (v.signUpId === id ? { ...v, selected: !v.selected } : v))
     );
   };
 
@@ -100,29 +98,37 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anySelected = volunteers.some((v) => v.selected);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     // For each volunteer to delete, call the delete API
     const volunteersToDel: FrontEndUser[] = volunteers.filter(
       (v) => v.selected === true
     );
-    volunteersToDel.forEach(async (vol) => {
-      try {
-        const res = await fetch(`/api/eventSignup?id=${vol.signUpId}`, {
+
+    try {
+      // Create an array of delete promises
+      const deletePromises = volunteersToDel.map((vol) =>
+        fetch(`/api/eventSignup?id=${vol.signUpId}`, {
           method: "DELETE",
-        });
-        if (res.ok) {
-          console.log(`Successfully deleted signup for user ${vol.userId}`);
-          // Update local state to remove the volunteer
-          setVolunteers((prev) => prev.filter((v) => v.userId !== vol.userId));
-          router.refresh();
-        } else {
-          console.log("res:", res);
-          console.error(`Failed to delete signup for user ${vol.userId}`);
-        }
-      } catch (error) {
-        console.error(`Error deleting signup for user ${vol.userId}:`, error);
-      }
-    });
+        }).then((res) => {
+          if (!res.ok) throw new Error(`Failed to delete ${vol.userId}`);
+          return vol.userId;
+        })
+      );
+
+      // Wait for all deletes to complete
+      const deletedUserIds = await Promise.all(deletePromises);
+
+      console.log(`Successfully deleted ${deletedUserIds.length} volunteers`);
+
+      // Update local state to remove all deleted volunteers
+      setVolunteers((prev) =>
+        prev.filter((v) => !deletedUserIds.includes(v.userId))
+      );
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting signups:", error);
+    }
   };
 
   return (
@@ -136,13 +142,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             style={{ width: "280px" }}
           >
             <h1 className="text-[24px] font-semibold">{position}</h1>
-            <p className="text-[16px] pt-2">{location}</p>
+            <p className="text-[16px] pt-2">{location == "null, null" ? location : "No location"}</p>
             <p className="text-[16px]">
-              {startTime.toString()} - {endTime.toString()}
+              {/* `{startTime.toString()} - {endTime.toString()}` */}
+              {new Date(startTime).toLocaleTimeString()} - {new Date(endTime).toLocaleTimeString()}
             </p>
-            <p className="text-[24px] pt-5">
+            {/* <p className="text-[24px] pt-5">
               {filledSlots}/{totalSlots} Spots Filled
-            </p>
+            </p> */}
           </div>
 
           {/* Right Section */}
@@ -156,6 +163,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 }}
               ></div>
             </div>
+            <p className="text-[24px] pt-5">
+              {filledSlots}/{totalSlots} Spots Filled
+            </p>
           </div>
         </div>
 
@@ -196,7 +206,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <input
                     type="checkbox"
                     checked={p.selected}
-                    onChange={() => toggleSelect(p.userId)}
+                    onChange={() => toggleSelect(p.signUpId)}
                     className="w-5 h-5 accent-[#234254] cursor-pointer"
                   />
                 </td>
