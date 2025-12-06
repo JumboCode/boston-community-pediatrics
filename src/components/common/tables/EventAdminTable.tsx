@@ -42,15 +42,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
   // Fetch signups for the position
-  const { data: signups, error: signupError } = useSWR<EventSignup[]>(
+  const { data: signups } = useSWR<EventSignup[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
   // Fetch all users
-  const { data: users, error: userError } = useSWR<User[]>(
-    "/api/users",
-    fetcher
-  );
+  const { data: users } = useSWR<User[]>("/api/users", fetcher);
 
   // Each signup is mapped to a user in the backend
   const frontEndUsers: FrontEndUser[] = useMemo(() => {
@@ -74,7 +71,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       };
     });
   }, [signups, users]);
-
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const router = useRouter();
@@ -132,40 +128,54 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   return (
-    <div className="flex items-center justify-center p-6">
+    <div className="min-w-[1100px] flex items-center justify-center p-6">
       <div className="w-full max-w-[996px] bg-white border border-black font-sans">
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
-          {/* Left Section */}
-          <div
-            className="text-[#234254] flex-shrink-0"
-            style={{ width: "280px" }}
-          >
-            <h1 className="text-[24px] font-semibold">{position}</h1>
-            <p className="text-[16px] pt-2">{location == "null, null" ? location : "No location"}</p>
-            <p className="text-[16px]">
-              {/* `{startTime.toString()} - {endTime.toString()}` */}
-              {new Date(startTime).toLocaleTimeString()} - {new Date(endTime).toLocaleTimeString()}
-            </p>
-            {/* <p className="text-[24px] pt-5">
-              {filledSlots}/{totalSlots} Spots Filled
-            </p> */}
-          </div>
+        <div className="flex flex-col">
+          <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
+            {/* Left Section */}
+            <div
+              className="text-[#234254] flex-shrink-0"
+              style={{ width: "280px" }}
+            >
+              <h1 className="text-[24px] font-semibold">{position}</h1>
+              <p className="text-[16px] pt-2">
+                {location ? location : "No location"}
+              </p>
+              <p className="text-[16px]">
+                {new Date(startTime).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })}{" "}
+                -{" "}
+                {new Date(endTime).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </p>
+            </div>
 
-          {/* Right Section */}
-          <div className="text-[#234254] flex-1 flex flex-col justify-between mb-10">
-            <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
-            <div className="bg-gray-200 rounded-full h-4 overflow-hidden">
+            {/* Right Section */}
+            <div className="text-[#234254] flex-1 flex flex-col justify-between mb-2">
+              <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
+            </div>
+          </div>
+          <div className="flex flex-row items-center gap-10 mb-1 px-5">
+            <div className="w-[280px] block">
+              <p className="text-[24px] w-[280px] block">
+                {filledSlots}/{totalSlots} Spots Filled
+              </p>
+            </div>
+            <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
-                className="bg-[#234254] h-4 rounded-full"
+                className="bg-[#426982] h-4 rounded-full"
                 style={{
                   width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
                 }}
               ></div>
             </div>
-            <p className="text-[24px] pt-5">
-              {filledSlots}/{totalSlots} Spots Filled
-            </p>
           </div>
         </div>
 
