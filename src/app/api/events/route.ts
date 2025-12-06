@@ -1,15 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getEvents, getEventById, createEvent, updateEvent, deleteEvent } from './controller';
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getEvents,
+  getEventById,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} from "./controller";
 
 // GET handler
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     if (id) {
       const event = await getEventById(id);
-      if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      if (!event)
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
       return NextResponse.json(event, { status: 200 });
     } else {
       const events = await getEvents();
@@ -17,7 +24,10 @@ export async function GET(req: NextRequest) {
     }
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch events" },
+      { status: 500 }
+    );
   }
 }
 
@@ -29,7 +39,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newEvent, { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create event" },
+      { status: 500 }
+    );
   }
 }
 
@@ -37,10 +50,10 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
     const data = await req.json(); // body data
@@ -49,7 +62,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(updated, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update event" },
+      { status: 500 }
+    );
   }
 }
 
@@ -57,16 +73,19 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
     await deleteEvent(id);
-    return NextResponse.json({ message: 'Event deleted' }, { status: 200 });
+    return NextResponse.json({ message: "Event deleted" }, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete event" },
+      { status: 500 }
+    );
   }
 }
