@@ -7,6 +7,8 @@ import {
   deleteEventSignup,
 } from "./controller";
 
+import { decrementEventPositionCount } from "../eventPosition/controller";
+
 // GET handler
 export async function GET(req: NextRequest) {
   try {
@@ -94,6 +96,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     const deletedEventSignup = await deleteEventSignup(id);
+    
+    // 3. Decrement numSignups
+    await decrementEventPositionCount(deletedEventSignup.positionId); 
     return NextResponse.json(deletedEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);

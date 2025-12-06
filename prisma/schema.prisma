@@ -45,14 +45,14 @@ model Event {
   endTime     DateTime
 
   // Location
-  address     String
-  street      String?
-  city        String?
-  state       String?
-  country     String?
-  zipCode     String?
-  lat         Float?
-  lng         Float?
+  addressLine1      String    @default("")
+  addressLine2      String?
+  city              String    @default("")
+  state             String    @default("")
+  country           String    @default("")
+  zipCode           String    @default("")
+  lat               Float?
+  lng               Float?
 
   positions   EventPosition[]
   signups     EventSignup[]
@@ -84,8 +84,13 @@ model EventPosition {
   description    String
   filledSlots    Int
   totalSlots     Int
-  lat            Float?
-  lng            Float?
+
+  addressLine1      String          @default("")
+  addressLine2      String?
+  city              String          @default("")
+  state             String          @default("")
+  country           String          @default("")
+  zipCode           String          @default("")
 
   event          Event              @relation(fields: [eventId], references: [id])
   signups        EventSignup[]
