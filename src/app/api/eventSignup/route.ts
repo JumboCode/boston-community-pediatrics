@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getSignupsByEventId,
-  getSignupsByPositionId,
   getUsersByPositionId,
   createEventSignup,
   updateEventSignup,
