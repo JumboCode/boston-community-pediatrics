@@ -16,7 +16,7 @@ export default async function EventsPage() {
   return (
     <div className="w-full flex flex-col items-center">
       {/* Hero Section */}
-      <div className="w-full  overflow-hidden">
+      <div className="w-full overflow-hidden">
         <Image
           src="/event-page-image-low.jpg"
           alt="Event Image"
@@ -27,29 +27,37 @@ export default async function EventsPage() {
       </div>
 
       {/* Events Section */}
-      <div className="flex gap-12 mt-12 p-4">
-        {error ? (
-          <p className="text-red-600 text-lg font-semibold">{error}</p>
-        ) : events.length === 0 ? (
-          <p className="text-gray-500 text-lg">No events available.</p>
-        ) : (
-          events
-            .filter((event) => event.date && event.date.length > 0)
-            .map((event) => {
-              const firstDate = event.date[0];
-              return (
-                <EventCard
-                  key={event.id}
-                  image="/event1.jpg"
-                  title={event.name}
-                  time={event.startTime}
-                  location={event.addressLine1}
-                  date={firstDate}
-                  id={event.id}
-                />
-              );
-            })
-        )}
+      <div className="relative w-full">
+        {/* Scrollable container */}
+        <div className="w-full overflow-x-auto scrollbar-hide">
+          <div className="flex gap-12 mt-12 p-4 w-max mx-auto">
+            {error ? (
+              <p className="text-red-600 text-lg font-semibold">{error}</p>
+            ) : events.length === 0 ? (
+              <p className="text-gray-500 text-lg">No events available.</p>
+            ) : (
+              events
+                .filter((event) => event.date && event.date.length > 0)
+                .map((event) => {
+                  const firstDate = event.date[0];
+                  return (
+                    <EventCard
+                      key={event.id}
+                      image="/event1.jpg"
+                      title={event.name}
+                      time={event.startTime}
+                      location={event.addressLine1}
+                      date={firstDate}
+                      id={event.id}
+                    />
+                  );
+                })
+            )}
+          </div>
+        </div>
+
+        {/* Right gradient overlay */}
+        <div className="pointer-events-none absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-white to-transparent"></div>
       </div>
     </div>
   );
