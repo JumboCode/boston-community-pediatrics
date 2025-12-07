@@ -14,8 +14,7 @@ import { getPositionsByEventId } from "@/app/api/eventPosition/controller";
 export default async function EventDetailsPage(props: {
   params: { id: string };
 }) {
-  const { params } = props;
-  const eventId = params.id;
+  const { id: eventId } = await props.params;
 
   const hardCodedEvent = {
     name: "JumboCode Event",
