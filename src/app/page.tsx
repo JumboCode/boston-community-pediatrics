@@ -24,7 +24,7 @@ const Home: React.FC = () => {
         <div className="absolute bottom-30 center-x-50 left-1/2 transform -translate-x-1/2">
           <Button
             label="Volunteer"
-            onClick={() => router.push("/volunteer")}
+            onClick={() => router.push("/event")}
             altStyle="w-[450px] h-[60px] text-white bg-[#234254] rounded-lg font-large flex items-center justify-center hover:bg-[#426982]"
           />
         </div>
@@ -49,7 +49,7 @@ const Home: React.FC = () => {
 
             <Button
               label="More Details"
-              onClick={() => router.push("/volunteer")}
+              onClick={() => router.push("/event")}
               altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-[#234254] rounded-lg 
             flex items-center justify-center opacity-0 text-md font-normal
             transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2"
@@ -70,7 +70,7 @@ const Home: React.FC = () => {
 
             <Button
               label="More Details"
-              onClick={() => router.push("/volunteer")}
+              onClick={() => router.push("/event")}
               altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-[#234254] rounded-lg 
             flex items-center justify-center opacity-0 text-md font-normal
             transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2"
