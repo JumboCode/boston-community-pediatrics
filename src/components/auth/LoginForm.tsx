@@ -30,14 +30,14 @@ const LoginForm = () => {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+        router.push("/event");
       } else {
         console.error(JSON.stringify(result, null, 2));
         setError("Login incomplete. Please check your credentials.");
       }
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.errors?.[0]?.message || "Failed to sign in. Please check your credentials.");
+    } catch {
+      console.error("Login error");
+      setError("Failed to sign in. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -53,8 +53,8 @@ const LoginForm = () => {
         redirectUrl: "/sso-callback",
         redirectUrlComplete: "/dashboard",
       });
-    } catch (err: any) {
-      console.error("Google sign in error:", err);
+    } catch {
+      console.error("Google sign in error");
       setError("Failed to initiate Google sign in.");
     }
   };
@@ -75,11 +75,29 @@ const LoginForm = () => {
         onClick={handleGoogleSignIn}
         className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-[#6B6B6B] rounded text-black hover:bg-gray-50 transition-colors font-medium"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M23.52 12.29C23.52 11.43 23.47 10.51 23.3 9.60999H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.94 21.1C22.2 19.01 23.52 15.92 23.52 12.29Z" fill="#4285F4"/>
-          <path d="M12 24C15.24 24 17.96 22.92 19.94 21.09L16.08 18.09C15.01 18.81 13.63 19.25 12 19.25C8.87 19.25 6.22 17.14 5.28 14.29L1.27 17.4C3.26 21.36 7.37 24 12 24Z" fill="#34A853"/>
-          <path d="M5.28 14.29C4.78 12.8 4.78 11.2 5.28 9.70999L1.27 6.60999C-0.42 9.96999 -0.42 14.03 1.27 17.39L5.28 14.29Z" fill="#FBBC05"/>
-          <path d="M12 4.75C13.73 4.72 15.4 5.36 16.66 6.56999L20.04 3.19C17.84 1.12 14.98 -0.03 12 0C7.37 0 3.26 2.64 1.27 6.60999L5.28 9.70999C6.22 6.86 8.87 4.75 12 4.75Z" fill="#EA4335"/>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M23.52 12.29C23.52 11.43 23.47 10.51 23.3 9.60999H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.94 21.1C22.2 19.01 23.52 15.92 23.52 12.29Z"
+            fill="#4285F4"
+          />
+          <path
+            d="M12 24C15.24 24 17.96 22.92 19.94 21.09L16.08 18.09C15.01 18.81 13.63 19.25 12 19.25C8.87 19.25 6.22 17.14 5.28 14.29L1.27 17.4C3.26 21.36 7.37 24 12 24Z"
+            fill="#34A853"
+          />
+          <path
+            d="M5.28 14.29C4.78 12.8 4.78 11.2 5.28 9.70999L1.27 6.60999C-0.42 9.96999 -0.42 14.03 1.27 17.39L5.28 14.29Z"
+            fill="#FBBC05"
+          />
+          <path
+            d="M12 4.75C13.73 4.72 15.4 5.36 16.66 6.56999L20.04 3.19C17.84 1.12 14.98 -0.03 12 0C7.37 0 3.26 2.64 1.27 6.60999L5.28 9.70999C6.22 6.86 8.87 4.75 12 4.75Z"
+            fill="#EA4335"
+          />
         </svg>
         Sign in with Google
       </button>
@@ -91,7 +109,10 @@ const LoginForm = () => {
       </div>
 
       {/* --- EMAIL FORM --- */}
-      <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-8">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full flex flex-col items-center gap-8"
+      >
         <input
           name="email"
           type="email"

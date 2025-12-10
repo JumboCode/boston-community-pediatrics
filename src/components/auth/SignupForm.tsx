@@ -8,19 +8,35 @@ import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 
+type SignupFormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dob: string;
+  languages: string[];
+  street?: string;
+  apt?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+};
+
 const SignupForm = () => {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   // State to switch between Form and Verification
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
 
   // Store form data here so we can use it AFTER verification
-  const [savedFormData, setSavedFormData] = useState<any>(null);
+  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
+    null
+  );
 
   // --- 1. GOOGLE SIGN UP FLOW ---
   const handleGoogleSignUp = async () => {
@@ -31,8 +47,8 @@ const SignupForm = () => {
         redirectUrl: "/sso-callback",
         redirectUrlComplete: "/onboarding", // Goes to onboarding to finish profile
       });
-    } catch (err: any) {
-      console.error("Google sign up error:", err);
+    } catch {
+      console.error("Google sign up error");
       setError("Failed to initiate Google sign up.");
     }
   };
@@ -74,21 +90,22 @@ const SignupForm = () => {
         firstName,
         lastName,
         email,
-        phone: formData.get("phone"),
-        dob: formData.get("dob"),
-        languages: formData.get("languages"),
-        street: formData.get("street"),
-        apt: formData.get("apt"),
-        city: formData.get("city"),
-        state: formData.get("state"),
-        zip: formData.get("zip"),
+        phone: formData.get("phone") as string,
+        dob: formData.get("dob") as string,
+        languages: (formData.get("languages") as string)
+          .split(",")
+          .map((s) => s.trim()),
+        street: formData.get("street") as string,
+        apt: formData.get("apt") as string,
+        city: formData.get("city") as string,
+        state: formData.get("state") as string,
+        zip: formData.get("zip") as string,
       });
 
       // 4. Switch UI to Verification Mode
       setPendingVerification(true);
-    } catch (err: any) {
-      // console.error(JSON.stringify(err, null, 2));
-      setError(err.errors?.[0]?.message || "Error creating account");
+    } catch {
+      setError("Error creating account");
     } finally {
       setLoading(false);
     }
@@ -119,6 +136,12 @@ const SignupForm = () => {
       if (clerkUserId) {
         // 3. Sync to YOUR Postgres DB via your existing API
         // We use the clerkUserId as the Primary Key 'id'
+
+        if (!savedFormData) {
+          setError("Signup data missing. Please restart signup.");
+          return;
+        }
+
         const dbResponse = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -137,7 +160,7 @@ const SignupForm = () => {
               zipCode: savedFormData.zip, // Map 'zip' to 'zipCode'
               role: "VOLUNTEER",
               // clerkId is optional since we used it as PK, but if your schema needs it:
-              clerkId: clerkUserId 
+              clerkId: clerkUserId,
             },
           }),
         });
@@ -150,13 +173,12 @@ const SignupForm = () => {
 
       // 4. Set active session (Log them in)
       await setActive({ session: completeSignUp.createdSessionId });
-      
+
       // 5. Redirect
-      router.push("/dashboard"); // or wherever you want them to go
-      
-    } catch (err: any) {
+      router.push("/event"); // or wherever you want them to go
+    } catch {
       // console.error(JSON.stringify(err, null, 2));
-      setError(err.errors?.[0]?.message || "Verification failed");
+      setError("Verification failed");
     } finally {
       setLoading(false);
     }
@@ -166,14 +188,25 @@ const SignupForm = () => {
   if (pendingVerification) {
     return (
       <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[600px] p-10 relative">
-        <h1 className="text-[#234254] text-[36px] font-medium mb-6 text-center">Verify your Email</h1>
+        <h1 className="text-[#234254] text-[36px] font-medium mb-6 text-center">
+          Verify your Email
+        </h1>
         <p className="text-black text-xl mb-10 text-center">
-          We sent a code to <span className="font-bold">{savedFormData?.email}</span>
+          We sent a code to{" "}
+          <span className="font-bold">{savedFormData?.email}</span>
         </p>
-        
-        <form onSubmit={handleVerify} className="flex flex-col gap-6 w-full px-10">
+
+        <form
+          onSubmit={handleVerify}
+          className="flex flex-col gap-6 w-full px-10"
+        >
           <div className="flex flex-col items-start">
-            <label htmlFor="code" className="text-base font-normal text-[#6B6B6B] mb-1">Verification Code</label>
+            <label
+              htmlFor="code"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
+            >
+              Verification Code
+            </label>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -183,9 +216,9 @@ const SignupForm = () => {
               className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
             />
           </div>
-          
+
           {error && <p className="text-red-500">{error}</p>}
-          
+
           <button
             type="submit"
             disabled={loading}
@@ -200,7 +233,10 @@ const SignupForm = () => {
 
   // --- RENDER: SIGN UP FORM (Original) ---
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative"
+    >
       {/* Back arrow */}
       <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
         <Link href="/">
@@ -216,16 +252,34 @@ const SignupForm = () => {
         Create an account to start volunteering
       </p>
 
-       <div className="w-[588px] mb-8">
+      <div className="w-[588px] mb-8">
         <button
           onClick={handleGoogleSignUp}
           className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-[#6B6B6B] rounded text-black hover:bg-gray-50 transition-colors font-medium"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M23.52 12.29C23.52 11.43 23.47 10.51 23.3 9.60999H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.94 21.1C22.2 19.01 23.52 15.92 23.52 12.29Z" fill="#4285F4"/>
-            <path d="M12 24C15.24 24 17.96 22.92 19.94 21.09L16.08 18.09C15.01 18.81 13.63 19.25 12 19.25C8.87 19.25 6.22 17.14 5.28 14.29L1.27 17.4C3.26 21.36 7.37 24 12 24Z" fill="#34A853"/>
-            <path d="M5.28 14.29C4.78 12.8 4.78 11.2 5.28 9.70999L1.27 6.60999C-0.42 9.96999 -0.42 14.03 1.27 17.39L5.28 14.29Z" fill="#FBBC05"/>
-            <path d="M12 4.75C13.73 4.72 15.4 5.36 16.66 6.56999L20.04 3.19C17.84 1.12 14.98 -0.03 12 0C7.37 0 3.26 2.64 1.27 6.60999L5.28 9.70999C6.22 6.86 8.87 4.75 12 4.75Z" fill="#EA4335"/>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M23.52 12.29C23.52 11.43 23.47 10.51 23.3 9.60999H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.94 21.1C22.2 19.01 23.52 15.92 23.52 12.29Z"
+              fill="#4285F4"
+            />
+            <path
+              d="M12 24C15.24 24 17.96 22.92 19.94 21.09L16.08 18.09C15.01 18.81 13.63 19.25 12 19.25C8.87 19.25 6.22 17.14 5.28 14.29L1.27 17.4C3.26 21.36 7.37 24 12 24Z"
+              fill="#34A853"
+            />
+            <path
+              d="M5.28 14.29C4.78 12.8 4.78 11.2 5.28 9.70999L1.27 6.60999C-0.42 9.96999 -0.42 14.03 1.27 17.39L5.28 14.29Z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M12 4.75C13.73 4.72 15.4 5.36 16.66 6.56999L20.04 3.19C17.84 1.12 14.98 -0.03 12 0C7.37 0 3.26 2.64 1.27 6.60999L5.28 9.70999C6.22 6.86 8.87 4.75 12 4.75Z"
+              fill="#EA4335"
+            />
           </svg>
           Sign up with Google
         </button>
@@ -241,7 +295,12 @@ const SignupForm = () => {
         {/* First / Last */}
         <div className="flex flex-row gap-[60px]">
           <div className="flex flex-col items-start">
-            <label htmlFor="first-name" className="text-base font-normal text-[#6B6B6B] mb-1">First Name</label>
+            <label
+              htmlFor="first-name"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
+            >
+              First Name
+            </label>
             <input
               name="first-name"
               id="first-name"
@@ -251,7 +310,12 @@ const SignupForm = () => {
           </div>
 
           <div className="flex flex-col items-start">
-            <label htmlFor="last-name" className="text-base font-normal text-[#6B6B6B] mb-1">Last Name</label>
+            <label
+              htmlFor="last-name"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
+            >
+              Last Name
+            </label>
             <input
               name="last-name"
               id="last-name"
@@ -263,7 +327,12 @@ const SignupForm = () => {
 
         {/* Email */}
         <div className="flex flex-col items-start">
-          <label htmlFor="email" className="text-base font-normal text-[#6B6B6B] mb-1">Email</label>
+          <label
+            htmlFor="email"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Email
+          </label>
           <input
             name="email"
             id="email"
@@ -275,7 +344,12 @@ const SignupForm = () => {
 
         {/* Phone */}
         <div className="flex flex-col items-start">
-          <label htmlFor="phone" className="text-base font-normal text-[#6B6B6B] mb-1">Phone Number</label>
+          <label
+            htmlFor="phone"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Phone Number
+          </label>
           <input
             name="phone"
             id="phone"
@@ -287,7 +361,12 @@ const SignupForm = () => {
 
         {/* DOB */}
         <div className="flex flex-col items-start">
-          <label htmlFor="dob" className="text-base font-normal text-[#6B6B6B] mb-1">Date of Birth</label>
+          <label
+            htmlFor="dob"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Date of Birth
+          </label>
           <input
             name="dob"
             id="dob"
@@ -299,7 +378,12 @@ const SignupForm = () => {
 
         {/* Languages */}
         <div className="flex flex-col items-start">
-          <label htmlFor="languages" className="text-base font-normal text-[#6B6B6B] mb-1">Languages Spoken</label>
+          <label
+            htmlFor="languages"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Languages Spoken
+          </label>
           <input
             name="languages"
             id="languages"
@@ -309,7 +393,12 @@ const SignupForm = () => {
 
         {/* Street Address */}
         <div className="flex flex-col items-start">
-          <label htmlFor="street" className="text-base font-normal text-[#6B6B6B] mb-1">Street Address (optional)</label>
+          <label
+            htmlFor="street"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Street Address (optional)
+          </label>
           <input
             name="street"
             id="street"
@@ -319,7 +408,12 @@ const SignupForm = () => {
 
         {/* Apt/Suite */}
         <div className="flex flex-col items-start">
-          <label htmlFor="apt" className="text-base font-normal text-[#6B6B6B] mb-1">Apt, suite, etc (optional)</label>
+          <label
+            htmlFor="apt"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Apt, suite, etc (optional)
+          </label>
           <input
             name="apt"
             id="apt"
@@ -329,7 +423,12 @@ const SignupForm = () => {
 
         {/* City */}
         <div className="flex flex-col items-start">
-          <label htmlFor="city" className="text-base font-normal text-[#6B6B6B] mb-1">City (optional)</label>
+          <label
+            htmlFor="city"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            City (optional)
+          </label>
           <input
             name="city"
             id="city"
@@ -340,7 +439,12 @@ const SignupForm = () => {
         {/* State / Zip */}
         <div className="flex flex-row gap-[60px]">
           <div className="flex flex-col items-start">
-            <label htmlFor="state" className="text-base font-normal text-[#6B6B6B] mb-1">State (optional)</label>
+            <label
+              htmlFor="state"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
+            >
+              State (optional)
+            </label>
             <input
               name="state"
               id="state"
@@ -349,7 +453,12 @@ const SignupForm = () => {
           </div>
 
           <div className="flex flex-col items-start">
-            <label htmlFor="zip" className="text-base font-normal text-[#6B6B6B] mb-1">Zip code (optional)</label>
+            <label
+              htmlFor="zip"
+              className="text-base font-normal text-[#6B6B6B] mb-1"
+            >
+              Zip code (optional)
+            </label>
             <input
               name="zip"
               id="zip"
@@ -373,7 +482,12 @@ const SignupForm = () => {
 
         {/* Password */}
         <div className="flex flex-col items-start">
-          <label htmlFor="password" className="text-base font-normal text-[#6B6B6B] mb-1">Create password</label>
+          <label
+            htmlFor="password"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Create password
+          </label>
           <input
             name="password"
             id="password"
@@ -384,7 +498,12 @@ const SignupForm = () => {
         </div>
 
         <div className="flex flex-col items-start">
-          <label htmlFor="confirm-password" className="text-base font-normal text-[#6B6B6B] mb-1">Confirm password</label>
+          <label
+            htmlFor="confirm-password"
+            className="text-base font-normal text-[#6B6B6B] mb-1"
+          >
+            Confirm password
+          </label>
           <input
             name="confirm-password"
             id="confirm-password"
