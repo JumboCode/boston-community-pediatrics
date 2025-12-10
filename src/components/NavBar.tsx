@@ -1,10 +1,15 @@
+"use client";
 import bcp_logo from "@/assets/icons/BCP.svg";
 import blankProfile from "@/assets/icons/empty-profile-picture.svg";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 
-const NavBar: React.FC = () => {
+function NavBar() {
+  const { user, isSignedIn } = useUser();
+
+  const firstName = user?.firstName ?? "Guest";
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
@@ -21,11 +26,6 @@ const NavBar: React.FC = () => {
         <li>
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <li>
-              <Link href="/about" className="text-white text-sm">
-                About Us
-              </Link>
-            </li>
-            <li>
               <Link href="/connect" className="text-white text-sm">
                 Connect
               </Link>
@@ -38,19 +38,27 @@ const NavBar: React.FC = () => {
                 Volunteer
               </Link>
             </li>
-            <li className="flex items-center gap-2">
-              <span className="text-white font-medium">Username</span>
-              <Image
-                src={blankProfile}
-                alt="Placeholder User"
-                className="w-8 h-8 rounded-full"
-              />
-            </li>
+            {isSignedIn ? (
+              <li className="flex items-center gap-2">
+                <span className="text-white font-medium">{firstName}</span>
+                <Image
+                  src={blankProfile}
+                  alt="Placeholder User"
+                  className="w-8 h-8 rounded-full"
+                />
+              </li>
+            ) : (
+              <li className="flex items-center gap-2">
+                <Link href="/login" className="text-white font-medium">
+                  Login
+                </Link>
+              </li>
+            )}
           </ul>
         </li>
       </ul>
     </nav>
   );
-};
+}
 
 export default NavBar;

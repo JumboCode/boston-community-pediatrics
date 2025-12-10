@@ -1,4 +1,4 @@
-import { User, PrismaClient } from "@prisma/client";
+import { User, UserRole, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function getUsers() {
@@ -15,9 +15,25 @@ export async function getUserById(id: string) {
   return user;
 }
 
-export async function createUser(user: User) {
+// We use 'any' here because the input JSON has dateOfBirth as a string
+export async function createUser(data: any) {
   const newUser = await prisma.user.create({
-    data: { ...user },
+    data: {
+      id: data.id, // Explicitly set ID (from Clerk)
+      firstName: data.firstName,
+      lastName: data.lastName,
+      emailAddress: data.emailAddress,
+      phoneNumber: data.phoneNumber,
+      // FIX: Convert the string "YYYY-MM-DD" to a Date object
+      dateOfBirth: new Date(data.dateOfBirth), 
+      streetAddress: data.streetAddress,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zipCode,
+      // Handle the Role
+      role: (data.role as UserRole) || 'VOLUNTEER', 
+      // If you added 'languages' to your schema, uncomment this:
+    },
   });
   return newUser;
 }
