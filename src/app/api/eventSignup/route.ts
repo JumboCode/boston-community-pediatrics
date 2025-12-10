@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getSignupsByEventId,
-  getSignupsByPositionId,
+  getUsersByPositionId,
   createEventSignup,
   updateEventSignup,
   deleteEventSignup,
 } from "./controller";
+
+import { decrementEventPositionCount } from "../eventPosition/controller";
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -13,15 +15,17 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get("eventId");
     const positionId = searchParams.get("positionId");
+    console.log("goint into getUsersByPositionID get REQ");
 
     if (positionId) {
-      const eventSignups = await getSignupsByPositionId(positionId);
-      if (!eventSignups)
+      console.log("goint into getUsersByPositionID");
+      const users = await getUsersByPositionId(positionId);
+      if (!users)
         return NextResponse.json(
           { error: "Event signups not found" },
           { status: 404 }
         );
-      return NextResponse.json(eventSignups, { status: 200 });
+      return NextResponse.json(users, { status: 200 });
     } else if (eventId) {
       const eventSignups = await getSignupsByEventId(eventId);
       if (!eventSignups)
@@ -31,7 +35,10 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventSignups, { status: 200 });
     } else {
-      return NextResponse.json({ error: "Missing event or position Id" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing event or position Id" },
+        { status: 400 }
+      );
     }
   } catch (err) {
     console.error(err);
@@ -89,6 +96,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     const deletedEventSignup = await deleteEventSignup(id);
+    
+    // 3. Decrement numSignups
+    await decrementEventPositionCount(deletedEventSignup.positionId); 
     return NextResponse.json(deletedEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);

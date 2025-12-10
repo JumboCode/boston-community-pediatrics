@@ -26,18 +26,13 @@ function NavBar() {
         <li>
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <li>
-              <Link href="/about" className="text-white text-sm">
-                About Us
-              </Link>
-            </li>
-            <li>
               <Link href="/connect" className="text-white text-sm">
                 Connect
               </Link>
             </li>
             <li>
               <Link
-                href="/volunteer"
+                href="/event"
                 className="bg-[#426982] text-white text-sm px-3 py-2 rounded text-center"
               >
                 Volunteer
