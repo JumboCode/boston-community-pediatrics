@@ -239,7 +239,7 @@ const SignupForm = () => {
     >
       {/* Back arrow */}
       <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
-        <Link href="/">
+        <Link href="/login">
           <Image src={BackArrow} alt="Back arrow" className="w-[30.86px] h-6" />
         </Link>
       </div>
