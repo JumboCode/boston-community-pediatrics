@@ -17,7 +17,7 @@ model User {
   clerkId       String     @default("placeholder")
   firstName     String
   lastName      String
-  emailAddress  String?    @unique
+  emailAddress  String    @unique
   phoneNumber   String
   dateOfBirth   DateTime?
   streetAddress String?
@@ -26,6 +26,7 @@ model User {
   country       String?
   zipCode       String?
   hoursWorked   Int         @default(0)
+  profileImage  String?
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   role          UserRole
@@ -53,6 +54,8 @@ model Event {
   zipCode           String    @default("")
   lat               Float?
   lng               Float?
+
+  images     String[]
 
   positions   EventPosition[]
   signups     EventSignup[]

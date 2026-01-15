@@ -5,7 +5,7 @@ import {
   deleteUser,
   getUserById,
   getUsers,
-  updateUser,
+  updateUserProfile,
 } from "./controller";
 
 export async function GET(req: NextRequest) {
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { id, user } = await req.json();
-    const updatedUser = await updateUser(id, user);
+    const { id, body } = await req.json();
+    const updatedUser = await updateUserProfile(id, body);
     if (!updatedUser) {
       return NextResponse.json({ error: "User not updated" }, { status: 404 });
     }

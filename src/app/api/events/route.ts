@@ -6,6 +6,14 @@ import {
   updateEvent,
   deleteEvent,
 } from "./controller";
+import { PrismaClient } from "@prisma/client";
+import { eventSchema } from "@/lib/schemas/eventSchema";
+
+const prisma = new PrismaClient();
+
+function combineDateTime(date: string, time: string) {
+  return new Date(`${date}T${time}:00`);
+}
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -34,8 +42,57 @@ export async function GET(req: NextRequest) {
 // POST handler
 export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
-    const newEvent = await createEvent(data);
+    const json = await req.json();
+    // const parse = eventSchema.safeParse(json);
+
+    // if (!parse.success) {
+    //   return NextResponse.json(
+    //     { error: "Failed to parse event data" },
+    //     { status: 400 }
+    //   );
+    // }
+
+    // const data = parse.data;
+
+    // const prismaData = {
+    //   name: data.name,
+    //   description: data.description || undefined,
+    //   resourcesLink: data.resourcesLink || undefined,
+
+    //   addressLine1: data.address,
+    //   addressLine2: data.apt || null,
+    //   city: data.city,
+    //   state: data.state,
+    //   zipCode: data.zip,
+
+    //   date: new Date(data.date),
+    //   time: combineDateTime(data.date, data.time),
+
+    //   positions: {
+    //     create: data.positions.map((p) => {
+    //       const date = p.date || data.date;
+    //       const time = p.time || data.time;
+    //       const start = combineDateTime(date, time);
+
+    //       return {
+    //         position: p.name,
+    //         description: p.description || "",
+    //         date: new Date(date),
+    //         startTime: start,
+    //         endTime: start,
+    //         totalSlots: Number(p.participants || 0),
+    //         filledSlots: 0,
+    //         addressLine1: p.address || data.address,
+    //         addressLine2: p.apt || data.apt || null,
+    //         city: p.city || data.city,
+    //         state: p.state || data.state,
+    //         zipCode: p.zip || data.zip,
+    //       };
+    //     }),
+    //   },
+    // };
+
+    const newEvent = await createEvent(prismaData);
     return NextResponse.json(newEvent, { status: 201 });
   } catch (err) {
     console.error(err);

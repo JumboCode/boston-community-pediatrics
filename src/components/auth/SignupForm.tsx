@@ -124,7 +124,6 @@ const SignupForm = () => {
       });
 
       if (completeSignUp.status !== "complete") {
-        console.log(JSON.stringify(completeSignUp, null, 2));
         setError("Verification incomplete. Please check your code.");
         setLoading(false);
         return;
