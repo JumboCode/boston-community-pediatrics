@@ -6,6 +6,7 @@ import { useState, useRef, type ChangeEvent } from "react";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import Button from "@/components/common/buttons/Button";
 import Carousel from "../Carousel";
+import { mutate } from "swr";
 
 const createStaticImageData = (url: string): StaticImageData =>
   ({
@@ -101,7 +102,7 @@ const EventForm = () => {
       !positions[index].sameAsAddress
     );
 
-  const handleCreateEvent = () => {
+  const handleCreateEvent = async () => {
     // Normalize positions
     const normalizedPositions = positions.map((p) => ({
       ...p,
@@ -122,56 +123,87 @@ const EventForm = () => {
     const parseResult = eventSchema.safeParse(formData);
 
     if (!parseResult.success) {
-      /*parseResult.error.issues.forEach((issue) => {
-        console.error(issue.path.join("."), issue.message);
-      });
-      alert("Please fix the errors in the form");
-      return;*/
       const errorMessages = parseResult.error.issues
-      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-      .join("\n");
-  
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("\n");
+
       window.alert(`Please fix these errors:\n\n${errorMessages}`);
       return;
     }
 
     // form is valid — send to API
-    console.log("Validated event data:", parseResult.data);
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parseResult.data),
+    });
+
+    if (!res.ok) {
+      alert("Failed to create event");
+      return;
+    }
+
+    // Tell SWR that /api/events is now stale
+    await mutate("/api/events");
+
+
   };
 
   const ConditionalInput = ({
-    id, label, type, value, fallbackValue, disabled, onToggle, onChange, className
+    id,
+    label,
+    type,
+    value,
+    fallbackValue,
+    disabled,
+    onToggle,
+    onChange,
+    className,
   }: {
-    id: string; label: string; type: "text" | "date" | "time" | "number" | "url"; value: string; fallbackValue: string; disabled: boolean; onToggle: () => void; onChange: (value: string) => void; className?: string;
+    id: string;
+    label: string;
+    type: "text" | "date" | "time" | "number" | "url";
+    value: string;
+    fallbackValue: string;
+    disabled: boolean;
+    onToggle: () => void;
+    onChange: (value: string) => void;
+    className?: string;
   }) => (
     <div className="flex flex-col">
-    <div className="mt-10 flex items-center justify-between">
-      <label htmlFor={id} className="mb-1 text-base font-normal text-[#6B6B6B]">
-        {label}
-      </label>
-      <div className="mb-1 flex items-center gap-[11px]">
-        <Button
-          label="Same as event"
-          altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
-          onClick={onToggle}
-        />
-        <input
-          type="checkbox"
-          checked={disabled}
-          onChange={onToggle}
-          className="h-[16px] w-[16px] cursor-pointer accent-[#234254]"
-        />
+      <div className="mt-10 flex items-center justify-between">
+        <label
+          htmlFor={id}
+          className="mb-1 text-base font-normal text-[#6B6B6B]"
+        >
+          {label}
+        </label>
+        <div className="mb-1 flex items-center gap-[11px]">
+          <Button
+            label="Same as event"
+            altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+            onClick={onToggle}
+          />
+          <input
+            type="checkbox"
+            checked={disabled}
+            onChange={onToggle}
+            className="h-[16px] w-[16px] cursor-pointer accent-[#234254]"
+          />
+        </div>
       </div>
+      <input
+        id={id}
+        type={type}
+        value={disabled ? fallbackValue : value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className={
+          className ||
+          "w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+        }
+      />
     </div>
-    <input
-      id={id}
-      type={type}
-      value={disabled ? fallbackValue : value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className={className || "w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"}
-    />
-  </div>
   );
 
   return (
@@ -415,7 +447,7 @@ const EventForm = () => {
               />
             </div>
             {/* position date */}
-            <ConditionalInput 
+            <ConditionalInput
               id={`position-date-${index}`}
               label="Position date"
               type="date"
@@ -426,7 +458,7 @@ const EventForm = () => {
               onChange={(val) => handlePositionChange(index, "date", val)}
             />
             {/* position time */}
-            <ConditionalInput 
+            <ConditionalInput
               id={`position-time-${index}`}
               label="Position time"
               type="time"
@@ -454,7 +486,7 @@ const EventForm = () => {
               />
             </div>
             {/* position street */}
-            <ConditionalInput 
+            <ConditionalInput
               id={`position-address-${index}`}
               label="Street address"
               type="text"

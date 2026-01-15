@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
-import type { EventSignup } from "@prisma/client";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import type { User } from "@prisma/client";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
+import { AdminUser } from "@/app/api/eventSignup/controller";
 
 interface FrontEndUser {
   userId: string;
@@ -42,35 +41,24 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
   // Fetch signups for the position
-  const { data: signups } = useSWR<EventSignup[]>(
+  const { data: signups } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
-  // Fetch all users
-  const { data: users } = useSWR<User[]>("/api/users", fetcher);
+  
+  const frontEndUsers = useMemo(() => {
+  if (!signups) return [];
 
-  // Each signup is mapped to a user in the backend
-  const frontEndUsers: FrontEndUser[] = useMemo(() => {
-    if (!signups || !users) return [];
-
-    // Build map for users
-    // string representing the userId (NOT the signupid) -> User
-    const userMap = new Map<string, User>(users.map((u) => [u.id, u]));
-
-    return signups.map((signUp): FrontEndUser => {
-      const u = signUp.userId ? userMap.get(signUp.userId) : undefined;
-
-      return {
-        signUpId: signUp.id,
-        userId: u?.id ?? "",
-        firstName: u?.firstName ?? "",
-        lastName: u?.lastName ?? "",
-        emailAddress: u?.emailAddress ?? "",
-        phoneNumber: u?.phoneNumber ?? "",
-        selected: false,
-      };
-    });
-  }, [signups, users]);
+  return signups.map((s) => ({
+    signUpId: s.signupId,
+    userId: s.id,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    emailAddress: s.emailAddress,
+    phoneNumber: s.phoneNumber,
+    selected: false,
+  }));
+}, [signups]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const router = useRouter();
@@ -113,8 +101,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
       // Wait for all deletes to complete
       const deletedUserIds = await Promise.all(deletePromises);
-
-      console.log(`Successfully deleted ${deletedUserIds.length} volunteers`);
 
       // Update local state to remove all deleted volunteers
       setVolunteers((prev) =>
@@ -200,7 +186,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <tbody>
             {volunteers.map((p, i) => (
               <tr
-                key={p.userId}
+                key={p.signUpId}
                 className={`border-t border-gray-300 border-b transition-colors duration-200 ${
                   p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
                 }`}

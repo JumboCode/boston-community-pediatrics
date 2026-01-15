@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { getUserById } from "../users/controller";
 import {
   getSignupsByEventId,
   getUsersByPositionId,
@@ -8,6 +10,8 @@ import {
 } from "./controller";
 
 import { decrementEventPositionCount } from "../eventPosition/controller";
+import { UserRole } from "@prisma/client";
+import { getCurrentUser } from "@/lib/auth";
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -15,11 +19,18 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get("eventId");
     const positionId = searchParams.get("positionId");
-    console.log("goint into getUsersByPositionID get REQ");
+
+    let isAdmin = false;
+    const user = await getCurrentUser();
+    
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
 
     if (positionId) {
-      console.log("goint into getUsersByPositionID");
-      const users = await getUsersByPositionId(positionId);
+      const users = await getUsersByPositionId(positionId, isAdmin);
       if (!users)
         return NextResponse.json(
           { error: "Event signups not found" },
@@ -96,9 +107,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     const deletedEventSignup = await deleteEventSignup(id);
-    
+
     // 3. Decrement numSignups
-    await decrementEventPositionCount(deletedEventSignup.positionId); 
+    await decrementEventPositionCount(deletedEventSignup.positionId);
     return NextResponse.json(deletedEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);

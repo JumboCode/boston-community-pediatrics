@@ -10,6 +10,9 @@ import EventAdminTable from "@/components/common/tables/EventAdminTable";
 import type { EventPosition } from "@prisma/client";
 import { getEventById } from "@/app/api/events/controller";
 import { getPositionsByEventId } from "@/app/api/eventPosition/controller";
+import { getCurrentUser } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
+import EventVolunteerTable from "@/components/common/tables/EventVolunteerTable";
 
 export default async function EventDetailsPage(props: {
   params: { id: string };
@@ -31,14 +34,15 @@ export default async function EventDetailsPage(props: {
       getEventById(eventId),
       getPositionsByEventId(eventId), // or fetch your API endpoint
     ]);
+    const user = await getCurrentUser();
 
     if (!event) {
       return <p>Event does not exist</p>;
     }
 
     return (
-      <>
-        <main className="pt-16 pb-12 flex flex-col items-center">
+      <div className="flex flex-col justify-center items-center">
+        <div className="pt-16 pb-12 flex flex-col items-center">
           {/* Carousel at the top */}
           <Carousel images={hardCodedEvent.images} />
 
@@ -83,9 +87,15 @@ export default async function EventDetailsPage(props: {
               {event.description}
             </p>
           </section>
-        </main>
+        </div>
 
-        <div className="flex flex-col items-center justify-center p-3 space-y-6">
+        <div
+          className={`flex flex-col items-center justify-center ${
+            user?.role !== UserRole.ADMIN
+              ? "border border-gray-800 max-w-[1000px] m-10"
+              : "space-y-6 p-3"
+          }`}
+        >
           {positions.map((item: EventPosition) => {
             // Format address
             const location = [
@@ -96,25 +106,40 @@ export default async function EventDetailsPage(props: {
               .filter(Boolean) // remove empty strings
               .join(", ");
 
-            return (
-              <EventAdminTable
-                key={item.id}
-                position={item.position}
-                startTime={item.startTime.toString()}
-                endTime={item.endTime.toString()}
-                description={item.description}
-                filledSlots={item.filledSlots}
-                totalSlots={item.totalSlots}
-                positionId={item.id}
-                location={location}
-              />
-            );
+            if (user?.role == UserRole.ADMIN) {
+              return (
+                <EventAdminTable
+                  key={item.id}
+                  position={item.position}
+                  startTime={item.startTime.toString()}
+                  endTime={item.endTime.toString()}
+                  description={item.description}
+                  filledSlots={item.filledSlots}
+                  totalSlots={item.totalSlots}
+                  positionId={item.id}
+                  location={location}
+                />
+              );
+            } else {
+              return (
+                <EventVolunteerTable
+                  key={item.id}
+                  positionTitle={item.position}
+                  startTime={item.startTime.toString()}
+                  endTime={item.endTime.toString()}
+                  description={item.description}
+                  filledSpots={item.filledSlots}
+                  totalSpots={item.totalSlots}
+                  positionId={item.id}
+                  streetAddress={location}
+                />
+              );
+            }
           })}
-
           {/* Bottom spacer */}
           <div></div>
         </div>
-      </>
+      </div>
     );
   } catch {
     console.error("Failed fetching event data");

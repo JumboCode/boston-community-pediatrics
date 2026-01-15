@@ -17,7 +17,7 @@ model User {
   clerkId       String     @default("placeholder")
   firstName     String
   lastName      String
-  emailAddress  String?    @unique
+  emailAddress  String    @unique
   phoneNumber   String
   dateOfBirth   DateTime?
   streetAddress String?
