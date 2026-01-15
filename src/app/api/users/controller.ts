@@ -1,4 +1,4 @@
-import { User, UserRole, PrismaClient } from "@prisma/client";
+import { UserRole, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function getUsers() {
@@ -25,31 +25,53 @@ export async function createUser(data: any) {
       emailAddress: data.emailAddress,
       phoneNumber: data.phoneNumber,
       // FIX: Convert the string "YYYY-MM-DD" to a Date object
-      dateOfBirth: new Date(data.dateOfBirth), 
+      dateOfBirth: new Date(data.dateOfBirth),
       streetAddress: data.streetAddress,
       city: data.city,
       state: data.state,
       zipCode: data.zipCode,
       // Handle the Role
-      role: (data.role as UserRole) || 'VOLUNTEER', 
+      role: (data.role as UserRole) || "VOLUNTEER",
       // If you added 'languages' to your schema, uncomment this:
     },
   });
   return newUser;
 }
 
-export async function updateUser(id: string, user: User) {
-  const updatedUser = await prisma.user.update({
-    where: {
-      id: id,
-    },
-    data: {
-      ...user,
-      id: id,
-    },
+export async function updateUserProfile(
+  userId: string,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+    streetAddress?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    dateOfBirth?: Date;
+  }
+) {
+  return prisma.user.update({
+    where: { id: userId },
+    data,
   });
+}
 
-  return updatedUser;
+export async function updateUserProfileImage(
+  userId: string,
+  imageKey: string | null
+) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { profileImage: imageKey },
+  });
+}
+
+export async function adminUpdateUserRole(userId: string, role: UserRole) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { role },
+  });
 }
 
 export async function deleteUser(id: string) {

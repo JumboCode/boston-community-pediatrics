@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getUserById } from "../users/controller";
+
 import {
   getSignupsByEventId,
   getUsersByPositionId,
@@ -22,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     let isAdmin = false;
     const user = await getCurrentUser();
-    
+
     if (user) {
       if (user.role === UserRole.ADMIN) {
         isAdmin = true;
@@ -38,6 +37,10 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(users, { status: 200 });
     } else if (eventId) {
+      if (!isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
       const eventSignups = await getSignupsByEventId(eventId);
       if (!eventSignups)
         return NextResponse.json(
