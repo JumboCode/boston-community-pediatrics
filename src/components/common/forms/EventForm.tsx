@@ -145,8 +145,6 @@ const EventForm = () => {
 
     // Tell SWR that /api/events is now stale
     await mutate("/api/events");
-
-
   };
 
   const ConditionalInput = ({
@@ -494,7 +492,7 @@ const EventForm = () => {
               fallbackValue={event.address}
               disabled={position.sameAsAddress}
               onToggle={() => toggleSameAsAddress(index)}
-              onChange={(val) => handlePositionChange(index, "street", val)}
+              onChange={(val) => handlePositionChange(index, "address", val)}
             />
             {/* position apt */}
             <div className="flex flex-col">

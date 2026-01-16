@@ -6,8 +6,9 @@ import {
   updateEvent,
   deleteEvent,
 } from "./controller";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, UserRole } from "@prisma/client";
 import { eventSchema } from "@/lib/schemas/eventSchema";
+import { getCurrentUser } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -43,6 +44,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
+
+    const user = await getCurrentUser();
+
+    let isAdmin = false;
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     // const parse = eventSchema.safeParse(json);
 
     // if (!parse.success) {
