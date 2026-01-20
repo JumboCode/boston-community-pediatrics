@@ -3,6 +3,16 @@ import BackArrow from "@/assets/icons/arrow-left.svg";
 import EventCard from "@/components/events/EventCard";
 
 export default function ProfilePage() {
+    
+    <EventCard
+        id="test-event"
+        title="Test Event"
+        image="/event1.jpg"   // must exist in /public
+        time={new Date()}
+        location="Test Location"
+        date={new Date()}
+    />
+
     return (
         <main className="min-h-screen p-8">
             <div className="mt-[142px] ml-[120px] flex items-center gap-3">
