@@ -3,9 +3,14 @@ import Image from "next/image";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import EventCard from "@/components/events/EventCard";
 import { useUser } from "@clerk/nextjs";
+import { useEffect } from 'react';
 
 export default function ProfilePage() {
     const { user, isSignedIn, isLoaded } = useUser();
+    // DEBUG: inspect the shape returned by Clerk
+    useEffect(() => {
+      console.log("Clerk user object:", user);
+    }, [user]);
     if (!isLoaded) {
         return <main className="min-h-screen p-8" />;
     }
@@ -66,8 +71,9 @@ export default function ProfilePage() {
                     className="h-[36.19px] w-[31.75px] rotate-180 ml-[69.25px] hover:bg-gray-100 rounded-lg"
                 />
             </div>
-            
+
         </main>
+        
     );
 }/* event 1 and 2 manual blocks
                 <div className="w-[282px]">
