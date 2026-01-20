@@ -5,12 +5,15 @@ import EventCard from "@/components/events/EventCard";
 import { useUser } from "@clerk/nextjs";
 
 export default function ProfilePage() {
-    const { user, isSignedIn } = useUser();
-    const firstName = user?.firstName ?? "Guest";
-    const lastName = user?.lastName ?? "Guest";
-    const emailAddress = user?.primaryEmailAddress ?? "Guest";
-    const phoneNumber = user?.primaryPhoneNumber ?? "Guest";
-    //const accountCreated = 
+    const { user, isSignedIn, isLoaded } = useUser();
+    if (!isLoaded) {
+        return <main className="min-h-screen p-8" />;
+    }
+    const firstName = isSignedIn ? user?.firstName ?? "" : "Guest";
+    const lastName = isSignedIn ? user?.lastName ?? "" : "";
+    const emailAddress = isSignedIn ? user?.primaryEmailAddress?.emailAddress ?? "—" : "—";
+    const phoneNumber = isSignedIn ? user?.primaryPhoneNumber?.phoneNumber ?? "—" : "—";
+    const memberSince = isSignedIn && user?.createdAt ? new Date(user.createdAt).getFullYear() : "0000";
 
     return (
         <main className="min-h-screen p-8">
@@ -25,18 +28,7 @@ export default function ProfilePage() {
                 />
             </div>
             <div className="mt-[54px] ml-[120px] flex gap-[25px]">
-                <div className="w-[282px]">
-                    <div className="h-[168px] w-[282px] bg-[#D9D9D9]" />
-                    <div className="mt-[12px] flex items-center justify-between">
-                        <div className="text-[20px] font-bold">Event 1</div>
-                    </div>
-                </div>
-                <div className="w-[282px]">
-                    <div className="h-[168px] w-[282px] bg-[#D9D9D9]" />
-                    <div className="mt-[12px] flex items-center justify-between">
-                        <div className="text-[20px] font-bold">Event 2</div>
-                    </div>
-                </div>
+                {/* we need to find a way to use eventcard to load the events with the backend info i think */}
             </div>
             <div className="absolute top-[248px] right-[121px] w-[305px] h-[420px] bg-[#426982] rounded-lg">
             
@@ -44,7 +36,7 @@ export default function ProfilePage() {
                 </div>
                 <div className = "flex flex-col items-center mt-40 space-y-.25">
                     <div className = "text-white font-bold text-[24px]">{firstName} {lastName}</div>
-                    <div className = "text-white text-[16px]">Member since 0000</div>
+                    <div className = "text-white text-[16px]">Member since {memberSince}</div>
                     
                 </div>
                 <div className = "flex flex-col mt-6 space-y-2">
@@ -77,4 +69,17 @@ export default function ProfilePage() {
             
         </main>
     );
-}
+}/* event 1 and 2 manual blocks
+                <div className="w-[282px]">
+                    <div className="h-[168px] w-[282px] bg-[#D9D9D9]" />
+                    <div className="mt-[12px] flex items-center justify-between">
+                        <div className="text-[20px] font-bold">Event 1</div>
+                    </div>
+                </div>
+                <div className="w-[282px]">
+                    <div className="h-[168px] w-[282px] bg-[#D9D9D9]" />
+                    <div className="mt-[12px] flex items-center justify-between">
+                        <div className="text-[20px] font-bold">Event 2</div>
+                    </div>
+                </div>
+*/

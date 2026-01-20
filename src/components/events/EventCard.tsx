@@ -9,10 +9,12 @@ interface EventCardProps {
   location: string;
   date: Date;
   id: string;
+  currentSignups: number;
+  maxSignups: number;
 }
 
 const EventCard = (props: EventCardProps) => {
-  const { image, title, time, location, date, id } = props;
+  const { image, title, time, location, date, id, currentSignups, maxSignups } = props;
   // Format time to EST in readable format
   const formattedTime = new Date(time).toLocaleTimeString("en-US", {
     timeZone: "America/New_York",
@@ -25,7 +27,7 @@ const EventCard = (props: EventCardProps) => {
   });
   return (
     <Link
-      className="flex flex-col w-72 rounded-2xl shadow p-4 gap-2"
+      className="flex flex-col w-[282px] mb-[35px]"
       href={`/event/${id}`}
     >
       <Image
@@ -33,12 +35,16 @@ const EventCard = (props: EventCardProps) => {
         alt={title}
         width={600}
         height={600}
-        className="w-full h-40 object-cover rounded-xl"
+        className="w-full h-[167.53px] object-cover"
       />
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="text-sm">{formattedTime}</p>
-      <p className="text-sm">{location}</p>
-      <p className="text-sm">{formattedDate}</p>
+      <div className="relative mt-[24px] pb-[18px]">
+        <h3 className="text-[20px] font-bold">{title}</h3>
+        <p className="text-[16px] mt-[15px]">{formattedTime}</p>
+        <p className="text-[16px] mt-[4.86px]">{location}</p>
+        <p className="text-[16px] mt-[4.86px]">{formattedDate}</p>
+
+        <p className="absolute bottom-0 right-[6px] text-[16px] ">{currentSignups}/{maxSignups} sign ups</p>
+      </div>
     </Link>
   );
 };
