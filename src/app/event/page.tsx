@@ -1,9 +1,14 @@
 import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/app/api/events/controller";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { Event } from "@prisma/client";
 
 export default async function EventsPage() {
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
+
   let events: Event[] = [];
   let error: string | null = null;
   try {
@@ -49,6 +54,8 @@ export default async function EventsPage() {
                       location={event.addressLine1}
                       date={firstDate}
                       id={event.id}
+                      pinned={event.pinned}
+                      isAdmin={isAdmin}
                     />
                   );
                 })
