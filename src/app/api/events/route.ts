@@ -6,7 +6,7 @@ import {
   updateEvent,
   deleteEvent,
 } from "./controller";
-import { PrismaClient, UserRole } from "@prisma/client";
+import { Prisma, PrismaClient, UserRole } from "@prisma/client";
 import { eventSchema } from "@/lib/schemas/eventSchema";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -46,65 +46,89 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
 
     const user = await getCurrentUser();
-
-    let isAdmin = false;
-    if (user) {
-      if (user.role === UserRole.ADMIN) {
-        isAdmin = true;
-      }
-    }
+    const isAdmin = user?.role === UserRole.ADMIN;
     if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // const parse = eventSchema.safeParse(json);
+    const parse = eventSchema.safeParse(json);
+    if (!parse.success) {
+      return NextResponse.json(
+        { error: "Failed to parse event data", issues: parse.error.issues },
+        { status: 400 }
+      );
+    }
 
-    // if (!parse.success) {
-    //   return NextResponse.json(
-    //     { error: "Failed to parse event data" },
-    //     { status: 400 }
-    //   );
-    // }
+    const data = parse.data;
+    const start = combineDateTime(data.date, data.time);
 
-    // const data = parse.data;
+    const prismaData = {
+      name: data.title,
+      description: data.description || undefined,
+      resourcesLink: data.resourcesLink || undefined,
 
-    // const prismaData = {
-    //   name: data.name,
-    //   description: data.description || undefined,
-    //   resourcesLink: data.resourcesLink || undefined,
+      // REQUIRED by your Prisma type (based on the error)
+      startTime: start,
+      endTime: start,
 
-    //   addressLine1: data.address,
-    //   addressLine2: data.apt || null,
-    //   city: data.city,
-    //   state: data.state,
-    //   zipCode: data.zip,
+      // // ALSO required by your Prisma type (based on the error)
+      // // Make it whatever your app considers the "full address"
+      // address: [
+      //   data.address,
+      //   data.apt ? `Apt ${data.apt}` : null,
+      //   `${data.city}, ${data.state} ${data.zip}`,
+      // ]
+      //   .filter(Boolean)
+      //   .join(", "),
 
-    //   date: new Date(data.date),
-    //   time: combineDateTime(data.date, data.time),
+      addressLine1: data.address,
+      addressLine2: data.apt || null,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zip,
 
-    //   positions: {
-    //     create: data.positions.map((p) => {
-    //       const date = p.date || data.date;
-    //       const time = p.time || data.time;
-    //       const start = combineDateTime(date, time);
+      date: [new Date(data.date)],
 
-    //       return {
-    //         position: p.name,
-    //         description: p.description || "",
-    //         date: new Date(date),
-    //         startTime: start,
-    //         endTime: start,
-    //         totalSlots: Number(p.participants || 0),
-    //         filledSlots: 0,
-    //         addressLine1: p.address || data.address,
-    //         addressLine2: p.apt || data.apt || null,
-    //         city: p.city || data.city,
-    //         state: p.state || data.state,
-    //         zipCode: p.zip || data.zip,
-    //       };
-    //     }),
-    //   },
-    // };
+      positions: {
+        create: data.positions.map((p) => {
+          const date = p.sameAsDate ? data.date : p.date;
+          const time = p.sameAsTime ? data.time : p.time;
+          const start = combineDateTime(date, time);
+
+          const line1 = p.sameAsAddress ? data.address : p.address;
+          const line2 = (p.sameAsAddress ? data.apt : p.apt) || null;
+          const city = p.sameAsAddress ? data.city : p.city;
+          const state = p.sameAsAddress ? data.state : p.state;
+          const zip = p.sameAsAddress ? data.zip : p.zip;
+
+          return {
+            position: p.name,
+            description: p.description || "",
+            date: new Date(date),
+            startTime: start,
+            endTime: start,
+            totalSlots: Number(p.participants || 0),
+            filledSlots: 0,
+
+            // // if your Position model ALSO has "address" required,
+            // // add it the same way as Event above:
+            // address: [
+            //   line1,
+            //   line2 ? `Apt ${line2}` : null,
+            //   `${city}, ${state} ${zip}`,
+            // ]
+            //   .filter(Boolean)
+            //   .join(", "),
+
+            addressLine1: line1,
+            addressLine2: line2,
+            city,
+            state,
+            zipCode: zip,
+          };
+        }),
+      },
+    } satisfies Prisma.EventCreateInput;
 
     const newEvent = await createEvent(prismaData);
     return NextResponse.json(newEvent, { status: 201 });
