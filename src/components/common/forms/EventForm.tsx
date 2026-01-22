@@ -59,8 +59,8 @@ const EventForm = () => {
 
     const newImages: StaticImageData[] = [];
     const newFiles: File[] = [];
-    const MAX_FILE_SIZE = 100 * 1024; // 100KB in bytes
-    const ALLOWED_TYPES = ["image/jpeg", "image/jpg"];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
     const oversizedFiles: string[] = [];
     const invalidFiles: string[] = [];
 
@@ -87,13 +87,13 @@ const EventForm = () => {
 
     if (invalidFiles.length > 0) {
       alert(
-        `The following files are not supported. Only JPG/JPEG files are allowed:\n\n${invalidFiles.join("\n")}`
+        `The following files are not supported. Only JPG/JPEG/PNG files are allowed:\n\n${invalidFiles.join("\n")}`
       );
     }
 
     if (oversizedFiles.length > 0) {
       alert(
-        `The following files exceed the 100KB limit and were not added:\n\n${oversizedFiles.join("\n")}`
+        `The following files exceed the 10MB limit and were not added:\n\n${oversizedFiles.join("\n")}`
       );
     }
 
@@ -327,7 +327,7 @@ const EventForm = () => {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".jpg, .jpeg"
+          accept=".jpg, .jpeg, .png"
           multiple
           className="hidden"
           onChange={handleFilesSelected}
