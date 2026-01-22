@@ -9,12 +9,10 @@ interface EventCardProps {
   location: string;
   date: Date;
   id: string;
-  currentSignups: number;
-  maxSignups: number;
 }
 
 const EventCard = (props: EventCardProps) => {
-  const { image, title, time, location, date, id, currentSignups, maxSignups } = props;
+  const { image, title, time, location, date, id } = props;
   // Format time to EST in readable format
   const formattedTime = new Date(time).toLocaleTimeString("en-US", {
     timeZone: "America/New_York",
@@ -42,8 +40,6 @@ const EventCard = (props: EventCardProps) => {
         <p className="text-[16px] mt-[15px]">{formattedTime}</p>
         <p className="text-[16px] mt-[4.86px]">{location}</p>
         <p className="text-[16px] mt-[4.86px]">{formattedDate}</p>
-
-        <p className="absolute bottom-0 right-[6px] text-[16px] ">{currentSignups}/{maxSignups} sign ups</p>
       </div>
     </Link>
   );

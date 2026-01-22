@@ -1,9 +1,11 @@
 "use client";
 import Image from "next/image";
-import BackArrow from "@/assets/icons/arrow-left.svg";
 import EventCard from "@/components/events/EventCard";
+import { getEvents } from "@/app/api/events/controller";
+import { Event } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 import { useEffect } from 'react';
+import { getUserById } from "@/app/api/users/controller";
 
 export default function ProfilePage() {
     const { user, isSignedIn, isLoaded } = useUser();
@@ -17,7 +19,8 @@ export default function ProfilePage() {
     const firstName = isSignedIn ? user?.firstName ?? "" : "Guest";
     const lastName = isSignedIn ? user?.lastName ?? "" : "";
     const emailAddress = isSignedIn ? user?.primaryEmailAddress?.emailAddress ?? "—" : "—";
-    const phoneNumber = isSignedIn ? user?.primaryPhoneNumber?.phoneNumber ?? "—" : "—";
+    //const phoneNumber = isSignedIn ? user?.primaryPhoneNumber?.phoneNumber ?? "—" : "—";
+    //const u
     const memberSince = isSignedIn && user?.createdAt ? new Date(user.createdAt).getFullYear() : "0000";
 
     return (
@@ -26,10 +29,14 @@ export default function ProfilePage() {
                 <div className="text-[28px] font-bold w-[283px] h-[36.19]">
                     UPCOMING EVENTS
                 </div>
-                <Image
-                    src={BackArrow}
-                    alt=""
-                    className="h-[36.19px] w-[31.75px] rotate-180 ml-[69.25px] hover:bg-gray-100 rounded-lg"
+                <EventCard
+                    key={event.id}
+                    image="/event1.jpg"
+                    title={event.name}
+                    time={event.startTime}
+                    location={event.addressLine1}
+                    date={firstDate}
+                    id={event.id}
                 />
             </div>
             <div className="mt-[54px] ml-[120px] flex gap-[25px]">
@@ -65,11 +72,6 @@ export default function ProfilePage() {
                 <div className="text-[28px] font-bold w-[283px] h-[36.19]">
                     PAST EVENTS
                 </div>
-                <Image
-                    src={BackArrow}
-                    alt=""
-                    className="h-[36.19px] w-[31.75px] rotate-180 ml-[69.25px] hover:bg-gray-100 rounded-lg"
-                />
             </div>
 
         </main>
