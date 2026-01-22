@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createUser,
   deleteUser,
+  getUserByEmail,
   getUserById,
   getUsers,
   updateUserProfile,
@@ -15,6 +16,24 @@ export async function GET(req: NextRequest) {
   if (id) {
     try {
       const user = await getUserById(id);
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      return NextResponse.json(user, { status: 200 });
+    } catch (error) {
+      console.error("Error:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch user" },
+        { status: 500 }
+      );
+    }
+  }
+
+  const email: string | undefined = searchParams.get("email") || undefined;
+
+  if (email) {
+    try {
+      const user = await getUserByEmail(email);
       if (!user) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }

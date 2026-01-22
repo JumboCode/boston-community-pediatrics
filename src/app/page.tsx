@@ -80,37 +80,6 @@ const Home: React.FC = () => {
           <div className="mt-8">Food Drive</div>
         </div>
       </div>
-
-      <div className="flex items-center my-10 justify-center w-[90%] mx-auto">
-        <div className="flex-grow border-t-2 border-[#234254]"></div>
-        <span className="mx-4 text-[#234254] text-3xl font-bold">About Us</span>
-        <div className="flex-grow border-t-2 border-[#234254]"></div>
-      </div>
-      <div className="flex items-center my-5 justify-center w-[90%] mx-auto gap-20 mb-20">
-        <div className="text-[#234254] text-lg font-normal w-[60%]">
-          <b>Lorem ipsum dolor</b> sit amet consectetur. At leo auctor nam metus
-          tincidunt phasellus volutpat id pulvinar. Accumsan amet id pulvinar
-          pellentesque sed vivamus ac. Id tortor sodales est aliquet nec
-          volutpat. Phasellus massa erat a nunc risus consequat sed. Porta nunc
-          convallis ultricies elit est cursus felis lacus consectetur. Rhoncus
-          quis quisque egestas porta sit. Mauris aliquam eget imperdiet
-          pellentesque. Nullam tristique arcu sit in in nulla viverra. Egestas
-          euismod platea pretium augue aliquam aliquam ac feugiat. Vulputate
-          massa gravida dui massa mi tellus sed. Vitae dui tincidunt a elementum
-          turpis nisl lobortis vulputate aliquam. Morbi tristique risus ornare
-          ridiculus massa vitae lacus a risus. Viverra lacus integer magna eget
-          facilisis nunc. Lobortis porttitor tempus est orci adipiscing nisl. A
-          parturient tellus nisi praesent posuere gravida sed. Aliquam elementum
-          nec id ipsum sit orci quis sem neque.
-        </div>
-        <div className="w-[40%] flex justify-center">
-          <Image
-            src={aboutus}
-            alt="About Us Image"
-            className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-[#234254]"
-          />
-        </div>
-      </div>
     </div>
   );
 };

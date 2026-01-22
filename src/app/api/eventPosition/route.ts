@@ -5,6 +5,8 @@ import {
   updateEventPosition,
   deleteEventPosition,
 } from "./controller";
+import { getCurrentUser } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -36,6 +38,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
+    let isAdmin = false;
+    const user = await getCurrentUser();
+
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    
     const newEventPosition = await createEventPosition(data);
     return NextResponse.json(newEventPosition, { status: 201 });
   } catch (err) {
@@ -55,6 +69,17 @@ export async function PUT(req: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+    let isAdmin = false;
+    const user = await getCurrentUser();
+
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const data = await req.json();
@@ -76,6 +101,17 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+    let isAdmin = false;
+    const user = await getCurrentUser();
+
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const deletedEventPosition = await deleteEventPosition(id);

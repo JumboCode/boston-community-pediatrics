@@ -1,4 +1,7 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getCurrentUser } from "./lib/auth";
 
 export default clerkMiddleware();
 
@@ -8,3 +11,5 @@ export const config = {
     "/api/(.*)", // ALL api routes
   ],
 };
+
+

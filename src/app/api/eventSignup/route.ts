@@ -102,11 +102,23 @@ export async function PUT(req: NextRequest) {
 // DELETE handler
 export async function DELETE(req: NextRequest) {
   try {
+    let isAdmin = false;
+    const user = await getCurrentUser();
+
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Admin permission is required" }, { status: 403 });
     }
 
     const deletedEventSignup = await deleteEventSignup(id);
