@@ -28,7 +28,7 @@ function AdminNavBar() {
         <li>
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <li>
-              <Link href="/" className="text-white text-sm">
+              <Link href="/event/createEvent" className="text-white text-sm">
                 Create Event
               </Link>
             </li>
