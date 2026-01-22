@@ -130,7 +130,6 @@ const EventForm = () => {
       window.alert(`Please fix these errors:\n\n${errorMessages}`);
       return;
     }
-
     // form is valid — send to API
     const res = await fetch("/api/events", {
       method: "POST",

@@ -4,24 +4,51 @@ import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/app/api/events/controller";
 import { Event } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
-import { useEffect } from 'react';
-import { getUserById } from "@/app/api/users/controller";
+import { useEffect, useState } from 'react';
+//import { getUserById } from "@/app/api/users/controller";
 
 export default function ProfilePage() {
     const { user, isSignedIn, isLoaded } = useUser();
+    
+    const [events, setEvents] = useState<Event[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null); //this should just be catching errors and update it when we look
+    
+    useEffect(() => {
+        async function fetchEvents() {
+            try {
+                const fetchedEvents = await getEvents();
+                setEvents(fetchedEvents);
+            } catch (err) {
+                console.error("Failed to load events:", err);
+                setError("Failed to load events");
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchEvents();
+    }, []);
+    
+    
     // DEBUG: inspect the shape returned by Clerk
     useEffect(() => {
       console.log("Clerk user object:", user);
     }, [user]);
-    if (!isLoaded) {
+    if (!isLoaded || loading) {
         return <main className="min-h-screen p-8" />;
     }
+
     const firstName = isSignedIn ? user?.firstName ?? "" : "Guest";
     const lastName = isSignedIn ? user?.lastName ?? "" : "";
     const emailAddress = isSignedIn ? user?.primaryEmailAddress?.emailAddress ?? "—" : "—";
-    //const phoneNumber = isSignedIn ? user?.primaryPhoneNumber?.phoneNumber ?? "—" : "—";
+    const phoneNumber = isSignedIn ? user?.primaryPhoneNumber?.phoneNumber ?? "—" : "—";
     //const u
     const memberSince = isSignedIn && user?.createdAt ? new Date(user.createdAt).getFullYear() : "0000";
+
+    const now = new Date();
+    const upcomingEvents = events
+        .filter((event) => event.date && event.date.length > 0)
+        .filter((event) => new Date(event.date[0]) >= now);
 
     return (
         <main className="min-h-screen p-8">
@@ -29,18 +56,31 @@ export default function ProfilePage() {
                 <div className="text-[28px] font-bold w-[283px] h-[36.19]">
                     UPCOMING EVENTS
                 </div>
-                <EventCard
-                    key={event.id}
-                    image="/event1.jpg"
-                    title={event.name}
-                    time={event.startTime}
-                    location={event.addressLine1}
-                    date={firstDate}
-                    id={event.id}
-                />
+                
             </div>
             <div className="mt-[54px] ml-[120px] flex gap-[25px]">
-                {/* we need to find a way to use eventcard to load the events with the backend info i think */}
+                {/* we need to find a way to use eventcard to load the events with the backend info i think */
+                error ? (
+                    <p className="text-red-600 text-lg font-semibold">{error}</p>
+                ) : upcomingEvents.length === 0 ? (
+                    <p className="text-gray-500 text-lg">No upcoming events.</p>
+                ) : (
+                    upcomingEvents.map((event) => {
+                        const firstDate = event.date[0];
+                        return (
+                            <EventCard
+                                key={event.id}
+                                image="/event1.jpg"
+                                title={event.name}
+                                time={event.startTime}
+                                location={event.addressLine1}
+                                date={firstDate}
+                                id={event.id}
+                            />
+                        );
+                    })
+                )
+                }
             </div>
             <div className="absolute top-[248px] right-[121px] w-[305px] h-[420px] bg-[#426982] rounded-lg">
             
