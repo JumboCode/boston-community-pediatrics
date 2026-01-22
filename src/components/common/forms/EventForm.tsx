@@ -18,6 +18,9 @@ const createStaticImageData = (url: string): StaticImageData =>
     blurHeight: 0,
   }) as StaticImageData;
 const EventForm = () => {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [event, setEvent] = useState({
     title: "",
     date: "",
@@ -53,13 +56,51 @@ const EventForm = () => {
   const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+
     const newImages: StaticImageData[] = [];
+    const newFiles: File[] = [];
+    const MAX_FILE_SIZE = 100 * 1024; // 100KB in bytes
+    const ALLOWED_TYPES = ["image/jpeg", "image/jpg"];
+    const oversizedFiles: string[] = [];
+    const invalidFiles: string[] = [];
+
     for (let i = 0; i < files.length; i += 1) {
       const file = files[i];
+
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        invalidFiles.push(`${file.name} (${file.type || "unknown type"})`);
+        continue;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        oversizedFiles.push(
+          `${file.name} (${(file.size / 1024).toFixed(2)}KB)`
+        );
+        continue;
+      }
+
+      newFiles.push(file);
+
       const url = URL.createObjectURL(file);
       newImages.push(createStaticImageData(url));
     }
-    setCarouselImages((prev) => [...prev, ...newImages]);
+
+    if (invalidFiles.length > 0) {
+      alert(
+        `The following files are not supported. Only JPG/JPEG files are allowed:\n\n${invalidFiles.join("\n")}`
+      );
+    }
+
+    if (oversizedFiles.length > 0) {
+      alert(
+        `The following files exceed the 100KB limit and were not added:\n\n${oversizedFiles.join("\n")}`
+      );
+    }
+
+    if (newFiles.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...newFiles]);
+      setCarouselImages((prev) => [...prev, ...newImages]);
+    }
     e.target.value = "";
   };
   const addPosition = () =>
@@ -101,50 +142,108 @@ const EventForm = () => {
       "sameAsAddress",
       !positions[index].sameAsAddress
     );
-
-  const handleCreateEvent = async () => {
-    // Normalize positions
-    const normalizedPositions = positions.map((p) => ({
-      ...p,
-      date: p.sameAsDate ? event.date : p.date,
-      time: p.sameAsTime ? event.time : p.time,
-      address: p.sameAsAddress ? event.address : p.address,
-      apt: p.sameAsAddress ? event.apt : p.apt,
-      city: p.sameAsAddress ? event.city : p.city,
-      state: p.sameAsAddress ? event.state : p.state,
-      zip: p.sameAsAddress ? event.zip : p.zip,
-    }));
-
-    const formData = {
-      ...event,
-      positions: normalizedPositions,
-    };
-
-    const parseResult = eventSchema.safeParse(formData);
-
-    if (!parseResult.success) {
-      const errorMessages = parseResult.error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-        .join("\n");
-
-      window.alert(`Please fix these errors:\n\n${errorMessages}`);
-      return;
-    }
-
-    // form is valid — send to API
-    const res = await fetch("/api/events", {
+  async function uploadEventImage(eventId: string, file: File) {
+    const presignRes = await fetch("/api/images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parseResult.data),
+      body: JSON.stringify({ type: "event", eventId }),
     });
 
-    if (!res.ok) {
-      alert("Failed to create event");
-      return;
+    if (!presignRes.ok) {
+      const text = await presignRes.text();
+      throw new Error(`Failed to get upload URL: ${presignRes.status} ${text}`);
     }
 
-    // Tell SWR that /api/events is now stale
-    await mutate("/api/events");
+    const { key, url } = (await presignRes.json()) as {
+      key: string;
+      url: string;
+    };
+
+    const putRes = await fetch(url, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+    });
+
+    if (!putRes.ok) {
+      const text = await putRes.text();
+      throw new Error(`Failed to upload file to R2: ${putRes.status} ${text}`);
+    }
+
+    return key;
+  }
+
+  const handleCreateEvent = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const normalizedPositions = positions.map((p) => ({
+        ...p,
+        date: p.sameAsDate ? event.date : p.date,
+        time: p.sameAsTime ? event.time : p.time,
+        address: p.sameAsAddress ? event.address : p.address,
+        apt: p.sameAsAddress ? event.apt : p.apt,
+        city: p.sameAsAddress ? event.city : p.city,
+        state: p.sameAsAddress ? event.state : p.state,
+        zip: p.sameAsAddress ? event.zip : p.zip,
+      }));
+
+      const formData = {
+        ...event,
+        positions: normalizedPositions,
+      };
+
+      const parseResult = eventSchema.safeParse(formData);
+
+      if (!parseResult.success) {
+        const errorMessages = parseResult.error.issues
+          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+          .join("\n");
+
+        window.alert(`Please fix these errors:\n\n${errorMessages}`);
+        return;
+      }
+
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parseResult.data),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        alert(`Failed to create event: ${text}`);
+        return;
+      }
+
+      const createdEvent = await res.json();
+
+      const eventId: string = createdEvent.id ?? createdEvent.event?.id;
+      if (!eventId) {
+        console.error("Create event response:", createdEvent);
+        alert("Event created but no eventId returned from /api/events");
+        return;
+      }
+
+      if (selectedFiles.length > 0) {
+        await Promise.all(
+          selectedFiles.map((f) => uploadEventImage(eventId, f))
+        );
+      }
+
+      await mutate("/api/events");
+
+      setSelectedFiles([]);
+      setCarouselImages([]);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Failed to create event");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const ConditionalInput = ({
@@ -228,7 +327,7 @@ const EventForm = () => {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept=".jpg, .jpeg"
           multiple
           className="hidden"
           onChange={handleFilesSelected}
