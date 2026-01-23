@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+interface GuestInput {
+  fullName: string;
+  email?: string | null;
+  phoneNumber?: string | null;
+  relationship?: string | null;
+  // Add other frontend fields if necessary, e.g., dateOfBirth, comments
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId, positionId, guests } = await req.json();
@@ -37,7 +45,7 @@ export async function POST(req: NextRequest) {
             positionId,
             // Create Waitlist Guests
             guests: {
-              create: guests.map((guest: any) => {
+              create: guests.map((guest: GuestInput) => {
                 const nameParts = guest.fullName.trim().split(" ");
                 return {
                   firstName: nameParts[0],
@@ -67,7 +75,7 @@ export async function POST(req: NextRequest) {
           eventId: position.eventId,
           hasGuests: (guests && guests.length > 0), // Helper flag from your schema
           guests: {
-            create: guests.map((guest: any) => {
+            create: guests.map((guest: GuestInput) => {
               const nameParts = guest.fullName.trim().split(" ");
               return {
                 positionId,
@@ -152,7 +160,7 @@ export async function PUT(req: NextRequest) {
         where: { id },
         data: {
           guests: {
-            create: guests.map((guest: any) => {
+            create: guests.map((guest: GuestInput) => {
               const nameParts = guest.fullName.trim().split(" ");
               return {
                 positionId: currentSignup.positionId, 

@@ -8,12 +8,40 @@ interface RegisterPageProps {
   params: Promise<{ id: string }>;
 }
 
+// 1. Define proper types so we don't use 'any'
+interface UserData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  dateOfBirth?: string;
+}
+
+interface EventData {
+  name: string;
+  date: string;
+  time: string;
+}
+
+interface PositionData {
+  id: string;
+  position: string;
+  description: string;
+  event?: EventData; // Optional in case the fetch fails or data is partial
+}
+
+interface PageData {
+  user: UserData;
+  position: PositionData;
+}
+
 export default function RegisterPage({ params }: RegisterPageProps) {
   const resolvedParams = use(params);
   const positionId = resolvedParams.id;
 
   const { user, isLoaded } = useUser();
-  const [data, setData] = useState<any>(null); // keeping type loose for simplicity
+  const [data, setData] = useState<PageData | null>(null); // keeping type loose for simplicity
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,16 +77,18 @@ export default function RegisterPage({ params }: RegisterPageProps) {
 
   // --- Helper to format dates ---
   // The DB returns ISO strings (e.g. "2025-01-01T00:00:00.000Z")
-  const formatDate = (dateStr: string) => {
+  // Allow 'dateStr' to be undefined
+  const formatDate = (dateStr?: string) => {
     if (!dateStr) return "TBD";
-    return new Date(dateStr).toLocaleDateString("en-US"); // "1/1/2025"
+    return new Date(dateStr).toLocaleDateString("en-US");
   };
 
-  const formatTime = (timeStr: string) => {
+  // Allow 'timeStr' to be undefined
+  const formatTime = (timeStr?: string) => {
     if (!timeStr) return "TBD";
     return new Date(timeStr).toLocaleTimeString("en-US", { 
       hour: 'numeric', minute: '2-digit' 
-    }); // "10:00 AM"
+    });
   };
 
   return (
@@ -69,8 +99,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         
         // 👇 PASS THE DATA HERE
         eventName={data?.position?.event?.name}
-        eventDate={formatDate(data?.position?.event?.date)}
-        eventTime={formatTime(data?.position?.event?.time)}
+        eventDate={formatDate(data.position.event?.date)}
+        eventTime={formatTime(data.position.event?.time)}
       />
     </div>
   );
