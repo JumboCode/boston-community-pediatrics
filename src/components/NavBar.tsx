@@ -19,8 +19,8 @@ function NavBar() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        // console.log('/api/users?email=' + user?.emailAddresses[0]?.emailAddress);
-        const res = await fetch('/api/users?email=' + user?.emailAddresses[0]?.emailAddress);
+        console.log('/api/users?id=' + user?.id);
+        const res = await fetch('/api/users?id=' + user?.id);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         setIsAdmin(data?.role == 'ADMIN');
