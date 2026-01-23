@@ -2,6 +2,15 @@ import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export async function getPositionById(id: string) {
+  return await prisma.eventPosition.findUnique({
+    where: { id },
+    include: {
+      event: true,
+    },
+  });
+}
+
 // Fetch event positions by event ID
 export const getPositionsByEventId = async (eventId: string) => {
   const eventPositions = await prisma.eventPosition.findMany({

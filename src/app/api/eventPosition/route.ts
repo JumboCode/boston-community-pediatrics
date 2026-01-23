@@ -4,14 +4,30 @@ import {
   createEventPosition,
   updateEventPosition,
   deleteEventPosition,
+  getPositionById,
 } from "./controller";
 
 // GET handler
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id"); // This is the specific Position ID
     const eventId = searchParams.get("eventId");
 
+    // CASE 1: Fetch Single Position by ID
+    if (id) {
+      const position = await getPositionById(id);
+      
+      if (!position) {
+        return NextResponse.json(
+          { error: "Position not found" },
+          { status: 404 }
+        );
+      }
+      // Returns a single object, e.g. { position: "Gate", description: "..." }
+      return NextResponse.json(position, { status: 200 });
+    }
+    
     if (eventId) {
       const eventPositions = await getPositionsByEventId(eventId);
       if (!eventPositions)
