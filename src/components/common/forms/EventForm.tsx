@@ -20,6 +20,7 @@ const createStaticImageData = (url: string): StaticImageData =>
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [event, setEvent] = useState({
     title: "",
@@ -53,12 +54,13 @@ const EventForm = () => {
     },
   ]);
 
-  const toISODateAtMidnight = (dateStr: string) => {
-    return new Date(`${dateStr}T00:00:00`).toISOString();
-  };
-
-  const toISODateTime = (dateStr: string, timeStr: string) => {
-    return new Date(`${dateStr}T${timeStr}:00`).toISOString();
+  const clearError = (key: string) => {
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
@@ -144,16 +146,30 @@ const EventForm = () => {
     setPositions((prev) =>
       prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
     );
-  const toggleSameAsDate = (index: number) =>
-    handlePositionChange(index, "sameAsDate", !positions[index].sameAsDate);
-  const toggleSameAsTime = (index: number) =>
-    handlePositionChange(index, "sameAsTime", !positions[index].sameAsTime);
-  const toggleSameAsAddress = (index: number) =>
-    handlePositionChange(
-      index,
-      "sameAsAddress",
-      !positions[index].sameAsAddress
-    );
+  const toggleSameAsDate = (index: number) => {
+    const next = !positions[index].sameAsDate;
+    handlePositionChange(index, "sameAsDate", next);
+    if (next) clearError(`positions.${index}.date`);
+  };
+  const toggleSameAsTime = (index: number) => {
+    const next = !positions[index].sameAsTime;
+    handlePositionChange(index, "sameAsTime", next);
+    if (next) {
+      clearError(`positions.${index}.startTime`);
+      clearError(`positions.${index}.endTime`);
+    }
+  };
+  const toggleSameAsAddress = (index: number) => {
+    const next = !positions[index].sameAsAddress;
+    handlePositionChange(index, "sameAsAddress", next);
+    if (next) {
+      clearError(`positions.${index}.address`);
+      clearError(`positions.${index}.city`);
+      clearError(`positions.${index}.state`);
+      clearError(`positions.${index}.zip`);
+      clearError(`positions.${index}.apt`);
+    }
+  };
   async function uploadEventImage(eventId: string, file: File) {
     const presignRes = await fetch("/api/images", {
       method: "POST",
@@ -212,13 +228,18 @@ const EventForm = () => {
       const parseResult = eventSchema.safeParse(formData);
 
       if (!parseResult.success) {
-        const errorMessages = parseResult.error.issues
-          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-          .join("\n");
+        const fieldErrors: Record<string, string> = {};
 
-        window.alert(`Please fix these errors:\n\n${errorMessages}`);
+        for (const issue of parseResult.error.issues) {
+          const path = issue.path.join(".");
+          fieldErrors[path] = issue.message;
+        }
+
+        setErrors(fieldErrors);
         return;
       }
+
+      setErrors({});
 
       const res = await fetch("/api/events", {
         method: "POST",
@@ -269,6 +290,8 @@ const EventForm = () => {
     onToggle,
     onChange,
     className,
+    error,
+    onClearError,
   }: {
     id: string;
     label: string;
@@ -279,6 +302,8 @@ const EventForm = () => {
     onToggle: () => void;
     onChange: (value: string) => void;
     className?: string;
+    error?: string;
+    onClearError?: () => void;
   }) => (
     <div className="flex flex-col">
       <div className="mt-10 flex items-center justify-between">
@@ -307,12 +332,22 @@ const EventForm = () => {
         type={type}
         value={disabled ? fallbackValue : value}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          onClearError?.();
+        }}
         className={
           className ||
-          "w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+          `w-[588px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:border-[#234254]
+           ${
+             error
+               ? "border-red-500 focus:ring-red-500/30"
+               : "border-[#6B6B6B] focus:ring-[#234254]/30"
+           }
+           disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed`
         }
       />
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
 
@@ -386,11 +421,21 @@ const EventForm = () => {
             id="event-date"
             type="date"
             value={event.date}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, date: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            onChange={(e) => {
+              const v = e.target.value;
+              setEvent((prev) => ({ ...prev, date: v }));
+              clearError("date");
+            }}
+            className={`w-[588px] h-[43px] rounded-lg border p-3 text-base
+            ${
+              errors["date"]
+                ? "border-red-500 focus:ring-red-500"
+                : "border-[#6B6B6B] focus:ring-[#234254]/30 focus:border-[#234254]"
+            }`}
           />
+          {errors["date"] && (
+            <p className="mt-1 text-sm text-red-500">{errors["date"]}</p>
+          )}
         </div>
         {/* event time */}
         <div className="flex flex-col items-start">
@@ -403,22 +448,42 @@ const EventForm = () => {
               id="event-start-time"
               type="time"
               value={event.startTime}
-              onChange={(e) =>
-                setEvent((prev) => ({ ...prev, startTime: e.target.value }))
-              }
-              className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              onChange={(e) => {
+                const v = e.target.value;
+                setEvent((prev) => ({ ...prev, startTime: v }));
+                clearError("startTime");
+              }}
+              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none
+              ${
+                errors["startTime"]
+                  ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
+                  : "border-[#6B6B6B] focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              }`}
             />
 
             <input
               id="event-end-time"
               type="time"
               value={event.endTime}
-              onChange={(e) =>
-                setEvent((prev) => ({ ...prev, endTime: e.target.value }))
-              }
-              className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              onChange={(e) => {
+                const v = e.target.value;
+                setEvent((prev) => ({ ...prev, endTime: v }));
+                clearError("endTime");
+              }}
+              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none
+              ${
+                errors["endTime"]
+                  ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
+                  : "border-[#6B6B6B] focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              }`}
             />
           </div>
+
+          {(errors["startTime"] || errors["endTime"]) && (
+            <p className="mt-1 text-sm text-red-500">
+              {errors["endTime"] ?? errors["startTime"]}
+            </p>
+          )}
         </div>
         {/* event description */}
         <div className="flex flex-col items-start">
@@ -576,6 +641,8 @@ const EventForm = () => {
               disabled={position.sameAsDate}
               onToggle={() => toggleSameAsDate(index)}
               onChange={(val) => handlePositionChange(index, "date", val)}
+              error={errors[`positions.${index}.date`]}
+              onClearError={() => clearError(`positions.${index}.date`)}
             />
             {/* position time */}
             <div className="flex flex-col">
@@ -607,10 +674,17 @@ const EventForm = () => {
                     position.sameAsTime ? event.startTime : position.startTime
                   }
                   disabled={position.sameAsTime}
-                  onChange={(e) =>
-                    handlePositionChange(index, "startTime", e.target.value)
+                  onChange={(e) => {
+                    handlePositionChange(index, "startTime", e.target.value);
+                    clearError(`positions.${index}.startTime`);
+                  }}
+                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:border-[#234254]
+                  ${
+                    errors[`positions.${index}.startTime`]
+                      ? "border-red-500 focus:ring-red-500/30"
+                      : "border-[#6B6B6B] focus:ring-[#234254]/30"
                   }
-                  className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
+                  disabled:bg-[#E5E5E5] disabled:cursor-not-allowed`}
                 />
 
                 <input
@@ -618,12 +692,26 @@ const EventForm = () => {
                   type="time"
                   value={position.sameAsTime ? event.endTime : position.endTime}
                   disabled={position.sameAsTime}
-                  onChange={(e) =>
-                    handlePositionChange(index, "endTime", e.target.value)
+                  onChange={(e) => {
+                    handlePositionChange(index, "endTime", e.target.value);
+                    clearError(`positions.${index}.endTime`);
+                  }}
+                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:border-[#234254]
+                  ${
+                    errors[`positions.${index}.endTime`]
+                      ? "border-red-500 focus:ring-red-500/30"
+                      : "border-[#6B6B6B] focus:ring-[#234254]/30"
                   }
-                  className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
+                  disabled:bg-[#E5E5E5] disabled:cursor-not-allowed`}
                 />
               </div>
+              {(errors[`positions.${index}.startTime`] ||
+                errors[`positions.${index}.endTime`]) && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors[`positions.${index}.endTime`] ??
+                    errors[`positions.${index}.startTime`]}
+                </p>
+              )}
             </div>
             {/* position description */}
             <div className="flex flex-col">
@@ -652,6 +740,8 @@ const EventForm = () => {
               disabled={position.sameAsAddress}
               onToggle={() => toggleSameAsAddress(index)}
               onChange={(val) => handlePositionChange(index, "address", val)}
+              error={errors[`positions.${index}.address`]}
+              onClearError={() => clearError(`positions.${index}.address`)}
             />
             {/* position apt */}
             <div className="flex flex-col">

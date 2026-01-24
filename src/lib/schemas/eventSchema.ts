@@ -7,7 +7,7 @@ const hhmm = z
 
 const yyyymmdd = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD");
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be MM-DD-YYYY"); // hacky error message for eventform error display
 
 const endAfterStart = (start: string, end: string) => end > start;
 
