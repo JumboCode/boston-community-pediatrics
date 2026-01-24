@@ -16,6 +16,10 @@ function combineDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00`);
 }
 
+function toMidnight(date: string) {
+  return new Date(`${date}T00:00:00`);
+}
+
 // GET handler
 export async function GET(req: NextRequest) {
   try {
@@ -24,13 +28,14 @@ export async function GET(req: NextRequest) {
 
     if (id) {
       const event = await getEventById(id);
-      if (!event)
+      if (!event) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
       return NextResponse.json(event, { status: 200 });
-    } else {
-      const events = await getEvents();
-      return NextResponse.json(events, { status: 200 });
     }
+
+    const events = await getEvents();
+    return NextResponse.json(events, { status: 200 });
   } catch (err) {
     console.error(err);
     return NextResponse.json(
@@ -60,40 +65,37 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parse.data;
-    const start = combineDateTime(data.date, data.time);
+
+    // Event-level start/end
+    const eventStart = combineDateTime(data.date, data.startTime);
+    const eventEnd = combineDateTime(data.date, data.endTime);
 
     const prismaData = {
       name: data.title,
-      description: data.description || undefined,
-      resourcesLink: data.resourcesLink || undefined,
+      description: data.description || "",
 
-      // REQUIRED by your Prisma type (based on the error)
-      startTime: start,
-      endTime: start,
-
-      // // ALSO required by your Prisma type (based on the error)
-      // // Make it whatever your app considers the "full address"
-      // address: [
-      //   data.address,
-      //   data.apt ? `Apt ${data.apt}` : null,
-      //   `${data.city}, ${data.state} ${data.zip}`,
-      // ]
-      //   .filter(Boolean)
-      //   .join(", "),
+      startTime: eventStart,
+      endTime: eventEnd,
 
       addressLine1: data.address,
       addressLine2: data.apt || null,
       city: data.city,
       state: data.state,
+      country: "USA",
       zipCode: data.zip,
 
-      date: [new Date(data.date)],
+      // your Prisma schema uses DateTime[]
+      date: [toMidnight(data.date)],
 
       positions: {
         create: data.positions.map((p) => {
-          const date = p.sameAsDate ? data.date : p.date;
-          const time = p.sameAsTime ? data.time : p.time;
-          const start = combineDateTime(date, time);
+          const posDate = p.sameAsDate ? data.date : p.date;
+
+          const posStartT = p.sameAsTime ? data.startTime : p.startTime;
+          const posEndT = p.sameAsTime ? data.endTime : p.endTime;
+
+          const posStart = combineDateTime(posDate, posStartT);
+          const posEnd = combineDateTime(posDate, posEndT);
 
           const line1 = p.sameAsAddress ? data.address : p.address;
           const line2 = (p.sameAsAddress ? data.apt : p.apt) || null;
@@ -104,26 +106,17 @@ export async function POST(req: NextRequest) {
           return {
             position: p.name,
             description: p.description || "",
-            date: new Date(date),
-            startTime: start,
-            endTime: start,
+            date: toMidnight(posDate),
+            startTime: posStart,
+            endTime: posEnd,
             totalSlots: Number(p.participants || 0),
             filledSlots: 0,
-
-            // // if your Position model ALSO has "address" required,
-            // // add it the same way as Event above:
-            // address: [
-            //   line1,
-            //   line2 ? `Apt ${line2}` : null,
-            //   `${city}, ${state} ${zip}`,
-            // ]
-            //   .filter(Boolean)
-            //   .join(", "),
 
             addressLine1: line1,
             addressLine2: line2,
             city,
             state,
+            country: "USA",
             zipCode: zip,
           };
         }),
@@ -151,7 +144,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const data = await req.json(); // body data
+    const data = await req.json();
     const updated = await updateEvent(id, data);
 
     return NextResponse.json(updated, { status: 200 });

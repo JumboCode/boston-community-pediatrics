@@ -24,7 +24,8 @@ const EventForm = () => {
   const [event, setEvent] = useState({
     title: "",
     date: "",
-    time: "12:30", //the time lowk only works (when we do same as event) when we set a default time here
+    startTime: "12:30", //the time lowk only works (when we do same as event) when we set a default time here
+    endTime: "13:30",
     description: "",
     resourcesLink: "" as string | undefined,
     address: "",
@@ -37,7 +38,8 @@ const EventForm = () => {
     {
       name: "",
       date: "",
-      time: "",
+      startTime: "",
+      endTime: "",
       description: "",
       address: "",
       apt: "",
@@ -50,6 +52,15 @@ const EventForm = () => {
       sameAsAddress: false,
     },
   ]);
+
+  const toISODateAtMidnight = (dateStr: string) => {
+    return new Date(`${dateStr}T00:00:00`).toISOString();
+  };
+
+  const toISODateTime = (dateStr: string, timeStr: string) => {
+    return new Date(`${dateStr}T${timeStr}:00`).toISOString();
+  };
+
   const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleAddPhotosClick = () => fileInputRef.current?.click();
@@ -109,7 +120,8 @@ const EventForm = () => {
       {
         name: "",
         date: "",
-        time: "",
+        startTime: "",
+        endTime: "",
         description: "",
         address: "",
         apt: "",
@@ -183,7 +195,8 @@ const EventForm = () => {
       const normalizedPositions = positions.map((p) => ({
         ...p,
         date: p.sameAsDate ? event.date : p.date,
-        time: p.sameAsTime ? event.time : p.time,
+        startTime: p.sameAsTime ? event.startTime : p.startTime,
+        endTime: p.sameAsTime ? event.endTime : p.endTime,
         address: p.sameAsAddress ? event.address : p.address,
         apt: p.sameAsAddress ? event.apt : p.apt,
         city: p.sameAsAddress ? event.city : p.city,
@@ -381,21 +394,31 @@ const EventForm = () => {
         </div>
         {/* event time */}
         <div className="flex flex-col items-start">
-          <label
-            htmlFor="event-time"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
-          >
+          <label className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]">
             Event time
           </label>
-          <input
-            id="event-time"
-            type="time"
-            value={event.time}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, time: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
-          />
+
+          <div className="flex w-[588px] gap-[60px]">
+            <input
+              id="event-start-time"
+              type="time"
+              value={event.startTime}
+              onChange={(e) =>
+                setEvent((prev) => ({ ...prev, startTime: e.target.value }))
+              }
+              className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
+
+            <input
+              id="event-end-time"
+              type="time"
+              value={event.endTime}
+              onChange={(e) =>
+                setEvent((prev) => ({ ...prev, endTime: e.target.value }))
+              }
+              className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            />
+          </div>
         </div>
         {/* event description */}
         <div className="flex flex-col items-start">
@@ -555,16 +578,53 @@ const EventForm = () => {
               onChange={(val) => handlePositionChange(index, "date", val)}
             />
             {/* position time */}
-            <ConditionalInput
-              id={`position-time-${index}`}
-              label="Position time"
-              type="time"
-              value={position.time}
-              fallbackValue={event.time}
-              disabled={position.sameAsTime}
-              onToggle={() => toggleSameAsTime(index)}
-              onChange={(val) => handlePositionChange(index, "time", val)}
-            />
+            <div className="flex flex-col">
+              <div className="mt-10 flex items-center justify-between">
+                <label className="mb-1 text-base font-normal text-[#6B6B6B]">
+                  Position time
+                </label>
+
+                <div className="mb-1 flex items-center gap-[11px]">
+                  <Button
+                    label="Same as event"
+                    altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+                    onClick={() => toggleSameAsTime(index)}
+                  />
+                  <input
+                    type="checkbox"
+                    checked={position.sameAsTime}
+                    onChange={() => toggleSameAsTime(index)}
+                    className="h-[16px] w-[16px] cursor-pointer accent-[#234254]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex w-[588px] gap-[60px]">
+                <input
+                  id={`position-start-time-${index}`}
+                  type="time"
+                  value={
+                    position.sameAsTime ? event.startTime : position.startTime
+                  }
+                  disabled={position.sameAsTime}
+                  onChange={(e) =>
+                    handlePositionChange(index, "startTime", e.target.value)
+                  }
+                  className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
+                />
+
+                <input
+                  id={`position-end-time-${index}`}
+                  type="time"
+                  value={position.sameAsTime ? event.endTime : position.endTime}
+                  disabled={position.sameAsTime}
+                  onChange={(e) =>
+                    handlePositionChange(index, "endTime", e.target.value)
+                  }
+                  className="w-[282px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
             {/* position description */}
             <div className="flex flex-col">
               <label
