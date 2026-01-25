@@ -66,16 +66,19 @@ const EventForm = () => {
   const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleAddPhotosClick = () => fileInputRef.current?.click();
-  const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFilesSelected = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const newImages: StaticImageData[] = [];
     const newFiles: File[] = [];
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-    const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+    const ALLOWED_TYPES = ["image/jpeg", "image/png"];
     const oversizedFiles: string[] = [];
     const invalidFiles: string[] = [];
+
+    const TARGET_WIDTH = 1000;
+    const TARGET_HEIGHT = 360;
 
     for (let i = 0; i < files.length; i += 1) {
       const file = files[i];
@@ -92,10 +95,67 @@ const EventForm = () => {
         continue;
       }
 
-      newFiles.push(file);
+      try {
+        const img = new window.Image();
+        const objectUrl = URL.createObjectURL(file);
 
-      const url = URL.createObjectURL(file);
-      newImages.push(createStaticImageData(url));
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = objectUrl;
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = TARGET_WIDTH;
+        canvas.height = TARGET_HEIGHT;
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl);
+          continue;
+        }
+
+        // truncate image to fit
+        const imgRatio = img.width / img.height;
+        const targetRatio = TARGET_WIDTH / TARGET_HEIGHT;
+
+        let sX, sY, sW, sH;
+
+        if (imgRatio > targetRatio) {
+          // if image wider, then truncate sides
+          sH = img.height;
+          sW = img.height * targetRatio;
+          sX = (img.width - sW) / 2;
+          sY = 0;
+        } else {
+          // if image taller, then truncate top and bottom
+          sW = img.width;
+          sH = img.width / targetRatio;
+          sX = 0;
+          sY = (img.height - sH) / 2;
+        }
+
+        ctx.drawImage(img, sX, sY, sW, sH, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+
+        const blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, file.type, 0.92);
+        });
+
+        URL.revokeObjectURL(objectUrl);
+
+        if (!blob) continue;
+
+        const resizedFile = new File([blob], file.name, {
+          type: file.type,
+        });
+
+        newFiles.push(resizedFile);
+        const url = URL.createObjectURL(resizedFile);
+        newImages.push(createStaticImageData(url));
+      } catch (error) {
+        console.error(`Failed to process image ${file.name}:`, error);
+        continue;
+      }
     }
 
     if (invalidFiles.length > 0) {
