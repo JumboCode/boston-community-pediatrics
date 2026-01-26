@@ -6,13 +6,28 @@ import { Event } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
+interface EventSignupWithEvent {
+  id: string;
+  userId: string;
+  eventId: string;
+  positionId: string;
+  hoursVolunteered?: number;
+  event: Event;
+  position?: {
+    id: string;
+    name: string;
+  };
+}
+
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
 
+  //const[userSignUps, setUserSignUps] = useState<EventSignupWithEvent[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); // this should just be catching errors and update it when we look
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
+
 
   useEffect(() => {
     async function fetchEvents() {
@@ -138,10 +153,34 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-31">
             <div className="ml-[25px] text-[16px] text-white">Email</div>
-            <div className="mr-[25px] text-[16px] text-white">
-              {emailAddress}
+            <div className="flex-1 truncate">
+              <div
+                title={emailAddress}
+                className="mr-[25px] text-[16px] truncate text-[16px] text-white"
+              >
+                {emailAddress}
+              </div>
+              <div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(emailAddress)}
+                  className="text-white/70 hover:text-white transition"
+                  aria-label="Copy email"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
