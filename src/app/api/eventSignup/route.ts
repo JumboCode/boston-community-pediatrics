@@ -67,6 +67,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
+
+    let isAdmin = false;
+    const user = await getCurrentUser();
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (user?.id != data.userId || !isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const newEventSignup = await createEventSignup(data);
     return NextResponse.json(newEventSignup, { status: 201 });
   } catch (err) {
@@ -88,6 +100,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
     const data = await req.json();
+
+    let isAdmin = false;
+    const user = await getCurrentUser();
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (user?.id != data.userId || !isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const updatedEventSignup = await updateEventSignup(id, data);
     return NextResponse.json(updatedEventSignup, { status: 201 });
   } catch (err) {
@@ -103,10 +127,10 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     let isAdmin = false;
-    const user = await getCurrentUser();
+    const currentUser = await getCurrentUser();
 
-    if (user) {
-      if (user.role === UserRole.ADMIN) {
+    if (currentUser) {
+      if (currentUser.role === UserRole.ADMIN) {
         isAdmin = true;
       }
     }
@@ -117,8 +141,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Admin permission is required" }, { status: 403 });
+    if (currentUser?.id != id && !isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const deletedEventSignup = await deleteEventSignup(id);

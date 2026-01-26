@@ -10,7 +10,7 @@ function UserNavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
 
   const firstName = user?.firstName ?? "Guest";
-  
+
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
@@ -27,7 +27,10 @@ function UserNavBar() {
         <li>
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <li>
-              <Link href="https://www.bostoncommunitypediatrics.org/" className="text-white text-sm">
+              <Link
+                href="https://www.bostoncommunitypediatrics.org/"
+                className="text-white text-sm"
+              >
                 Connect
               </Link>
             </li>

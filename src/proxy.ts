@@ -1,7 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getCurrentUser } from "./lib/auth";
 
 const isProtectedRoute = createRouteMatcher(['/admin(.*)','/event/createEvent(.*)'])
 

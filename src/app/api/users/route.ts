@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   createUser,
   deleteUser,
-  getUserByEmail,
   getUserById,
   getUsers,
   updateUserProfile,
 } from "./controller";
+import { getCurrentUser } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -19,24 +20,18 @@ export async function GET(req: NextRequest) {
       if (!user) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
-      return NextResponse.json(user, { status: 200 });
-    } catch (error) {
-      console.error("Error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch user" },
-        { status: 500 }
-      );
-    }
-  }
 
-  const email: string | undefined = searchParams.get("email") || undefined;
-
-  if (email) {
-    try {
-      const user = await getUserByEmail(email);
-      if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      let isAdmin = false;
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        if (currentUser.role === UserRole.ADMIN) {
+          isAdmin = true;
+        }
       }
+      if (currentUser?.id != user.id && !isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
       return NextResponse.json(user, { status: 200 });
     } catch (error) {
       console.error("Error:", error);
@@ -82,7 +77,37 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { id, body } = await req.json();
-    const updatedUser = await updateUserProfile(id, body);
+    let isAdmin = false;
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      if (currentUser.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    } else return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (currentUser?.id != id && !isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    let filteredBody = body;
+    // Non-admins can only update certain fields
+    if (!isAdmin) {
+      const allowedFields = [
+        "firstName",
+        "lastName",
+        "phoneNumber",
+        "dateOfBirth",
+        "streetAddress",
+        "city",
+        "state",
+        "country",
+        "zipCode",
+        "profileImage",
+      ];
+      filteredBody = Object.fromEntries(
+        Object.entries(body).filter(([key]) => allowedFields.includes(key))
+      );
+    }
+    const updatedUser = await updateUserProfile(id, filteredBody);
     if (!updatedUser) {
       return NextResponse.json({ error: "User not updated" }, { status: 404 });
     }

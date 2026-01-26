@@ -4,14 +4,9 @@ import blankProfile from "@/assets/icons/empty-profile-picture.svg";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
-import { useState } from "react";
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-
+import { Menu } from "@headlessui/react";
 
 function AdminNavBar() {
-
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
@@ -38,41 +33,48 @@ function AdminNavBar() {
               </Link>
             </li>
             <li className="relative">
-                <Dropdown>
-                    {/* Toggle button */}
-                    <Dropdown.Toggle
-                    id="manage-dropdown"
-                    className="text-white"
-                    >
-                    Manage ▼
-                    </Dropdown.Toggle>
+              <Menu>
+                <Menu.Button className="text-white text-sm cursor-pointer">
+                  Manage
+                </Menu.Button>
 
-                    {/* Dropdown menu */}
-                    <Dropdown.Menu className="bg-white shadow-lg p-2 flex flex-col gap-2 mt-6.5 items-center">
-                    <Dropdown.Item
+                <Menu.Items className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md p-1">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
                         href="/manage/events"
-                        className="text-black px-4 py-2 rounded hover:bg-blue-500 transition-colors block"
-                    >
+                        className={`block px-4 py-2 text-sm ${
+                          active ? "bg-blue-500 text-white" : "text-black"
+                        }`}
+                      >
                         Events
-                    </Dropdown.Item>
+                      </Link>
+                    )}
+                  </Menu.Item>
 
-                    <Dropdown.Item
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
                         href="/manage/volunteers"
-                        className="text-black px-4 py-2 rounded hover:bg-blue-500 transition-colors block"
-                    >
+                        className={`block px-4 py-2 text-sm ${
+                          active ? "bg-blue-500 text-white" : "text-black"
+                        }`}
+                      >
                         Volunteers
-                    </Dropdown.Item>
-                    </Dropdown.Menu>
-                </Dropdown>
+                      </Link>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Menu>
             </li>
-              <li className="flex items-center gap-2">
-                <span className="text-white font-medium">Admin</span>
-                <Image
-                  src={blankProfile}
-                  alt="Placeholder User"
-                  className="w-8 h-8 rounded-full"
-                />
-              </li>
+            <li className="flex items-center gap-2">
+              <span className="text-white font-medium">Admin</span>
+              <Image
+                src={blankProfile}
+                alt="Placeholder User"
+                className="w-8 h-8 rounded-full"
+              />
+            </li>
           </ul>
         </li>
       </ul>

@@ -7,16 +7,15 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import UserNavBar from "./UserNavBar";
 import AdminNavBar from "./AdminNavBar";
-import { is } from "zod/locales";
-import { useAuth } from "@clerk/nextjs";
-import { getUserById } from "@/app/api/users/controller";
 import { useState, useEffect } from "react";
 
 function NavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+
   
   useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user?.id) return;
     async function fetchUser() {
       try {
         console.log('/api/users?id=' + user?.id);
