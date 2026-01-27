@@ -5,10 +5,9 @@ import { Event } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import PinButton from "@/components/events/PinButton";
 
-
 export default async function EventsPage() {
   const user = await getCurrentUser();
-  
+
   let events: Event[] = [];
   let error: string | null = null;
   try {
@@ -48,17 +47,16 @@ export default async function EventsPage() {
                   return (
                     <EventCard
                       key={event.id}
-                      image= "/event1.jpg"
+                      image="/event1.jpg"
                       title={event.name}
                       time={event.startTime}
                       location={event.addressLine1}
                       date={firstDate}
                       id={event.id}
                       pinned={event.pinned}
-                      
                     >
                       {user?.role === "ADMIN" && (
-                      <PinButton eventId={event.id} pinned={event.pinned} />
+                        <PinButton eventId={event.id} pinned={event.pinned} />
                       )}
                     </EventCard>
                   );

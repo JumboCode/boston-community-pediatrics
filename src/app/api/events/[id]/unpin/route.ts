@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // Changed to Promise
+  { params }: { params: Promise<{ id: string }> } // Changed to Promise
 ) {
   const user = await getCurrentUser();
 
@@ -12,7 +12,7 @@ export async function POST(
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { id: eventId } = await params;  // Await params
+  const { id: eventId } = await params; // Await params
 
   await prisma.event.update({
     where: { id: eventId },

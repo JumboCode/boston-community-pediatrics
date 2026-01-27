@@ -27,25 +27,6 @@ const Home: React.FC = () => {
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    const BASE_WIDTH = 1440;
-    const BASE_HEIGHT = 900;
-
-    const handleResize = () => {
-      const widthRatio = window.innerWidth / BASE_WIDTH;
-      const heightRatio = window.innerHeight / BASE_HEIGHT;
-
-      const MAX_SCALE = 1.5;
-
-      setScale(Math.max(Math.min(widthRatio, heightRatio, MAX_SCALE)));
-    };
-
-    handleResize(); // run once on mount
-    window.addEventListener("resize", handleResize);
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
     const fetchPinnedEvents = async () => {
       try {
         const res = await fetch("/api/events/pinned");
@@ -56,6 +37,22 @@ const Home: React.FC = () => {
       } finally {
         setLoading(false);
       }
+      const BASE_WIDTH = 1440;
+      const BASE_HEIGHT = 900;
+
+      const handleResize = () => {
+        const widthRatio = window.innerWidth / BASE_WIDTH;
+        const heightRatio = window.innerHeight / BASE_HEIGHT;
+
+        const MAX_SCALE = 1.5;
+
+        setScale(Math.max(Math.min(widthRatio, heightRatio, MAX_SCALE)));
+      };
+
+      handleResize();
+      window.addEventListener("resize", handleResize);
+
+      return () => window.removeEventListener("resize", handleResize);
     };
 
     fetchPinnedEvents();
@@ -108,44 +105,46 @@ const Home: React.FC = () => {
             No featured events at this time.
           </p>
         ) : (
-          pinnedEvents.map((event) => (
-            <div
-              key={event.id}
-              className="text-center text-[#234254] text-lg font-bold"
-              /*style={{
-                transform: `scale(${scale})`,
-                transition: "transform 0.2s",
-              }}*/
-            >
-              <div className="relative w-[clamp(350px,32vw,600px)] h-[clamp(315px,28vw,533px)] group">
-                {event.images && event.images.length > 0 ? (
+          pinnedEvents.map((event) => {
+            // Check if event has a valid image
+            const hasValidImage =
+              event.images &&
+              event.images.length > 0 &&
+              event.images[0] &&
+              event.images[0].trim() !== "";
+
+            // Ensure image path starts with /
+            const imageSrc = hasValidImage
+              ? event.images[0].startsWith("/")
+                ? event.images[0]
+                : `/${event.images[0]}`
+              : "/event1.jpg";
+
+            return (
+              <div
+                key={event.id}
+                className="text-center text-[#234254] text-lg font-bold"
+              >
+                <div className="relative w-[clamp(350px,32vw,600px)] h-[clamp(315px,28vw,533px)] group">
                   <Image
-                    src={event.images[0]}
+                    src={imageSrc}
                     alt={event.name}
                     width={450}
                     height={400}
                     className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-[#234254] transition-all duration-300 group-hover:blur-[3px]"
                   />
-                ) : (
-                  <Image
-                    src="/event1.jpg"
-                    alt={event.name}
-                    width={450}
-                    height={400}
-                    className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-[#234254] transition-all duration-300 group-hover:blur-[3px]"
+                  <Button
+                    label="More Details"
+                    onClick={() => router.push(`/event/${event.id}`)}
+                    altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-[#234254] rounded-lg 
+        flex items-center justify-center opacity-0 text-md font-normal
+        transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:bg-[#426982]"
                   />
-                )}
-                <Button
-                  label="More Details"
-                  onClick={() => router.push(`/event/${event.id}`)}
-                  altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-[#234254] rounded-lg 
-            flex items-center justify-center opacity-0 text-md font-normal
-            transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:bg-[#426982]"
-                />
+                </div>
+                <div className="mt-8">{event.name}</div>
               </div>
-              <div className="mt-8">{event.name}</div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
