@@ -5,6 +5,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "@headlessui/react";
+import DropDownArrow from "@/assets/icons/drop-down-arrow-bold.svg";
 
 function AdminNavBar() {
   return (
@@ -34,8 +35,14 @@ function AdminNavBar() {
             </li>
             <li className="relative">
               <Menu>
-                <Menu.Button className="text-white text-sm cursor-pointer">
+                <Menu.Button className="text-white text-sm cursor-pointer ">
                   Manage
+                  <Image
+                    src={DropDownArrow}
+                    alt="Dropdown Arrow"
+                    className="w-5 h-5 inline-block color-white white"
+                  />
+                  
                 </Menu.Button>
 
                 <Menu.Items className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md p-1">
@@ -68,7 +75,9 @@ function AdminNavBar() {
               </Menu>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-white font-medium">Admin</span>
+              <span className="text-white text-sm relative top-[1.5px]">
+                Admin
+              </span>
               <Image
                 src={blankProfile}
                 alt="Placeholder User"

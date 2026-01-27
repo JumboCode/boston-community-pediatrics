@@ -13,16 +13,15 @@ function NavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) return;
     async function fetchUser() {
       try {
-        console.log('/api/users?id=' + user?.id);
-        const res = await fetch('/api/users?id=' + user?.id);
-        if (!res.ok) throw new Error('Failed to fetch');
+        console.log("/api/users?id=" + user?.id);
+        const res = await fetch("/api/users?id=" + user?.id);
+        if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        setIsAdmin(data?.role == 'ADMIN');
+        setIsAdmin(data?.role == "ADMIN");
       } catch (err) {
         console.error(err);
       }
@@ -32,8 +31,8 @@ function NavBar() {
 
   return (
     <>
-    {isAdmin ? <AdminNavBar /> : <UserNavBar />}
-    {console.log("isAdmin:", isAdmin)}
+      {isAdmin ? <AdminNavBar /> : <UserNavBar />}
+      {console.log("isAdmin:", isAdmin)}
     </>
   );
 }
