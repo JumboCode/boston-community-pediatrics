@@ -7,6 +7,8 @@ import BackArrow from "@/assets/icons/arrow-left.svg";
 import Button from "@/components/common/buttons/Button";
 import Carousel from "../Carousel";
 import { mutate } from "swr";
+import { useRouter } from "next/navigation";
+
 
 const createStaticImageData = (url: string): StaticImageData =>
   ({
@@ -21,6 +23,8 @@ const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const router = useRouter();
+
 
   const inputBase =
     "rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
@@ -374,6 +378,7 @@ const EventForm = () => {
       }
 
       await mutate("/api/events");
+      router.push(`/event/${eventId}`); // Redirects to the newly created page
 
       setSelectedFiles([]);
       setCarouselImages([]);
