@@ -22,11 +22,34 @@ const EventForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const inputBase =
+    "rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
+
+  const inputClass = (key: string, extra = "") =>
+    `${inputBase} ${
+      errors[key]
+        ? "border-red-500 focus:ring-red-500/30"
+        : "border-[#6B6B6B] focus:ring-[#234254]/30 focus:border-[#234254]"
+    } ${extra}`;
+
+  const textareaBase =
+    "resize-none rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
+
+  const textareaClass = (key: string, extra = "") =>
+    `${textareaBase} ${
+      errors[key]
+        ? "border-red-500 focus:ring-red-500/30"
+        : "border-[#6B6B6B] focus:ring-[#234254]/30 focus:border-[#234254]"
+    } ${extra}`;
+
+  const ErrorText = ({ k }: { k: string }) =>
+    errors[k] ? <p className="mt-1 text-sm text-red-500">{errors[k]}</p> : null;
+
   const [event, setEvent] = useState({
     title: "",
     date: "",
-    startTime: "12:30", //the time lowk only works (when we do same as event) when we set a default time here
-    endTime: "13:30",
+    startTime: "",
+    endTime: "",
     description: "",
     resourcesLink: "" as string | undefined,
     address: "",
@@ -290,9 +313,31 @@ const EventForm = () => {
       if (!parseResult.success) {
         const fieldErrors: Record<string, string> = {};
 
+        const redirectPath = (path: (string | number)[]) => {
+          if (path[0] === "positions" && typeof path[1] === "number") {
+            const idx = path[1];
+            const field = String(path[2] ?? "");
+            const pos = positions[idx];
+
+            if (field === "date" && pos?.sameAsDate) return ["date"];
+            if (
+              (field === "startTime" || field === "endTime") &&
+              pos?.sameAsTime
+            )
+              return [field];
+            if (
+              ["address", "apt", "city", "state", "zip"].includes(field) &&
+              pos?.sameAsAddress
+            )
+              return [field];
+          }
+          return path;
+        };
+
         for (const issue of parseResult.error.issues) {
-          const path = issue.path.join(".");
-          fieldErrors[path] = issue.message;
+          const finalPath = redirectPath(issue.path).join(".");
+          if (!(finalPath in fieldErrors))
+            fieldErrors[finalPath] = issue.message;
         }
 
         setErrors(fieldErrors);
@@ -463,11 +508,13 @@ const EventForm = () => {
             id="event-title"
             type="text"
             value={event.title}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, title: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            onChange={(e) => {
+              setEvent((prev) => ({ ...prev, title: e.target.value }));
+              clearError("title");
+            }}
+            className={`w-[588px] h-[43px] ${inputClass("title")}`}
           />
+          <ErrorText k="title" />
         </div>
         {/* event date */}
         <div className="flex flex-col items-start">
@@ -556,11 +603,13 @@ const EventForm = () => {
           <textarea
             id="event-description"
             value={event.description}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, description: e.target.value }))
-            }
-            className="w-[588px] h-[175px] resize-none rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            onChange={(e) => {
+              setEvent((prev) => ({ ...prev, description: e.target.value }));
+              clearError("description");
+            }}
+            className={`w-[588px] h-[175px] ${textareaClass("description")}`}
           />
+          <ErrorText k="description" />
         </div>
         {/* link to resources */}
         <div className="flex flex-col items-start">
@@ -591,11 +640,13 @@ const EventForm = () => {
           <input
             id="event-street"
             value={event.address}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, address: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            onChange={(e) => {
+              setEvent((prev) => ({ ...prev, address: e.target.value }));
+              clearError("address");
+            }}
+            className={`w-[588px] h-[43px] ${inputClass("address")}`}
           />
+          <ErrorText k="address" />
         </div>
         {/* event apt */}
         <div className="flex flex-col items-start">
@@ -625,11 +676,13 @@ const EventForm = () => {
           <input
             id="event-city"
             value={event.city}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, city: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            onChange={(e) => {
+              setEvent((prev) => ({ ...prev, city: e.target.value }));
+              clearError("city");
+            }}
+            className={`w-[588px] h-[43px] ${inputClass("city")}`}
           />
+          <ErrorText k="city" />
         </div>
         {/* event state / zip */}
         <div className="flex flex-row gap-[60px]">
@@ -643,11 +696,13 @@ const EventForm = () => {
             <input
               id="event-state"
               value={event.state}
-              onChange={(e) =>
-                setEvent((prev) => ({ ...prev, state: e.target.value }))
-              }
-              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              onChange={(e) => {
+                setEvent((prev) => ({ ...prev, state: e.target.value }));
+                clearError("state");
+              }}
+              className={`w-[264px] h-[43px] ${inputClass("state")}`}
             />
+            <ErrorText k="state" />
           </div>
           <div className="flex flex-col items-start">
             <label
@@ -660,11 +715,13 @@ const EventForm = () => {
               id="event-zip"
               inputMode="numeric"
               value={event.zip}
-              onChange={(e) =>
-                setEvent((prev) => ({ ...prev, zip: e.target.value }))
-              }
-              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              onChange={(e) => {
+                setEvent((prev) => ({ ...prev, zip: e.target.value }));
+                clearError("zip");
+              }}
+              className={`w-[264px] h-[43px] ${inputClass("zip")}`}
             />
+            <ErrorText k="zip" />
           </div>
         </div>
 
@@ -685,11 +742,13 @@ const EventForm = () => {
                 id={`position-name-${index}`}
                 type="text"
                 value={position.name}
-                onChange={(e) =>
-                  handlePositionChange(index, "name", e.target.value)
-                }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                onChange={(e) => {
+                  handlePositionChange(index, "name", e.target.value);
+                  clearError(`positions.${index}.name`);
+                }}
+                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed")}`}
               />
+              <ErrorText k={`positions.${index}.name`} />
             </div>
             {/* position date */}
             <ConditionalInput
@@ -784,11 +843,13 @@ const EventForm = () => {
               <textarea
                 id={`position-description-${index}`}
                 value={position.description}
-                onChange={(e) =>
-                  handlePositionChange(index, "description", e.target.value)
-                }
-                className="w-[588px] h-[175px] resize-none rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                onChange={(e) => {
+                  handlePositionChange(index, "description", e.target.value);
+                  clearError(`positions.${index}.description`);
+                }}
+                className={`w-[588px] h-[175px] ${textareaClass(`positions.${index}.description`)}`}
               />
+              <ErrorText k={`positions.${index}.description`} />
             </div>
             {/* position street */}
             <ConditionalInput
@@ -835,11 +896,16 @@ const EventForm = () => {
                 type="text"
                 value={position.sameAsAddress ? event.city : position.city}
                 disabled={position.sameAsAddress}
-                onChange={(e) =>
-                  handlePositionChange(index, "city", e.target.value)
-                }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                onChange={(e) => {
+                  handlePositionChange(index, "city", e.target.value);
+                  clearError(`positions.${index}.city`);
+                }}
+                className={`w-[588px] h-[43px] ${inputClass(
+                  `positions.${index}.city`,
+                  "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                )}`}
               />
+              <ErrorText k={`positions.${index}.city`} />
             </div>
             {/* position state / zip */}
             <div className="flex flex-row gap-[60px]">
@@ -855,11 +921,16 @@ const EventForm = () => {
                   type="text"
                   value={position.sameAsAddress ? event.state : position.state}
                   disabled={position.sameAsAddress}
-                  onChange={(e) =>
-                    handlePositionChange(index, "state", e.target.value)
-                  }
-                  className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                  onChange={(e) => {
+                    handlePositionChange(index, "state", e.target.value);
+                    clearError(`positions.${index}.state`);
+                  }}
+                  className={`w-[264px] h-[43px] ${inputClass(
+                    `positions.${index}.state`,
+                    "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                  )}`}
                 />
+                <ErrorText k={`positions.${index}.state`} />
               </div>
               <div className="flex flex-col items-start">
                 <label
@@ -873,11 +944,16 @@ const EventForm = () => {
                   type="text"
                   value={position.sameAsAddress ? event.zip : position.zip}
                   disabled={position.sameAsAddress}
-                  onChange={(e) =>
-                    handlePositionChange(index, "zip", e.target.value)
-                  }
-                  className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                  onChange={(e) => {
+                    handlePositionChange(index, "zip", e.target.value);
+                    clearError(`positions.${index}.zip`);
+                  }}
+                  className={`w-[264px] h-[43px] ${inputClass(
+                    `positions.${index}.zip`,
+                    "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                  )}`}
                 />
+                <ErrorText k={`positions.${index}.zip`} />
               </div>
             </div>
             {/* max participants */}
@@ -892,11 +968,13 @@ const EventForm = () => {
                 id={`position-participants-${index}`}
                 type="number"
                 value={position.participants}
-                onChange={(e) =>
-                  handlePositionChange(index, "participants", e.target.value)
-                }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                onChange={(e) => {
+                  handlePositionChange(index, "participants", e.target.value);
+                  clearError(`positions.${index}.participants`);
+                }}
+                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.participants`)}`}
               />
+              <ErrorText k={`positions.${index}.participants`} />
             </div>
           </div>
         ))}

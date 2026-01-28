@@ -29,7 +29,6 @@ export async function getPresignedURL(filename: string) {
     }),
     {
       expiresIn: 600,
-      unhoistableHeaders: new Set(["x-amz-checksum-crc32"]),
     }
   );
   return url;
