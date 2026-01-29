@@ -41,10 +41,12 @@ const Home: React.FC = () => {
     };
 
     fetchPinnedEvents();
+  }, []);
 
+  useEffect(() => {
     const BASE_WIDTH = 1440;
     const BASE_HEIGHT = 900;
-    const MOBILE_BREAKPOINT = 900; 
+    const MOBILE_BREAKPOINT = 900;
 
     const handleResize = () => {
       const widthRatio = window.innerWidth / BASE_WIDTH;
@@ -52,8 +54,12 @@ const Home: React.FC = () => {
 
       const MAX_SCALE = 1.5;
 
-      setScale(Math.max(Math.min(widthRatio, heightRatio, MAX_SCALE)));
+      const newScale = Math.min(widthRatio, heightRatio, MAX_SCALE);
+      setScale(newScale);
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+
+      console.log("Window size:", window.innerWidth, "x", window.innerHeight);
+      console.log("Scale:", newScale);
     };
 
     handleResize();
@@ -95,11 +101,12 @@ const Home: React.FC = () => {
       </div>
 
       <div
-        className={`flex justify-center w-[90%] ${isMobile ? "flex-col items-center" : "origin-center"}`}
+        className={`flex justify-center ${isMobile ? "flex-col items-center" : "origin-center"}`}
         style={{
-          gap: isMobile ? "40px" : "300px",
-          transform: isMobile ? "none" : `scale(${scale})`,
-          transition: "transform 0.5s",
+          gap: isMobile ? "40px" : `${315 * scale}px`,
+          width: isMobile ? "90%" : "auto",
+          maxWidth: "100%",
+          transition: "gap 0.5s",
         }}
       >
         {loading ? (
@@ -128,7 +135,15 @@ const Home: React.FC = () => {
                 className="text-center text-[#234254] text-lg font-bold"
               >
                 <div
-                  className={`relative group ${isMobile ? "w-[337px] h-[300px]" : "w-[450px] h-[400px]"}`}
+                  className={`relative group ${isMobile ? "w-[337px] h-[300px]" : ""}`}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: `${486 * scale}px`,
+                          height: `${391 * scale}px`,
+                        }
+                  }
                 >
                   <Image
                     src={imageSrc}
