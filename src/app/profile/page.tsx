@@ -22,21 +22,20 @@ interface EventSignupWithEvent {
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
 
-  //const[userSignUps, setUserSignUps] = useState<EventSignupWithEvent[]>([]);
+  //const[userSignups, setUserSignUps] = useState<EventSignupWithEvent[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null); // this should just be catching errors and update it when we look
+  const [error, setError] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
-
 
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const response = await fetch("/api/events"); // calls the api route instead of prisma
+        const response = await fetch("/api/events");
         if (!response.ok) {
-          throw new Error("Failed to fetch events"); // checks if the call worked
+          throw new Error("Failed to fetch events");
         }
-        const fetchedEvents = await response.json(); // converts api to json
+        const fetchedEvents = await response.json();
         setEvents(fetchedEvents);
       } catch (err) {
         console.error("Failed to load events:", err);
@@ -54,7 +53,7 @@ export default function ProfilePage() {
       if (!user?.id) return;
 
       try {
-        const response = await fetch(`/api/users?id=${user.id}`); // Uses Clerk's user ID
+        const response = await fetch(`/api/users?id=${user.id}`);
         if (response.ok) {
           const userData = await response.json();
           console.log("User data from API:", userData);
@@ -70,7 +69,6 @@ export default function ProfilePage() {
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
-  // DEBUG: inspect the shape returned by Clerk
   useEffect(() => {
     console.log("Clerk user object:", user);
   }, [user]);
@@ -90,13 +88,10 @@ export default function ProfilePage() {
       : "0000";
 
   const now = new Date();
-  const upcomingEvents = events // set to event array
-    .filter((event) => event.date && event.date.length > 0) // goes through the evnts
-    .filter((event) => new Date(event.date[0]) >= now) /* THIS IS WHERE THE 
-        DATE FILTERING HAPPENS AND WHY WHEN WE TRY TO HAVE UPCOMING EVENTS ONLY ONE 
-        EVENT SHOWS */
-    .slice(0, 2); /* this is cutting it to only the first two events for now. 
-        it lowk looks weird with any more... */
+  const upcomingEvents = events
+    .filter((event) => event.date && event.date.length > 0)
+    .filter((event) => new Date(event.date[0]) >= now)
+    .slice(0, 2);
 
   return (
     <main className="min-h-screen p-8">
@@ -196,9 +191,7 @@ export default function ProfilePage() {
           PAST EVENTS
         </div>
 
-        {/* Column headers (above the bordered table) */}
         <div className="mt-[18px] flex w-[690px] items-center">
-          {/* empty space for the date column */}
           <div className="w-[120px]" />
           <div className="mt-[24.81px] flex-1 text-center text-[14px] font-bold">
             Event name
@@ -211,9 +204,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Table box */}
         <div className="mt-[7.08px] mb-[96px] h-[155px] w-[690px] border-[2px] border-black bg-white">
-          {/* 3 rows */}
           <div className="grid h-full grid-rows-3">
             {[
               {
@@ -245,7 +236,6 @@ export default function ProfilePage() {
                   idx !== 2 ? "border-b border-[#8C8C8C]" : "",
                 ].join(" ")}
               >
-                {/* Date block */}
                 <div className="pl-[24px] leading-none">
                   <div className="text-[14px]">OCT</div>
                   <div className="ml-[4px] -mt-[2px] text-[20px] font-bold">
@@ -253,17 +243,14 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Event name */}
                 <div className="text-center text-[16px]">
                   {row.name}
                 </div>
 
-                {/* Position */}
                 <div className="text-center text-[14px]">
                   {row.role}
                 </div>
 
-                {/* Volunteer hours */}
                 <div className="text-center text-[14px]">
                   {row.hours}
                 </div>
