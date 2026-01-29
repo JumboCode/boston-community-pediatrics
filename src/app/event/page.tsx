@@ -2,8 +2,12 @@ import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/app/api/events/controller";
 import { Event } from "@prisma/client";
+import { getCurrentUser } from "@/lib/auth";
+import PinButton from "@/components/events/PinButton";
 
 export default async function EventsPage() {
+  const user = await getCurrentUser();
+
   let events: Event[] = [];
   let error: string | null = null;
   try {
@@ -49,7 +53,12 @@ export default async function EventsPage() {
                       location={event.addressLine1}
                       date={firstDate}
                       id={event.id}
-                    />
+                      pinned={event.pinned}
+                    >
+                      {user?.role === "ADMIN" && (
+                        <PinButton eventId={event.id} pinned={event.pinned} />
+                      )}
+                    </EventCard>
                   );
                 })
             )}
