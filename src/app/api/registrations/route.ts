@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// --- Configuration ---
+const MAX_GUESTS = 20;
+
 // --- Interfaces ---
 interface GuestInput {
   firstName: string;
@@ -18,36 +21,32 @@ export async function POST(req: NextRequest) {
   try {
     const { userId, positionId, guests } = await req.json();
 
+    // 1. LIMIT CHECK
+    if (guests && guests.length > MAX_GUESTS) {
+      return NextResponse.json(
+        { error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.` },
+        { status: 400 }
+      );
+    }
+
     const spotsNeeded = 1 + (guests?.length || 0);
 
     const result = await prisma.$transaction(async (tx) => {
       
-      // ---------------------------------------------------------
-      // 1. DUPLICATE CHECK (New Logic)
-      // ---------------------------------------------------------
-      // Check if user is already in the main signup list
+      // 2. DUPLICATE CHECK
       const existingSignup = await tx.eventSignup.findFirst({
-        where: { 
-          userId, 
-          positionId 
-        },
+        where: { userId, positionId },
       });
 
-      // Check if user is already in the waitlist
       const existingWaitlist = await tx.eventWaitlist.findFirst({
-        where: { 
-          userId, 
-          positionId 
-        },
+        where: { userId, positionId },
       });
 
       if (existingSignup || existingWaitlist) {
         throw new Error("ALREADY_REGISTERED");
       }
 
-      // ---------------------------------------------------------
-      // 2. Fetch Position Details
-      // ---------------------------------------------------------
+      // 3. Fetch Position Details
       const position = await tx.eventPosition.findUnique({
         where: { id: positionId },
         select: { 
@@ -63,9 +62,7 @@ export async function POST(req: NextRequest) {
 
       const isFull = (position.filledSlots + spotsNeeded) > position.totalSlots;
 
-      // ---------------------------------------------------------
-      // 3. SCENARIO A: WAITLIST
-      // ---------------------------------------------------------
+      // 4. SCENARIO A: WAITLIST
       if (isFull) {
         const waitlistEntry = await tx.eventWaitlist.create({
           data: {
@@ -86,9 +83,7 @@ export async function POST(req: NextRequest) {
         return { status: "waitlisted", data: waitlistEntry };
       }
 
-      // ---------------------------------------------------------
-      // 4. SCENARIO B: SIGNUP (Success)
-      // ---------------------------------------------------------
+      // 5. SCENARIO B: SIGNUP (Success)
       const newSignup = await tx.eventSignup.create({
         data: {
           userId,
@@ -122,11 +117,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Failed to process registration:", error);
 
-    // Return a readable error if it's the duplicate check
     if (error instanceof Error && error.message === "ALREADY_REGISTERED") {
       return NextResponse.json(
         { error: "You are already registered or waitlisted for this position." },
-        { status: 409 } // 409 Conflict
+        { status: 409 }
       );
     }
 
@@ -136,8 +130,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-// ... (PUT handler remains the same as previous step)
 
 // ==========================================
 // PUT: Update Existing Registration
@@ -151,57 +143,123 @@ export async function PUT(req: NextRequest) {
 
     const { guests } = await req.json();
 
+    // 1. LIMIT CHECK
+    if (guests && guests.length > MAX_GUESTS) {
+      return NextResponse.json(
+        { error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.` },
+        { status: 400 }
+      );
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       
-      // 1. Try finding in Signups
+      // -------------------------------------------------------
+      // PATH A: User is currently in SIGNUP (Main List)
+      // -------------------------------------------------------
       const currentSignup = await tx.eventSignup.findUnique({
         where: { id },
         include: { guests: true },
       });
 
       if (currentSignup) {
-        const oldGuestCount = currentSignup.guests.length;
-        const newGuestCount = guests?.length || 0;
-        const spotDifference = newGuestCount - oldGuestCount;
-
-        // Wipe old guests
-        await tx.guest.deleteMany({ where: { signupId: id } });
-
-        // Re-create guests (Using new firstName/lastName logic)
-        const updatedSignup = await tx.eventSignup.update({
-          where: { id },
-          data: {
-            guests: {
-              create: guests.map((guest: GuestInput) => ({
-                positionId: currentSignup.positionId,
-                firstName: guest.firstName,
-                lastName: guest.lastName,
-                emailAddress: guest.email || null,
-                phoneNumber: guest.phoneNumber || null,
-                relation: guest.relationship || null,
-              })),
-            },
-          },
-          include: { guests: true },
+        const position = await tx.eventPosition.findUnique({
+          where: { id: currentSignup.positionId },
         });
 
-        if (spotDifference !== 0) {
+        if (!position) throw new Error("Position data missing");
+
+        const oldSpotsUsed = 1 + currentSignup.guests.length; // User + old guests
+        const newSpotsNeeded = 1 + (guests?.length || 0);     // User + new guests
+        
+        // Calculate the base usage of the event WITHOUT this user
+        const usageWithoutUser = position.filledSlots - oldSpotsUsed;
+        
+        // Check if adding the NEW guest count fits
+        const willFit = (usageWithoutUser + newSpotsNeeded) <= position.totalSlots;
+
+        // SCENARIO 1: IT FITS -> Update normally
+        if (willFit) {
+          // Wipe old guests
+          await tx.guest.deleteMany({ where: { signupId: id } });
+
+          // Update signup with new guests
+          const updatedSignup = await tx.eventSignup.update({
+            where: { id },
+            data: {
+              hasGuests: (guests && guests.length > 0),
+              guests: {
+                create: guests.map((guest: GuestInput) => ({
+                  positionId: currentSignup.positionId,
+                  firstName: guest.firstName,
+                  lastName: guest.lastName,
+                  emailAddress: guest.email || null,
+                  phoneNumber: guest.phoneNumber || null,
+                  relation: guest.relationship || null,
+                })),
+              },
+            },
+            include: { guests: true },
+          });
+
+          // Adjust filled slots based on difference
+          const spotDifference = newSpotsNeeded - oldSpotsUsed;
+          if (spotDifference !== 0) {
+            await tx.eventPosition.update({
+              where: { id: currentSignup.positionId },
+              data: { filledSlots: { increment: spotDifference } },
+            });
+          }
+
+          return { status: "registered", data: updatedSignup };
+        } 
+        
+        // SCENARIO 2: DOES NOT FIT -> Move to Waitlist
+        else {
+          // 1. Delete the Signup (and cascade delete guests)
+          await tx.eventSignup.delete({ where: { id } });
+
+          // 2. Free up the slots they were holding
           await tx.eventPosition.update({
             where: { id: currentSignup.positionId },
-            data: { filledSlots: { increment: spotDifference } },
+            data: { filledSlots: { decrement: oldSpotsUsed } },
           });
-        }
 
-        return { status: "registered", data: updatedSignup };
+          // 3. Create new Waitlist entry
+          const newWaitlistEntry = await tx.eventWaitlist.create({
+            data: {
+              userId: currentSignup.userId,
+              positionId: currentSignup.positionId,
+              guests: {
+                create: guests.map((guest: GuestInput) => ({
+                  firstName: guest.firstName, 
+                  lastName: guest.lastName,
+                  email: guest.email || null, 
+                  relation: guest.relationship || null,
+                })),
+              },
+            },
+            include: { guests: true }
+          });
+
+          return { 
+            status: "moved_to_waitlist", 
+            message: "Capacity exceeded. Your update has moved you to the waitlist.",
+            data: newWaitlistEntry 
+          };
+        }
       }
 
-      // 2. Try finding in Waitlist
+      // -------------------------------------------------------
+      // PATH B: User is currently in WAITLIST
+      // -------------------------------------------------------
       const currentWaitlist = await tx.eventWaitlist.findUnique({
         where: { id },
         include: { guests: true },
       });
 
       if (currentWaitlist) {
+        // Since they are already on the waitlist, we don't care about capacity.
+        // Just update their guest list.
         await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
 
         const updatedWaitlist = await tx.eventWaitlist.update({
