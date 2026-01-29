@@ -9,3 +9,4 @@ export const getCurrentUser = cache(async () => {
   const user = await client.users.getUser(userId);
   return await getUserById(user.id);
 });
+ 
