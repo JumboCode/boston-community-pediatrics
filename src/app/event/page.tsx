@@ -34,7 +34,7 @@ export default async function EventsPage() {
       <div className="relative w-full">
         {/* Scrollable container */}
         <div className="w-full overflow-x-auto scrollbar-hide">
-          <div className="flex gap-12 mt-12 p-4 w-max mx-auto">
+          <div className="flex gap-[24px] mt-12 ml-[120px] w-max">
             {error ? (
               <p className="text-red-600 text-lg font-semibold">{error}</p>
             ) : events.length === 0 ? (

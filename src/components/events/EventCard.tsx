@@ -46,7 +46,7 @@ const EventCard = ({
         alt={title}
         width={600}
         height={600}
-        className="w-full h-40 object-cover rounded-xl"
+        className="w-full h-[167.53px] object-cover"
       />
 
       {/* Admin-only pin button injected from parent - MOVED AFTER IMAGE */}
