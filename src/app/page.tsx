@@ -9,9 +9,6 @@ import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import { useRouter } from "next/navigation";
 
-
-// Change: when an event without images is pinned, the default image is shown instead of a broken image link.
-
 interface Event {
   id: string;
   name: string;
