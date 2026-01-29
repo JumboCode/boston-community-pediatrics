@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
 // POST handler
 export async function POST(req: NextRequest) {
   try {
-    const json = await req.json();
+    // changed it into prismaData from body
+    const prismaData = await req.json();
     // const parse = eventSchema.safeParse(json);
 
     // if (!parse.success) {
