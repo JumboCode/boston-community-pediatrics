@@ -89,6 +89,17 @@ export async function DELETE(req: NextRequest) {
 
     const body = await req.json();
 
+    if (body.filename) {
+      const url = new URL(body.filename);
+      const pathParts = url.pathname.split("/");
+      const key = decodeURIComponent(
+        pathParts[pathParts.length - 1].split("?")[0]
+      );
+
+      await deleteObject(key);
+      return NextResponse.json({ ok: true });
+    }
+
     if (body.type === "profile") {
       if (!user.profileImage) {
         return NextResponse.json({ ok: true });
@@ -120,6 +131,11 @@ export async function DELETE(req: NextRequest) {
 
       await removeEventImage(body.eventId, body.imageKey);
 
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.key) {
+      await deleteObject(body.key);
       return NextResponse.json({ ok: true });
     }
 
