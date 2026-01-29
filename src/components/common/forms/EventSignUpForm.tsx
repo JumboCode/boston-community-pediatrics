@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 
 // --- Types ---
 interface Guest {
-  id: string; 
-  fullName: string;
+  id: string;
+  firstName: string; // Changed from fullName
+  lastName: string;  // Changed from fullName
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
@@ -16,7 +17,7 @@ interface Guest {
 
 interface EventSignUpFormProps {
   userData: {
-    id: string; 
+    id: string;
     firstName: string;
     lastName: string;
     emailAddress: string;
@@ -24,38 +25,39 @@ interface EventSignUpFormProps {
     dateOfBirth?: string;
   };
   positionData: {
-    id: string; 
+    id: string;
     position: string;
     description: string;
   };
   eventName?: string;
-  eventDate?: string; 
-  eventTime?: string; 
+  eventDate?: string;
+  eventTime?: string;
 }
 
-export default function EventSignUpForm({ 
-  userData, 
-  positionData, 
+export default function EventSignUpForm({
+  userData,
+  positionData,
   eventName = "Event Name",
   eventDate = "00/00/0000",
   eventTime = "00:00 AM"
 }: EventSignUpFormProps) {
   const router = useRouter();
-  
+
   // --- State ---
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Success & Waitlist States
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isWaitlisted, setIsWaitlisted] = useState(false); // <--- NEW STATE
+  const [isWaitlisted, setIsWaitlisted] = useState(false);
   const [registrationId, setRegistrationId] = useState<string | null>(null);
 
   // --- Guest Handlers ---
   const addGuest = () => {
     const newGuest: Guest = {
       id: crypto.randomUUID(),
-      fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phoneNumber: "",
       dateOfBirth: "",
@@ -75,18 +77,25 @@ export default function EventSignUpForm({
 
   // --- API Submission ---
   const handleSignUp = async () => {
+    // Simple validation check
+    const isValid = guests.every(g => g.firstName && g.lastName && g.dateOfBirth && g.relationship);
+    if (!isValid) {
+      alert("Please fill in all required fields for guests (Name, DOB, Relationship).");
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     const payload = {
       userId: userData.id,
       positionId: positionData.id,
-      guests: guests.map(({ id, ...rest }) => rest), 
+      guests: guests.map(({ id, ...rest }) => rest), // Sends firstName/lastName separately
     };
 
     try {
       const method = registrationId ? "PUT" : "POST";
-      const url = registrationId 
-        ? `/api/registrations?id=${registrationId}` 
+      const url = registrationId
+        ? `/api/registrations?id=${registrationId}`
         : "/api/registrations";
 
       const res = await fetch(url, {
@@ -96,25 +105,20 @@ export default function EventSignUpForm({
       });
 
       if (res.ok) {
-        // --- UPDATED LOGIC HERE ---
-        // Our backend now returns { status: "registered" | "waitlisted", data: { ... } }
         const responseData = await res.json();
-        
-        // Use the inner data object for the ID
-        const record = responseData.data; 
+        const record = responseData.data;
 
         if (!registrationId && record?.id) {
           setRegistrationId(record.id);
         }
 
-        // Check the status flag from the backend
         if (responseData.status === "waitlisted") {
           setIsWaitlisted(true);
         } else {
           setIsSuccess(true);
         }
-        
-        window.scrollTo(0, 0); 
+
+        window.scrollTo(0, 0);
       } else {
         alert("Failed to sign up.");
       }
@@ -132,8 +136,6 @@ export default function EventSignUpForm({
       <div className="bg-[#5a718c] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white">
         <h2 className="text-3xl font-bold mb-2">You’ve been added to the waitlist!</h2>
         <p className="text-blue-100 mb-8">We’ll keep you updated!</p>
-
-        {/* Info Card (Shared Style) */}
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto">
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0" />
           <div className="text-gray-800 space-y-1 text-sm flex-1">
@@ -143,18 +145,11 @@ export default function EventSignUpForm({
             <p><span className="font-bold">Participants:</span> {1 + guests.length} (You + {guests.length} guests)</p>
           </div>
         </div>
-
         <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setIsWaitlisted(false)}
-            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
-          >
+          <button onClick={() => setIsWaitlisted(false)} className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm">
             Edit details
           </button>
-          <button
-            onClick={() => router.push("/home")}
-            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
-          >
+          <button onClick={() => router.push("/")} className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm">
             Return to Home
           </button>
         </div>
@@ -168,7 +163,6 @@ export default function EventSignUpForm({
       <div className="bg-[#426982] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white">
         <h2 className="text-3xl font-bold mb-2">Thanks for signing up!</h2>
         <p className="text-blue-100 mb-8">A confirmation has been sent to your email.</p>
-
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto">
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0" />
           <div className="text-gray-800 space-y-1 text-sm flex-1">
@@ -178,18 +172,11 @@ export default function EventSignUpForm({
             <p><span className="font-bold">Participants:</span> {1 + guests.length} (You + {guests.length} guests)</p>
           </div>
         </div>
-
         <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setIsSuccess(false)}
-            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm"
-          >
+          <button onClick={() => setIsSuccess(false)} className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm">
             Edit details
           </button>
-          <button
-            onClick={() => router.push("/home")}
-            className="px-6 py-2.5 bg-white text-[#426982] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
-          >
+          <button onClick={() => router.push("/")} className="px-6 py-2.5 bg-white text-[#426982] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm">
             Return to Home
           </button>
         </div>
@@ -200,13 +187,13 @@ export default function EventSignUpForm({
   // --- FORM VIEW (Standard) ---
   return (
     <div className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 w-full max-w-2xl mx-auto">
-      
+
       <h1 className="text-3xl font-bold text-center text-[#1e293b] mb-8">
         {eventName}
       </h1>
 
       <p className="text-sm font-medium text-gray-900 mb-2">Your information</p>
-      
+
       <div className="border border-gray-300 rounded-lg p-6 mb-8">
         <div className="flex flex-col sm:flex-row gap-6 mb-6">
           <div className="w-24 h-24 bg-gray-200 rounded-sm shrink-0" />
@@ -214,7 +201,6 @@ export default function EventSignUpForm({
             <p><span className="font-semibold text-gray-900">Name:</span> {userData.firstName} {userData.lastName}</p>
             <p><span className="font-semibold text-gray-900">Email:</span> {userData.emailAddress}</p>
             <p><span className="font-semibold text-gray-900">Phone:</span> {userData.phoneNumber}</p>
-            <p><span className="font-semibold text-gray-900">Birthday:</span> {userData.dateOfBirth || "N/A"}</p>
           </div>
         </div>
       </div>
@@ -234,17 +220,56 @@ export default function EventSignUpForm({
             </div>
 
             <div className="space-y-4">
-              {/* Form Inputs (Same as before) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
-                  value={guest.fullName}
-                  onChange={(e) => updateGuest(guest.id, "fullName", e.target.value)}
-                />
+              {/* SPLIT FIRST/LAST NAME */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                    value={guest.firstName}
+                    onChange={(e) => updateGuest(guest.id, "firstName", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                    value={guest.lastName}
+                    onChange={(e) => updateGuest(guest.id, "lastName", e.target.value)}
+                  />
+                </div>
               </div>
 
+              {/* REQUIRED DOB and RELATIONSHIP */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Participant DOB <span className="text-red-500">*</span></label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none text-gray-700"
+                    value={guest.dateOfBirth}
+                    onChange={(e) => updateGuest(guest.id, "dateOfBirth", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Relationship <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Spouse, Child"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                    value={guest.relationship}
+                    onChange={(e) => updateGuest(guest.id, "relationship", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* OPTIONAL FIELDS */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
                 <input
@@ -265,27 +290,6 @@ export default function EventSignUpForm({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Participant DOB</label>
-                    <input
-                    type="date"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none text-gray-700"
-                    value={guest.dateOfBirth}
-                    onChange={(e) => updateGuest(guest.id, "dateOfBirth", e.target.value)}
-                    />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Relationship (optional)</label>
-                    <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
-                    value={guest.relationship}
-                    onChange={(e) => updateGuest(guest.id, "relationship", e.target.value)}
-                    />
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Additional comments</label>
                 <textarea
@@ -301,7 +305,7 @@ export default function EventSignUpForm({
                   onClick={() => removeGuest(guest.id)}
                   className="text-gray-500 text-sm hover:text-red-600 flex items-center gap-1 border border-gray-200 px-3 py-1 rounded hover:border-red-200 transition"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                   Remove participant
                 </button>
               </div>
@@ -310,7 +314,7 @@ export default function EventSignUpForm({
         ))}
       </div>
 
-      <button 
+      <button
         onClick={addGuest}
         className="w-full py-3 mb-8 border border-gray-400 rounded text-gray-800 font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
       >
@@ -318,7 +322,7 @@ export default function EventSignUpForm({
       </button>
 
       <div className="flex items-center justify-between gap-4">
-         <button
+        <button
           onClick={() => router.back()}
           className="w-full py-3 border border-gray-800 rounded text-gray-900 font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition-colors"
         >
@@ -330,9 +334,9 @@ export default function EventSignUpForm({
           disabled={isSubmitting}
           className="w-full py-3 bg-[#426982] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#35566b] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {isSubmitting 
-             ? (registrationId ? "Updating..." : "Signing up...") 
-             : (registrationId ? "Update Registration" : "Sign Up")}
+          {isSubmitting
+            ? (registrationId ? "Updating..." : "Signing up...")
+            : (registrationId ? "Update Registration" : "Sign Up")}
         </button>
       </div>
     </div>
