@@ -9,6 +9,9 @@ import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import { useRouter } from "next/navigation";
 
+
+// Change: when an event without images is pinned, the default image is shown instead of a broken image link.
+
 interface Event {
   id: string;
   name: string;
@@ -25,6 +28,7 @@ const Home: React.FC = () => {
   const [pinnedEvents, setPinnedEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [scale, setScale] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const fetchPinnedEvents = async () => {
@@ -37,25 +41,28 @@ const Home: React.FC = () => {
       } finally {
         setLoading(false);
       }
-      const BASE_WIDTH = 1440;
-      const BASE_HEIGHT = 900;
-
-      const handleResize = () => {
-        const widthRatio = window.innerWidth / BASE_WIDTH;
-        const heightRatio = window.innerHeight / BASE_HEIGHT;
-
-        const MAX_SCALE = 1.5;
-
-        setScale(Math.max(Math.min(widthRatio, heightRatio, MAX_SCALE)));
-      };
-
-      handleResize();
-      window.addEventListener("resize", handleResize);
-
-      return () => window.removeEventListener("resize", handleResize);
     };
 
     fetchPinnedEvents();
+
+    const BASE_WIDTH = 1440;
+    const BASE_HEIGHT = 900;
+    const MOBILE_BREAKPOINT = 900; 
+
+    const handleResize = () => {
+      const widthRatio = window.innerWidth / BASE_WIDTH;
+      const heightRatio = window.innerHeight / BASE_HEIGHT;
+
+      const MAX_SCALE = 1.5;
+
+      setScale(Math.max(Math.min(widthRatio, heightRatio, MAX_SCALE)));
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -91,10 +98,10 @@ const Home: React.FC = () => {
       </div>
 
       <div
-        className="flex justify-center w-[90%] origin-center"
+        className={`flex justify-center w-[90%] ${isMobile ? "flex-col items-center" : "origin-center"}`}
         style={{
-          gap: "150px",
-          transform: `scale(${scale})`,
+          gap: isMobile ? "40px" : "300px",
+          transform: isMobile ? "none" : `scale(${scale})`,
           transition: "transform 0.5s",
         }}
       >
@@ -106,14 +113,12 @@ const Home: React.FC = () => {
           </p>
         ) : (
           pinnedEvents.map((event) => {
-            // Check if event has a valid image
             const hasValidImage =
               event.images &&
               event.images.length > 0 &&
               event.images[0] &&
               event.images[0].trim() !== "";
 
-            // Ensure image path starts with /
             const imageSrc = hasValidImage
               ? event.images[0].startsWith("/")
                 ? event.images[0]
@@ -125,7 +130,9 @@ const Home: React.FC = () => {
                 key={event.id}
                 className="text-center text-[#234254] text-lg font-bold"
               >
-                <div className="relative w-[clamp(350px,32vw,600px)] h-[clamp(315px,28vw,533px)] group">
+                <div
+                  className={`relative group ${isMobile ? "w-[337px] h-[300px]" : "w-[450px] h-[400px]"}`}
+                >
                   <Image
                     src={imageSrc}
                     alt={event.name}
@@ -160,8 +167,12 @@ const Home: React.FC = () => {
         <div className="flex-grow border-t-2 border-[#234254]"></div>
       </div>
 
-      <div className="flex items-center my-5 justify-center w-[90%] mx-auto gap-20 mb-20">
-        <div className="text-[#234254] text-lg font-normal w-[60%]">
+      <div
+        className={`flex items-center my-5 justify-center w-[90%] mx-auto mb-20 ${isMobile ? "flex-col gap-8" : "gap-20"}`}
+      >
+        <div
+          className={`text-[#234254] text-lg font-normal ${isMobile ? "w-full order-2" : "w-[60%]"}`}
+        >
           <b>Lorem ipsum dolor</b> sit amet consectetur. At leo auctor nam metus
           tincidunt phasellus volutpat id pulvinar. Accumsan amet id pulvinar
           pellentesque sed vivamus ac. Id tortor sodales est aliquet nec
@@ -177,7 +188,9 @@ const Home: React.FC = () => {
           parturient tellus nisi praesent posuere gravida sed. Aliquam elementum
           nec id ipsum sit orci quis sem neque.
         </div>
-        <div className="w-[40%] flex justify-center">
+        <div
+          className={`flex justify-center ${isMobile ? "w-full order-1" : "w-[40%]"}`}
+        >
           <Image
             src={aboutus}
             alt="About Us Image"
