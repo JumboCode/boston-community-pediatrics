@@ -5,7 +5,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "@headlessui/react";
-import DropDownArrow from "@/assets/icons/drop-down-arrow-bold.svg";
+import DropDownArrow from "@/assets/icons/drop-down-arrow.svg";
 
 function AdminNavBar() {
   return (
@@ -40,7 +40,7 @@ function AdminNavBar() {
                   <Image
                     src={DropDownArrow}
                     alt="Dropdown Arrow"
-                    className="w-5 h-5 inline-block color-white white"
+                    className="w-3 h-3 inline-block ml-1"
                   />
                   
                 </Menu.Button>
