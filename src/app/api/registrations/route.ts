@@ -168,21 +168,16 @@ export async function PUT(req: NextRequest) {
 
         if (!position) throw new Error("Position data missing");
 
-        const oldSpotsUsed = 1 + currentSignup.guests.length; // User + old guests
-        const newSpotsNeeded = 1 + (guests?.length || 0);     // User + new guests
+        const oldSpotsUsed = 1 + currentSignup.guests.length; 
+        const newSpotsNeeded = 1 + (guests?.length || 0);     
         
-        // Calculate the base usage of the event WITHOUT this user
         const usageWithoutUser = position.filledSlots - oldSpotsUsed;
-        
-        // Check if adding the NEW guest count fits
         const willFit = (usageWithoutUser + newSpotsNeeded) <= position.totalSlots;
 
-        // SCENARIO 1: IT FITS -> Update normally
+        // SCENARIO 1: Still fits -> Update normally
         if (willFit) {
-          // Wipe old guests
           await tx.guest.deleteMany({ where: { signupId: id } });
 
-          // Update signup with new guests
           const updatedSignup = await tx.eventSignup.update({
             where: { id },
             data: {
@@ -201,7 +196,7 @@ export async function PUT(req: NextRequest) {
             include: { guests: true },
           });
 
-          // Adjust filled slots based on difference
+          // Adjust slots
           const spotDifference = newSpotsNeeded - oldSpotsUsed;
           if (spotDifference !== 0) {
             await tx.eventPosition.update({
@@ -213,18 +208,16 @@ export async function PUT(req: NextRequest) {
           return { status: "registered", data: updatedSignup };
         } 
         
-        // SCENARIO 2: DOES NOT FIT -> Move to Waitlist
+        // SCENARIO 2: Does NOT fit -> Move to Waitlist
         else {
-          // 1. Delete the Signup (and cascade delete guests)
-          await tx.eventSignup.delete({ where: { id } });
+          await tx.guest.deleteMany({ where: { signupId: id } }); // Delete guests first
+          await tx.eventSignup.delete({ where: { id } }); // Delete signup
 
-          // 2. Free up the slots they were holding
           await tx.eventPosition.update({
             where: { id: currentSignup.positionId },
             data: { filledSlots: { decrement: oldSpotsUsed } },
           });
 
-          // 3. Create new Waitlist entry
           const newWaitlistEntry = await tx.eventWaitlist.create({
             data: {
               userId: currentSignup.userId,
@@ -243,7 +236,7 @@ export async function PUT(req: NextRequest) {
 
           return { 
             status: "moved_to_waitlist", 
-            message: "Capacity exceeded. Your update has moved you to the waitlist.",
+            message: "Capacity exceeded. You have been moved to the waitlist.",
             data: newWaitlistEntry 
           };
         }
@@ -258,26 +251,78 @@ export async function PUT(req: NextRequest) {
       });
 
       if (currentWaitlist) {
-        // Since they are already on the waitlist, we don't care about capacity.
-        // Just update their guest list.
-        await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
-
-        const updatedWaitlist = await tx.eventWaitlist.update({
-          where: { id },
-          data: {
-            guests: {
-              create: guests.map((guest: GuestInput) => ({
-                firstName: guest.firstName,
-                lastName: guest.lastName,
-                email: guest.email || null,
-                relation: guest.relationship || null,
-              })),
-            },
-          },
-          include: { guests: true },
+        const position = await tx.eventPosition.findUnique({
+          where: { id: currentWaitlist.positionId },
         });
 
-        return { status: "waitlisted", data: updatedWaitlist };
+        if (!position) throw new Error("Position data missing");
+
+        const newSpotsNeeded = 1 + (guests?.length || 0);
+
+        // Check if they fit now (Waitlist users take up 0 slots, so we just check filled + needed)
+        const willFit = (position.filledSlots + newSpotsNeeded) <= position.totalSlots;
+
+        // SCENARIO 3: Now they FIT -> Move to Signup
+        if (willFit) {
+          // 1. Delete Waitlist Entry
+          await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
+          await tx.eventWaitlist.delete({ where: { id } });
+
+          // 2. Create Signup Entry
+          const newSignup = await tx.eventSignup.create({
+            data: {
+              userId: currentWaitlist.userId,
+              positionId: currentWaitlist.positionId,
+              eventId: position.eventId,
+              hasGuests: (guests && guests.length > 0),
+              guests: {
+                create: guests.map((guest: GuestInput) => ({
+                  positionId: currentWaitlist.positionId,
+                  firstName: guest.firstName,
+                  lastName: guest.lastName,
+                  emailAddress: guest.email || null,
+                  phoneNumber: guest.phoneNumber || null,
+                  relation: guest.relationship || null,
+                })),
+              },
+            },
+            include: { guests: true },
+          });
+
+          // 3. Occupy the slots
+          await tx.eventPosition.update({
+            where: { id: currentWaitlist.positionId },
+            data: { filledSlots: { increment: newSpotsNeeded } },
+          });
+
+          return { 
+            status: "registered", 
+            message: "Space available! You have been moved to the main list.",
+            data: newSignup 
+          };
+        }
+
+        // SCENARIO 4: Still doesn't fit -> Stay in Waitlist
+        else {
+          await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
+
+          const updatedWaitlist = await tx.eventWaitlist.update({
+            where: { id },
+            data: {
+              guests: {
+                create: guests.map((guest: GuestInput) => ({
+                  firstName: guest.firstName,
+                  lastName: guest.lastName,
+                  email: guest.email || null,
+                  relation: guest.relationship || null,
+                })),
+              },
+            },
+            include: { guests: true },
+          });
+
+          return { status: "waitlisted", data: updatedWaitlist };
+        }
       }
 
       throw new Error("Registration ID not found in Signup or Waitlist");

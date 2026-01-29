@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 // --- Types ---
 interface Guest {
   id: string;
-  firstName: string; // Changed from fullName
-  lastName: string;  // Changed from fullName
+  firstName: string;
+  lastName: string;
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
@@ -46,10 +46,15 @@ export default function EventSignUpForm({
   // --- State ---
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // New Error State
 
   // Success & Waitlist States
   const [isSuccess, setIsSuccess] = useState(false);
   const [isWaitlisted, setIsWaitlisted] = useState(false);
+  
+  // Specific message when moved to waitlist
+  const [waitlistMessage, setWaitlistMessage] = useState("We’ll keep you updated!");
+  
   const [registrationId, setRegistrationId] = useState<string | null>(null);
 
   // --- Guest Handlers ---
@@ -65,10 +70,13 @@ export default function EventSignUpForm({
       comments: "",
     };
     setGuests([...guests, newGuest]);
+    // Clear error if they add a guest (assuming they might be fixing a "too few guests" issue, though not applicable here)
+    setErrorMessage(null); 
   };
 
   const removeGuest = (id: string) => {
     setGuests(guests.filter((g) => g.id !== id));
+    setErrorMessage(null);
   };
 
   const updateGuest = (id: string, field: keyof Guest, value: string) => {
@@ -77,10 +85,13 @@ export default function EventSignUpForm({
 
   // --- API Submission ---
   const handleSignUp = async () => {
+    setErrorMessage(null); // Reset errors on new submit
+
     // Simple validation check
     const isValid = guests.every(g => g.firstName && g.lastName && g.dateOfBirth && g.relationship);
     if (!isValid) {
-      alert("Please fill in all required fields for guests (Name, DOB, Relationship).");
+      setErrorMessage("Please fill in all required fields for guests (Name, DOB, Relationship).");
+      window.scrollTo(0, 0);
       return;
     }
 
@@ -89,7 +100,7 @@ export default function EventSignUpForm({
     const payload = {
       userId: userData.id,
       positionId: positionData.id,
-      guests: guests.map(({ id, ...rest }) => rest), // Sends firstName/lastName separately
+      guests: guests.map(({ id, ...rest }) => rest),
     };
 
     try {
@@ -104,27 +115,46 @@ export default function EventSignUpForm({
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        const responseData = await res.json();
-        const record = responseData.data;
+      const responseData = await res.json();
 
-        if (!registrationId && record?.id) {
-          setRegistrationId(record.id);
-        }
-
-        if (responseData.status === "waitlisted") {
-          setIsWaitlisted(true);
-        } else {
-          setIsSuccess(true);
-        }
-
+      // 1. Handle Errors (400, 409, 500)
+      if (!res.ok) {
+        setErrorMessage(responseData.error || "An unexpected error occurred.");
         window.scrollTo(0, 0);
-      } else {
-        alert("Failed to sign up.");
+        setIsSubmitting(false);
+        return;
       }
+
+      // 2. Handle Success Scenarios
+      const record = responseData.data;
+      // --- NEW CODE (FIX) ---
+      // Always update the ID because switching tables (Waitlist <-> Signup) changes the ID
+      if (record?.id) {
+        setRegistrationId(record.id);
+      }
+
+      if (responseData.status === "waitlisted") {
+        setIsWaitlisted(true);
+        setIsSuccess(false);
+        setWaitlistMessage("You are on the waitlist. We will notify you if a spot opens up.");
+      } 
+      else if (responseData.status === "moved_to_waitlist") {
+        // This is the specific PUT scenario
+        setIsWaitlisted(true);
+        setIsSuccess(false);
+        setWaitlistMessage(responseData.message || "Your update exceeded capacity, so you have been moved to the waitlist.");
+      } 
+      else {
+        // Registered
+        setIsSuccess(true);
+        setIsWaitlisted(false);
+      }
+
+      window.scrollTo(0, 0);
     } catch (error) {
       console.error(error);
-      alert("An error occurred.");
+      setErrorMessage("Network error. Please try again later.");
+      window.scrollTo(0, 0);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,18 +163,22 @@ export default function EventSignUpForm({
   // --- WAITLIST VIEW COMPONENT ---
   if (isWaitlisted) {
     return (
-      <div className="bg-[#5a718c] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white">
-        <h2 className="text-3xl font-bold mb-2">You’ve been added to the waitlist!</h2>
-        <p className="text-blue-100 mb-8">We’ll keep you updated!</p>
-        <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto">
-          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0" />
-          <div className="text-gray-800 space-y-1 text-sm flex-1">
-            <p><span className="font-bold">Event:</span> {eventName}</p>
-            <p><span className="font-bold">Date:</span> {eventDate}</p>
-            <p><span className="font-bold">Time:</span> {eventTime}</p>
-            <p><span className="font-bold">Participants:</span> {1 + guests.length} (You + {guests.length} guests)</p>
+      <div className="bg-[#5a718c] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
+        <h2 className="text-3xl font-bold mb-2">Waitlist Confirmed</h2>
+        <p className="text-blue-100 mb-8 text-lg">{waitlistMessage}</p>
+        
+        <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
+          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
+            EVENT
+          </div>
+          <div className="space-y-1 text-sm flex-1">
+            <p><span className="font-bold text-gray-900">Event:</span> {eventName}</p>
+            <p><span className="font-bold text-gray-900">Date:</span> {eventDate}</p>
+            <p><span className="font-bold text-gray-900">Time:</span> {eventTime}</p>
+            <p><span className="font-bold text-gray-900">Total Group:</span> {1 + guests.length} (You + {guests.length} guests)</p>
           </div>
         </div>
+
         <div className="flex items-center justify-center gap-4">
           <button onClick={() => setIsWaitlisted(false)} className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm">
             Edit details
@@ -160,18 +194,22 @@ export default function EventSignUpForm({
   // --- SUCCESS VIEW COMPONENT ---
   if (isSuccess) {
     return (
-      <div className="bg-[#426982] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white">
-        <h2 className="text-3xl font-bold mb-2">Thanks for signing up!</h2>
+      <div className="bg-[#426982] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
+        <h2 className="text-3xl font-bold mb-2">Registration Confirmed!</h2>
         <p className="text-blue-100 mb-8">A confirmation has been sent to your email.</p>
-        <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto">
-          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0" />
-          <div className="text-gray-800 space-y-1 text-sm flex-1">
-            <p><span className="font-bold">Event:</span> {eventName}</p>
-            <p><span className="font-bold">Date:</span> {eventDate}</p>
-            <p><span className="font-bold">Time:</span> {eventTime}</p>
-            <p><span className="font-bold">Participants:</span> {1 + guests.length} (You + {guests.length} guests)</p>
+        
+        <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
+          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
+             EVENT
+          </div>
+          <div className="space-y-1 text-sm flex-1">
+            <p><span className="font-bold text-gray-900">Event:</span> {eventName}</p>
+            <p><span className="font-bold text-gray-900">Date:</span> {eventDate}</p>
+            <p><span className="font-bold text-gray-900">Time:</span> {eventTime}</p>
+            <p><span className="font-bold text-gray-900">Total Group:</span> {1 + guests.length} (You + {guests.length} guests)</p>
           </div>
         </div>
+
         <div className="flex items-center justify-center gap-4">
           <button onClick={() => setIsSuccess(false)} className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm">
             Edit details
@@ -191,6 +229,24 @@ export default function EventSignUpForm({
       <h1 className="text-3xl font-bold text-center text-[#1e293b] mb-8">
         {eventName}
       </h1>
+
+      {/* ERROR ALERT BANNER */}
+      {errorMessage && (
+        <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+           </svg>
+           <div className="flex-1">
+             <h3 className="text-sm font-medium text-red-800">There was a problem</h3>
+             <p className="text-sm text-red-700 mt-1">{errorMessage}</p>
+           </div>
+           <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+             </svg>
+           </button>
+        </div>
+      )}
 
       <p className="text-sm font-medium text-gray-900 mb-2">Your information</p>
 
