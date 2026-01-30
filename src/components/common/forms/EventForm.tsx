@@ -81,6 +81,7 @@ const EventForm = () => {
           if (Array.isArray(posData) && posData.length) {
             setPositions(
               posData.map((p: any) => ({
+                id: p.id ?? undefined,
                 name: p.position ?? "",
                 date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
                 startTime: p.startTime
@@ -101,10 +102,12 @@ const EventForm = () => {
                 sameAsAddress: false,
               }))
             );
+            setOriginalPositionIds(posData.map((p: any) => p.id).filter(Boolean));
           }
         } else if (Array.isArray((result as any).positions) && (result as any).positions.length) {
           setPositions(
             (result as any).positions.map((p: any) => ({
+              id: p.id ?? undefined,
               name: p.position ?? "",
               date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
               startTime: p.startTime
@@ -125,6 +128,7 @@ const EventForm = () => {
               sameAsAddress: false,
             }))
           );
+          setOriginalPositionIds((result as any).positions.map((p: any) => p.id).filter(Boolean));
         }
       } catch (err) {
         console.error("Failed to fetch positions:", err);
@@ -204,6 +208,7 @@ const EventForm = () => {
   });
   const [positions, setPositions] = useState([
     {
+      id: undefined as string | undefined,
       name: "",
       date: "",
       startTime: "",
@@ -220,6 +225,7 @@ const EventForm = () => {
       sameAsAddress: false,
     },
   ]);
+  const [originalPositionIds, setOriginalPositionIds] = useState<string[]>([]);
 
   const clearError = (key: string) => {
     setErrors((prev) => {
@@ -546,6 +552,60 @@ const EventForm = () => {
       if (selectedFiles.length > 0) {
         await Promise.all(
           selectedFiles.map((f) => uploadEventImage(eventId, f))
+        );
+      }
+
+      // Sync positions: create/update/delete via eventPosition API
+      if (isEdit) {
+        const combineDateTime = (date: string, time: string) =>
+          new Date(`${date}T${time}:00`);
+        const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
+
+        const currentIds = normalizedPositions.map((p) => (p as any).id).filter(Boolean) as string[];
+        const toDelete = originalPositionIds.filter((id) => !currentIds.includes(id));
+
+        // delete removed positions
+        await Promise.all(
+          toDelete.map((id) =>
+            fetch(`/api/eventPosition?id=${id}`, { method: "DELETE" }).catch((e) => {
+              console.error("Failed to delete position", id, e);
+            })
+          )
+        );
+
+        // upsert remaining positions (PUT if id, POST if new)
+        await Promise.all(
+          normalizedPositions.map(async (p: any) => {
+            const posPayload = {
+              position: p.name,
+              description: p.description || "",
+              date: toMidnight(p.date),
+              startTime: combineDateTime(p.date, p.startTime),
+              endTime: combineDateTime(p.date, p.endTime),
+              totalSlots: Number(p.participants || 0),
+              // filledSlots: leave undefined to avoid overwriting
+              addressLine1: p.address || "",
+              addressLine2: p.apt || null,
+              city: p.city || "",
+              state: p.state || "",
+              country: "USA",
+              zipCode: p.zip || "",
+            };
+
+            if (p.id) {
+              await fetch(`/api/eventPosition?id=${p.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(posPayload),
+              }).catch((e) => console.error("Failed to update position", p.id, e));
+            } else {
+              await fetch(`/api/eventPosition`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...posPayload, eventId }),
+              }).catch((e) => console.error("Failed to create position", e));
+            }
+          })
         );
       }
 

@@ -49,8 +49,6 @@ const EventCard = ({
     timeZone: "America/New_York",
   });
 
-  const router = useRouter();
-
   async function handlePinToggle() {
     if (isLoading) return;
     setIsLoading(true);
