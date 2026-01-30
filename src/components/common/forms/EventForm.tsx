@@ -2,13 +2,30 @@
 import { eventSchema } from "@/lib/schemas/eventSchema";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type ChangeEvent } from "react";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import Button from "@/components/common/buttons/Button";
 import Carousel from "../Carousel";
 import { mutate } from "swr";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from 'next/navigation';
 
+
+
+export async function fetchEventById(id: string): Promise<Event | null> {
+  try {
+    const response = await fetch(`/api/events?id=${id}`);
+    if (!response.ok) {
+      console.error('Failed to fetch event', response.statusText);
+      return null;
+    }
+    const data: Event = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    return null;
+  }
+}
 
 const createStaticImageData = (url: string): StaticImageData =>
   ({
@@ -24,6 +41,74 @@ const EventForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventIdtest = searchParams.get('id');
+
+  useEffect(() => {
+    const load = async () => {
+      const id = eventIdtest;
+      if (!id) return;
+      const result = await fetchEventById(id);
+      if (!result) return;
+
+      // Map event-level fields
+      setEvent({
+        title: result.name ?? "",
+        date:
+          result.date && result.date.length
+            ? new Date(result.date[0]).toISOString().slice(0, 10)
+            : "",
+        startTime: result.startTime
+          ? new Date(result.startTime).toISOString().slice(11, 16)
+          : "",
+        endTime: result.endTime
+          ? new Date(result.endTime).toISOString().slice(11, 16)
+          : "",
+        description: result.description ?? "",
+        resourcesLink: (result as any).resourcesLink ?? undefined,
+        address: result.addressLine1 ?? "",
+        apt: result.addressLine2 ?? "",
+        city: result.city ?? "",
+        state: result.state ?? "",
+        zip: result.zipCode ?? "",
+      });
+
+      // Map positions if present
+      if (Array.isArray((result as any).positions) && (result as any).positions.length) {
+        setPositions(
+          (result as any).positions.map((p: any) => ({
+            name: p.position ?? "",
+            date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+            startTime: p.startTime
+              ? new Date(p.startTime).toISOString().slice(11, 16)
+              : "",
+            endTime: p.endTime
+              ? new Date(p.endTime).toISOString().slice(11, 16)
+              : "",
+            description: p.description ?? "",
+            address: p.addressLine1 ?? "",
+            apt: p.addressLine2 ?? "",
+            city: p.city ?? "",
+            state: p.state ?? "",
+            zip: p.zipCode ?? "",
+            participants: p.totalSlots != null ? String(p.totalSlots) : "",
+            sameAsDate: false,
+            sameAsTime: false,
+            sameAsAddress: false,
+          }))
+        );
+      }
+
+      // Map images (best-effort)
+      if (Array.isArray((result as any).images) && (result as any).images.length) {
+        setCarouselImages(
+          (result as any).images.map((url: string) => createStaticImageData(url))
+        );
+      }
+    };
+
+    load();
+  }, [eventIdtest]);
 
 
   const inputBase =
@@ -350,8 +435,12 @@ const EventForm = () => {
 
       setErrors({});
 
-      const res = await fetch("/api/events", {
-        method: "POST",
+      const isEdit = !!eventIdtest;
+      const url = isEdit ? `/api/events?id=${eventIdtest}` : "/api/events";
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parseResult.data),
       });
@@ -364,10 +453,13 @@ const EventForm = () => {
 
       const createdEvent = await res.json();
 
-      const eventId: string = createdEvent.id ?? createdEvent.event?.id;
+      const eventId: string = isEdit
+        ? (eventIdtest as string)
+        : createdEvent.id ?? createdEvent.event?.id;
+
       if (!eventId) {
-        console.error("Create event response:", createdEvent);
-        alert("Event created but no eventId returned from /api/events");
+        console.error("Event response:", createdEvent);
+        alert(isEdit ? "Event updated but no id available" : "Event created but no eventId returned from /api/events");
         return;
       }
 
@@ -461,6 +553,17 @@ const EventForm = () => {
     </div>
   );
 
+  const [eventId, setEventId] = useState('');
+  const handleSearch = async () => {
+    if (!eventId) return;
+    // setLoading(true);
+    const result = await fetchEventById(eventId);
+    // setEvent(result);
+    console.log("here is event:")
+    console.log(result)
+    // setLoading(false);
+  };
+
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
       {/* back arrow */}
@@ -475,7 +578,7 @@ const EventForm = () => {
       </div>
       {/* title */}
       <h1 className="mt-[22px] text-center text-[36px] font-medium leading-tight text-[#234254]">
-        Create a new event
+        {eventIdtest ? "Edit event" : "Create a new event"}
       </h1>
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">

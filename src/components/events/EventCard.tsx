@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
+import { useRouter } from "next/navigation";
+
 import { KebabMenu } from "../common/buttons/KebabMenu";
 interface EventCardProps {
   image: string;
@@ -37,6 +39,8 @@ const EventCard = ({
     timeZone: "America/New_York",
   });
 
+  const router = useRouter();
+
   return (
     <div className="relative flex flex-col w-72 rounded-2xl shadow p-4 gap-2 bg-white">
       <Link
@@ -61,10 +65,11 @@ const EventCard = ({
         >
           <h3 className="text-lg font-semibold">{title}</h3>
         </Link>
+
         <KebabMenu
           items={[
-            { label: "Edit", onClick: () => console.log("Edit") },
-            { label: "Duplicate", onClick: () => console.log("Duplicate") },
+            { label: "Pin", onClick: () => console.log("Edit") },
+            { label: "Edit", onClick: () => router.push(`/event/createEvent?id=${id}`) },
             {
               label: "Delete",
               danger: true,
