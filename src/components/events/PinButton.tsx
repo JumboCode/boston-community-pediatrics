@@ -88,7 +88,7 @@ function PinButton({ eventId, pinned: initialPinned }: PinButtonProps) {
       {/* Modal */}
       {modalMessage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
-          <div className="bg-white w-[500px] rounded-lg border-2 border-blue-500 p-8 text-center shadow-xl">
+          <div className="bg-white w-[500px] rounded-lg border-2 border-gray-500 p-8 text-center shadow-xl">
             <h2 className="text-2xl font-semibold mb-4">{modalTitle}</h2>
             <p className="text-gray-700 mb-6">{modalMessage}</p>
 
