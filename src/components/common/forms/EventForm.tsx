@@ -73,30 +73,85 @@ const EventForm = () => {
         zip: result.zipCode ?? "",
       });
 
-      // Map positions if present
-      if (Array.isArray((result as any).positions) && (result as any).positions.length) {
-        setPositions(
-          (result as any).positions.map((p: any) => ({
-            name: p.position ?? "",
-            date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
-            startTime: p.startTime
-              ? new Date(p.startTime).toISOString().slice(11, 16)
-              : "",
-            endTime: p.endTime
-              ? new Date(p.endTime).toISOString().slice(11, 16)
-              : "",
-            description: p.description ?? "",
-            address: p.addressLine1 ?? "",
-            apt: p.addressLine2 ?? "",
-            city: p.city ?? "",
-            state: p.state ?? "",
-            zip: p.zipCode ?? "",
-            participants: p.totalSlots != null ? String(p.totalSlots) : "",
-            sameAsDate: false,
-            sameAsTime: false,
-            sameAsAddress: false,
-          }))
-        );
+      // Try to fetch positions from the eventPosition API; fall back to embedded positions
+      try {
+        const posRes = await fetch(`/api/eventPosition?eventId=${id}`);
+        if (posRes.ok) {
+          const posData = await posRes.json();
+          if (Array.isArray(posData) && posData.length) {
+            setPositions(
+              posData.map((p: any) => ({
+                name: p.position ?? "",
+                date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+                startTime: p.startTime
+                  ? new Date(p.startTime).toISOString().slice(11, 16)
+                  : "",
+                endTime: p.endTime
+                  ? new Date(p.endTime).toISOString().slice(11, 16)
+                  : "",
+                description: p.description ?? "",
+                address: p.addressLine1 ?? "",
+                apt: p.addressLine2 ?? "",
+                city: p.city ?? "",
+                state: p.state ?? "",
+                zip: p.zipCode ?? "",
+                participants: p.totalSlots != null ? String(p.totalSlots) : "",
+                sameAsDate: false,
+                sameAsTime: false,
+                sameAsAddress: false,
+              }))
+            );
+          }
+        } else if (Array.isArray((result as any).positions) && (result as any).positions.length) {
+          setPositions(
+            (result as any).positions.map((p: any) => ({
+              name: p.position ?? "",
+              date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+              startTime: p.startTime
+                ? new Date(p.startTime).toISOString().slice(11, 16)
+                : "",
+              endTime: p.endTime
+                ? new Date(p.endTime).toISOString().slice(11, 16)
+                : "",
+              description: p.description ?? "",
+              address: p.addressLine1 ?? "",
+              apt: p.addressLine2 ?? "",
+              city: p.city ?? "",
+              state: p.state ?? "",
+              zip: p.zipCode ?? "",
+              participants: p.totalSlots != null ? String(p.totalSlots) : "",
+              sameAsDate: false,
+              sameAsTime: false,
+              sameAsAddress: false,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Failed to fetch positions:", err);
+        if (Array.isArray((result as any).positions) && (result as any).positions.length) {
+          setPositions(
+            (result as any).positions.map((p: any) => ({
+              name: p.position ?? "",
+              date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+              startTime: p.startTime
+                ? new Date(p.startTime).toISOString().slice(11, 16)
+                : "",
+              endTime: p.endTime
+                ? new Date(p.endTime).toISOString().slice(11, 16)
+                : "",
+              description: p.description ?? "",
+              address: p.addressLine1 ?? "",
+              apt: p.addressLine2 ?? "",
+              city: p.city ?? "",
+              state: p.state ?? "",
+              zip: p.zipCode ?? "",
+              participants: p.totalSlots != null ? String(p.totalSlots) : "",
+              sameAsDate: false,
+              sameAsTime: false,
+              sameAsAddress: false,
+            }))
+          );
+        }
       }
 
       // Map images (best-effort)
@@ -439,15 +494,40 @@ const EventForm = () => {
       const url = isEdit ? `/api/events?id=${eventIdtest}` : "/api/events";
       const method = isEdit ? "PUT" : "POST";
 
+      // When editing, send only the top-level event fields in the shape
+      // the server's PUT handler expects (Prisma EventUpdateInput-compatible).
+      let payload: any;
+      if (isEdit) {
+        const combineDateTime = (date: string, time: string) =>
+          new Date(`${date}T${time}:00`);
+        const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
+
+        payload = {
+          name: parseResult.data.title,
+          description: parseResult.data.description || "",
+          startTime: combineDateTime(parseResult.data.date, parseResult.data.startTime),
+          endTime: combineDateTime(parseResult.data.date, parseResult.data.endTime),
+          addressLine1: parseResult.data.address,
+          addressLine2: parseResult.data.apt || null,
+          city: parseResult.data.city,
+          state: parseResult.data.state,
+          country: "USA",
+          zipCode: parseResult.data.zip,
+          date: [toMidnight(parseResult.data.date)],
+        };
+      } else {
+        payload = parseResult.data;
+      }
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parseResult.data),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const text = await res.text();
-        alert(`Failed to create event: ${text}`);
+        alert(`Failed to ${isEdit ? "update":"create"} event: ${text}`);
         return;
       }
 
@@ -1116,7 +1196,7 @@ const EventForm = () => {
           />
           <Button
             onClick={handleCreateEvent}
-            label="Create event"
+            label="Submit"
             altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
           />
         </div>
