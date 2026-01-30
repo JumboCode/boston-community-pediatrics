@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
+import { KebabMenu } from "../common/buttons/KebabMenu";
 interface EventCardProps {
   image: string;
   title: string;
@@ -37,26 +38,45 @@ const EventCard = ({
   });
 
   return (
-    <Link
-      href={`/event/${id}`}
-      className="relative flex flex-col w-[283px] h-[318px] rounded-2xl shadow p-4 gap-2 bg-white"
-    >
-      <Image
-        src={image}
-        alt={title}
-        width={600}
-        height={600}
-        className="w-full h-[167.53px] object-cover"
-      />
+    <div className="relative flex flex-col w-72 rounded-2xl shadow p-4 gap-2 bg-white">
+      <Link
+        href={`/event/${id}`}
+        
+      >
+        <Image
+          src={image}
+          alt={title}
+          width={600}
+          height={600}
+          className="w-full h-[167.53px] object-cover"
+        />
+      </Link>
 
       {/* Admin-only pin button injected from parent - MOVED AFTER IMAGE */}
       {children}
 
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <div className="flex items-start justify-between">
+        <Link
+          href={`/event/${id}`}
+        >
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </Link>
+        <KebabMenu
+          items={[
+            { label: "Edit", onClick: () => console.log("Edit") },
+            { label: "Duplicate", onClick: () => console.log("Duplicate") },
+            {
+              label: "Delete",
+              danger: true,
+              onClick: () => console.log("Delete"),
+            },
+          ]}
+        />
+      </div>
       <p className="text-sm text-gray-700">{formattedTime}</p>
       <p className="text-sm text-gray-700">{location}</p>
       <p className="text-sm text-gray-700">{formattedDate}</p>
-    </Link>
+    </div>
   );
 };
 
