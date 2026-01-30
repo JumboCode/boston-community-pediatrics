@@ -56,11 +56,8 @@ export default async function EventsPage() {
                         date={firstDate}
                         id={event.id}
                         pinned={event.pinned}
-                      >
-                        {user?.role === "ADMIN" && (
-                          <PinButton eventId={event.id} pinned={event.pinned} />
-                        )}
-                      </EventCard>
+                        isAdmin={user?.role === "ADMIN"}
+                      ></EventCard>
                     );
                   })}
 
