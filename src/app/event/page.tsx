@@ -4,6 +4,7 @@ import { getEvents } from "@/app/api/events/controller";
 import { Event } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import PinButton from "@/components/events/PinButton";
+import Link from "next/link";
 
 export default async function EventsPage() {
   const user = await getCurrentUser();
@@ -34,33 +35,48 @@ export default async function EventsPage() {
       <div className="relative w-full">
         {/* Scrollable container */}
         <div className="w-full overflow-x-auto scrollbar-hide">
-          <div className="flex gap-[24px] mt-12 ml-[120px] w-max">
+          <div className="flex gap-[24px] mt-12 ml-[60px] pr-[60px] w-max">
             {error ? (
               <p className="text-red-600 text-lg font-semibold">{error}</p>
             ) : events.length === 0 ? (
               <p className="text-gray-500 text-lg">No events available.</p>
             ) : (
-              events
-                .filter((event) => event.date && event.date.length > 0)
-                .map((event) => {
-                  const firstDate = event.date[0];
-                  return (
-                    <EventCard
-                      key={event.id}
-                      image="/event1.jpg"
-                      title={event.name}
-                      time={event.startTime}
-                      location={event.addressLine1}
-                      date={firstDate}
-                      id={event.id}
-                      pinned={event.pinned}
-                    >
-                      {user?.role === "ADMIN" && (
-                        <PinButton eventId={event.id} pinned={event.pinned} />
-                      )}
-                    </EventCard>
-                  );
-                })
+              <>
+                {events
+                  .filter((event) => event.date && event.date.length > 0)
+                  .map((event) => {
+                    const firstDate = event.date[0];
+                    return (
+                      <EventCard
+                        key={event.id}
+                        image="/event1.jpg"
+                        title={event.name}
+                        time={event.startTime}
+                        location={event.addressLine1}
+                        date={firstDate}
+                        id={event.id}
+                        pinned={event.pinned}
+                      >
+                        {user?.role === "ADMIN" && (
+                          <PinButton eventId={event.id} pinned={event.pinned} />
+                        )}
+                      </EventCard>
+                    );
+                  })}
+
+                {/* Add Event Card */}
+                {user?.role === "ADMIN" && (
+                  <Link href="/event/createEvent">
+                    <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md active:scale-[0.99]">
+                      <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
+                        <span className="text-2xl text-gray-500 leading-none">
+                          +
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>

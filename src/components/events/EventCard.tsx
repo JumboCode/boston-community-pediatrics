@@ -39,7 +39,7 @@ const EventCard = ({
   return (
     <Link
       href={`/event/${id}`}
-      className="relative flex flex-col w-72 rounded-2xl shadow p-4 gap-2 bg-white"
+      className="relative flex flex-col w-[283px] h-[318px] rounded-2xl shadow p-4 gap-2 bg-white"
     >
       <Image
         src={image}
