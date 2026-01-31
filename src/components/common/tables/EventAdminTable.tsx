@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import { AdminUser } from "@/app/api/eventSignup/controller";
+import { SendEmailProps } from "@/lib/email/types";
 
 interface FrontEndUser {
   userId: string;
@@ -45,20 +46,20 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
-  
-  const frontEndUsers = useMemo(() => {
-  if (!signups) return [];
 
-  return signups.map((s) => ({
-    signUpId: s.signupId,
-    userId: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    emailAddress: s.emailAddress,
-    phoneNumber: s.phoneNumber,
-    selected: false,
-  }));
-}, [signups]);
+  const frontEndUsers = useMemo(() => {
+    if (!signups) return [];
+
+    return signups.map((s) => ({
+      signUpId: s.signupId,
+      userId: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      emailAddress: s.emailAddress,
+      phoneNumber: s.phoneNumber,
+      selected: false,
+    }));
+  }, [signups]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const router = useRouter();
@@ -110,6 +111,30 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       router.refresh();
     } catch (error) {
       console.error("Error deleting signups:", error);
+    }
+  };
+
+  const testEmailProps: SendEmailProps = {
+    recipients: ["jlongi01@tufts.edu", "tmaran02@tufts.edu"],
+    subject: "DID THIS WORK",
+    html: "<strong>It works!</strong>",
+  };
+
+  const handleTestEmail = async () => {
+    try {
+      console.log("SENDING");
+      const res = await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(testEmailProps),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Unknown error");
+
+      console.log("Sent:", data);
+    } catch (error) {
+      console.error("Error testing send email:", error);
     }
   };
 
@@ -218,6 +243,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <Button
                 label="Send Email"
                 altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                onClick={handleTestEmail}
               />
               <Button
                 label="Remove from Event"
