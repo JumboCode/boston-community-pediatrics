@@ -64,22 +64,28 @@ export function KebabMenu({ items }: KebabMenuProps) {
       {/* Menu */}
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 w-40 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+          className="absolute right-0 z-50 mt-2 w-[120px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
           role="menu"
         >
-          {items.map((item) => (
-            <button
-              key={item.label}
-              role="menuitem"
-              onClick={() => {
-                item.onClick();
-                setOpen(false);
-              }}
-              className={`block w-full px-4 py-2 text-left text-sm hover:bg-gray-100
-                ${item.danger ? "text-red-600" : "text-gray-700"}`}
-            >
-              {item.label}
-            </button>
+          {items.map((item, index) => (
+            <div key={item.label}>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  item.onClick();
+                  setOpen(false);
+                }}
+                className={`block w-full px-4 py-2 text-left text-sm hover:bg-gray-100
+        ${item.danger ? "text-red-600" : "text-gray-700"}`}
+              >
+                {item.label}
+              </button>
+
+              {/* Divider */}
+              {index < items.length - 1 && (
+                <div className="h-px bg-gray-200" />
+              )}
+            </div>
           ))}
         </div>
       )}

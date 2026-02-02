@@ -3,7 +3,6 @@ import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/app/api/events/controller";
 import { Event } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
-import PinButton from "@/components/events/PinButton";
 import Link from "next/link";
 
 export default async function EventsPage() {
@@ -42,8 +41,9 @@ export default async function EventsPage() {
               <p className="text-gray-500 text-lg">No events available.</p>
             ) : (
               <>
-                {events
+                {[...events]
                   .filter((event) => event.date && event.date.length > 0)
+                  .sort((a, b) => Number(b.pinned) - Number(a.pinned))
                   .map((event) => {
                     const firstDate = event.date[0];
                     return (

@@ -1,15 +1,15 @@
+import Image from "next/image";
+
 export default function PinnedIndicator() {
   return (
-    <div className="absolute top-4 right-4 z-40">
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="#234254"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z" />
-      </svg>
+    <div className="absolute top-[-8] right-[-8] z-40">
+      <Image
+        src="/pinIcon.png"
+        alt="Pinned event"
+        width={26}
+        height={26}
+        className="drop-shadow-md"
+      />
     </div>
   );
 }
