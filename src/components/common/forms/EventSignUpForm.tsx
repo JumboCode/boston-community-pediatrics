@@ -130,7 +130,7 @@ export default function EventSignUpForm({
       // --- NEW CODE (FIX) ---
       // Always update the ID because switching tables (Waitlist <-> Signup) changes the ID
       if (record?.id) {
-        setRegistrationId(record.id);
+        setRegistrationId(record.id); 
       }
 
       if (responseData.status === "waitlisted") {
