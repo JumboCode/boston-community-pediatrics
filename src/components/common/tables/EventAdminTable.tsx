@@ -227,6 +227,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             </div>
           </div>
         )}
+
+        {/* Waitlist Table */}
+        <table className="w-full border-white-700 text-[#234254]">
+          <p className="text-[24px] w-[280px] block">
+            
+          </p>
+        </table>
       </div>
     </div>
   );
