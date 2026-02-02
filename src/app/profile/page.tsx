@@ -98,7 +98,7 @@ export default function ProfilePage() {
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
-          UPCOMING EVENTS
+          Uupcoming Events
         </div>
       </div>
 
@@ -188,7 +188,7 @@ export default function ProfilePage() {
       {/* PAST EVENTS */}
       <div className="mt-[41.05px] ml-[120px]">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
-          PAST EVENTS
+          Past Events
         </div>
 
         <div className="mt-[18px] flex w-[690px] items-center">
