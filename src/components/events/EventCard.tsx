@@ -111,7 +111,7 @@ const EventCard = ({
       </Link>
 
       {/* Pinned indicator (ONLY when pinned) */}
-      {pinned && <PinnedIndicator />}
+      {isAdmin && pinned && <PinnedIndicator />}
 
       <div className="flex items-start justify-between">
         <Link href={`/event/${id}`}>
