@@ -87,17 +87,17 @@ const Home: React.FC = () => {
           <Button
             label="Volunteer"
             onClick={() => router.push("/event")}
-            altStyle="w-[525px] h-[70px] text-white bg-[#234254] rounded-lg font-large flex items-center justify-center hover:bg-[#426982]"
+            altStyle="w-[525px] h-[70px] text-white bg-bcp-blue rounded-lg font-large flex items-center justify-center hover:bg-[#426982]"
           />
         </div>
       </div>
 
       <div className="flex items-center my-10 justify-center w-[90%] mx-auto">
-        <div className="flex-grow border-t-2 border-[#234254]"></div>
-        <span className="mx-4 text-[#234254] text-3xl font-bold">
+        <div className="flex-grow border-t-2 border-bcp-blue"></div>
+        <span className="mx-4 text-bcp-blue text-3xl font-bold">
           Featured Opportunities
         </span>
-        <div className="flex-grow border-t-2 border-[#234254]"></div>
+        <div className="flex-grow border-t-2 border-bcp-blue"></div>
       </div>
 
       <div
@@ -110,9 +110,9 @@ const Home: React.FC = () => {
         }}
       >
         {loading ? (
-          <p className="text-[#234254] text-lg">Loading events...</p>
+          <p className="text-bcp-blue text-lg">Loading events...</p>
         ) : pinnedEvents.length === 0 ? (
-          <p className="text-[#234254] text-lg">
+          <p className="text-bcp-blue text-lg">
             No featured events at this time.
           </p>
         ) : (
@@ -132,7 +132,7 @@ const Home: React.FC = () => {
             return (
               <div
                 key={event.id}
-                className="text-center text-[#234254] text-lg font-bold"
+                className="text-center text-bcp-blue text-lg font-bold"
               >
                 <div
                   className={`relative group ${isMobile ? "w-[337px] h-[300px]" : ""}`}
@@ -150,12 +150,12 @@ const Home: React.FC = () => {
                     alt={event.name}
                     width={450}
                     height={400}
-                    className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-[#234254] transition-all duration-300 group-hover:blur-[3px]"
+                    className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue transition-all duration-300 group-hover:blur-[3px]"
                   />
                   <Button
                     label="More Details"
                     onClick={() => router.push(`/event/${event.id}`)}
-                    altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-[#234254] rounded-lg 
+                    altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-bcp-blue rounded-lg 
         flex items-center justify-center opacity-0 text-md font-normal
         transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:bg-[#426982]"
                   />
@@ -174,16 +174,16 @@ const Home: React.FC = () => {
           marginBottom: `${40 * Math.pow(scale, 0.8)}px`,
         }}
       >
-        <div className="flex-grow border-t-2 border-[#234254]"></div>
-        <span className="mx-4 text-[#234254] text-3xl font-bold">About Us</span>
-        <div className="flex-grow border-t-2 border-[#234254]"></div>
+        <div className="flex-grow border-t-2 border-bcp-blue"></div>
+        <span className="mx-4 text-bcp-blue text-3xl font-bold">About Us</span>
+        <div className="flex-grow border-t-2 border-bcp-blue"></div>
       </div>
 
       <div
         className={`flex items-center my-5 justify-center w-[90%] mx-auto mb-20 ${isMobile ? "flex-col gap-8" : "gap-20"}`}
       >
         <div
-          className={`text-[#234254] text-lg font-normal ${isMobile ? "w-full order-2" : "w-[60%]"}`}
+          className={`text-bcp-blue text-lg font-normal ${isMobile ? "w-full order-2" : "w-[60%]"}`}
         >
           <b>Lorem ipsum dolor</b> sit amet consectetur. At leo auctor nam metus
           tincidunt phasellus volutpat id pulvinar. Accumsan amet id pulvinar
@@ -206,7 +206,7 @@ const Home: React.FC = () => {
           <Image
             src={aboutus}
             alt="About Us Image"
-            className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-[#234254]"
+            className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue"
           />
         </div>
       </div>

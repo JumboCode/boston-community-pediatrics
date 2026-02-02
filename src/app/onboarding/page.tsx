@@ -86,7 +86,7 @@ function OnboardingPage() {
   if (!isLoaded || checkingDb) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-xl text-[#234254]">Checking profile...</p>
+        <p className="text-xl text-bcp-blue">Checking profile...</p>
       </div>
     );
   }
@@ -97,7 +97,7 @@ function OnboardingPage() {
         onSubmit={handleSubmit}
         className="flex flex-col items-center border border-[#6B6B6B] rounded-lg w-[792px] p-10"
       >
-        <h1 className="text-[#234254] text-[36px] font-medium mb-2 text-center">
+        <h1 className="text-bcp-blue text-[36px] font-medium mb-2 text-center">
           Complete Your Profile
         </h1>
         <p className="text-black text-xl mb-10 text-center">
@@ -127,7 +127,7 @@ function OnboardingPage() {
                 id="first-name"
                 required
                 defaultValue={user?.firstName || ""} // Pre-fill if Google provided it
-                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
             <div className="flex flex-col items-start flex-1">
