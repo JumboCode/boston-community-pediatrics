@@ -82,9 +82,7 @@ export function KebabMenu({ items }: KebabMenuProps) {
               </button>
 
               {/* Divider */}
-              {index < items.length - 1 && (
-                <div className="h-px bg-gray-200" />
-              )}
+              {index < items.length - 1 && <div className="h-px bg-gray-200" />}
             </div>
           ))}
         </div>
