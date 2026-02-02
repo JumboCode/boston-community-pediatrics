@@ -90,7 +90,7 @@ const EventCard = ({
           label: pinned ? "Unpin" : "Pin",
           onClick: handlePinToggle,
         },
-        { label: "Edit", onClick: () => {} },
+        { label: "Edit", onClick: () => router.push(`/event/createEvent?id=${id}`) },
         {
           label: "Delete",
           danger: true,
