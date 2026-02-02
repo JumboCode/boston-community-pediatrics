@@ -8,6 +8,8 @@ import {
   removeEventImage,
   updateEventImage,
 } from "../events/controller";
+import { prisma } from "@/lib/prisma";
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const filename = searchParams.get("filename");
@@ -70,6 +72,8 @@ export async function POST(req: NextRequest) {
       const url = await getPresignedURL(key);
       return NextResponse.json({ key, url });
     }
+
+    
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   } catch (err) {
