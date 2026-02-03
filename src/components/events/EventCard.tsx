@@ -31,6 +31,7 @@ const EventCard = ({
 }: EventCardProps) => {
   const [modalTitle, setModalTitle] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const closeModal = () => {
     setModalTitle(null);
@@ -84,6 +85,40 @@ const EventCard = ({
     }
   }
 
+  async function handleDelete() {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`/api/events?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        setModalTitle("Error");
+        setModalMessage("Failed to delete event. Please try again.");
+        setShowDeleteConfirm(false);
+        return;
+      }
+
+      setModalTitle("Event Deleted!");
+      setModalMessage("The event has been successfully deleted.");
+      setShowDeleteConfirm(false);
+
+      // Redirect after a short delay to show the confirmation message
+      setTimeout(() => {
+        router.push("/event");
+        router.refresh();
+      }, 1500);
+    } catch (err) {
+      setModalTitle("Error");
+      setModalMessage("Something went wrong. Please try again.");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   const menuItems = isAdmin
     ? [
         {
@@ -94,7 +129,7 @@ const EventCard = ({
         {
           label: "Delete",
           danger: true,
-          onClick: () => {},
+          onClick: () => setShowDeleteConfirm(true),
         },
       ]
     : [];
@@ -156,6 +191,40 @@ const EventCard = ({
             >
               Return
             </button>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-[792px] rounded-lg border-2 border-black-500 p-8 shadow-xl flex flex-col items-center justify-center text-center"
+          >
+            <h2 className="text-4xl mb-4">Delete Event?</h2>
+            <p className="text-xl text-gray-700 mb-8">
+              Are you sure you want to delete this event? This action cannot be undone.
+            </p>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-12 py-2 rounded-md bg-gray-300 text-black hover:bg-gray-400 transition"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-12 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
