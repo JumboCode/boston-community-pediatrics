@@ -49,7 +49,8 @@ export default async function EventsPage() {
                       key={event.id}
                       image="/event1.jpg"
                       title={event.name}
-                      time={event.startTime}
+                      startTime={event.startTime}
+                      endTime={event.endTime}
                       location={event.addressLine1}
                       date={firstDate}
                       id={event.id}

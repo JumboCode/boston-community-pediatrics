@@ -1,62 +1,46 @@
 "use client";
 
-import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
-import { Event } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-interface EventSignupWithEvent {
-  id: string;
-  userId: string;
-  eventId: string;
+// Define the shape of the data from our API
+interface MyRegistration {
+  id: string; // Registration ID
   positionId: string;
-  hoursVolunteered?: number;
-  event: Event;
-  position?: {
+  status: string;
+  position: {
     id: string;
-    name: string;
+    position: string;
+    endTime: string;
+    event: {
+      id: string;
+      name: string;
+      startTime: string; // ISO String
+      addressLine1: string;
+      date: string[]; // ISO String array
+      images: string[];
+    };
   };
 }
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
 
-  //const[userSignups, setUserSignUps] = useState<EventSignupWithEvent[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
 
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        const response = await fetch("/api/events");
-        if (!response.ok) {
-          throw new Error("Failed to fetch events");
-        }
-        const fetchedEvents = await response.json();
-        setEvents(fetchedEvents);
-      } catch (err) {
-        console.error("Failed to load events:", err);
-        setError("Failed to load events");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchEvents();
-  }, []);
-
+  // 1. Fetch User Phone Number
   useEffect(() => {
     async function fetchPhoneNumber() {
       if (!user?.id) return;
-
       try {
         const response = await fetch(`/api/users?id=${user.id}`);
         if (response.ok) {
           const userData = await response.json();
-          console.log("User data from API:", userData);
           setPhoneNumber(userData.phoneNumber ?? "—");
         }
       } catch (err) {
@@ -69,9 +53,52 @@ export default function ProfilePage() {
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
+  // 2. Fetch User Registrations (My Events)
   useEffect(() => {
-    console.log("Clerk user object:", user);
-  }, [user]);
+    async function fetchMyData() {
+      if (!user?.id) return;
+      try {
+        const response = await fetch(`/api/registrations?userId=${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data);
+          setMyEvents(data);
+        }
+      } catch (err) {
+        console.error("Failed to load profile data", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (isLoaded && isSignedIn) {
+      fetchMyData();
+    }
+  }, [user?.id, isLoaded, isSignedIn]);
+
+  // 1. ADD THIS FUNCTION
+  const handleRemove = async (registrationId: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to remove yourself from this event?");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`/api/registrations?id=${registrationId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // Remove from local state immediately to update UI
+        setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
+        alert("You have been removed from the event.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to remove registration.");
+      }
+    } catch (error) {
+      console.error("Error removing registration:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
 
   if (!isLoaded || loading) {
     return <main className="min-h-screen p-8" />;
@@ -87,11 +114,33 @@ export default function ProfilePage() {
       ? new Date(user.createdAt).getFullYear()
       : "0000";
 
+  // --- FILTERING LOGIC ---
   const now = new Date();
-  const upcomingEvents = events
-    .filter((event) => event.date && event.date.length > 0)
-    .filter((event) => new Date(event.date[0]) >= now)
-    .slice(0, 2);
+  now.setHours(0, 0, 0, 0);
+
+  const upcoming: MyRegistration[] = [];
+  const past: MyRegistration[] = [];
+
+  // Separate events into Upcoming and Past
+  myEvents.forEach((reg) => {
+    if (!reg.position?.event?.date || reg.position.event.date.length === 0) return;
+
+    const eventDate = new Date(reg.position.event.date[0]);
+
+    // Sort into buckets
+    if (eventDate >= now) {
+      upcoming.push(reg);
+    } else {
+      past.push(reg);
+    }
+  });
+
+  // Sort Past events: Most recent first (Descending)
+  past.sort((a, b) => {
+    const dateA = new Date(a.position.event.date[0]).getTime();
+    const dateB = new Date(b.position.event.date[0]).getTime();
+    return dateB - dateA;
+  });
 
   return (
     <main className="min-h-screen p-8">
@@ -103,23 +152,29 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-[54px] ml-[120px] flex flex-wrap gap-[25px]">
-        {error ? (
-          <p className="text-lg font-semibold text-red-600">{error}</p>
-        ) : upcomingEvents.length === 0 ? (
-          <p className="text-lg text-gray-500">No upcoming events.</p>
+        {upcoming.length === 0 ? (
+          <p className="text-lg text-gray-500">No upcoming events found.</p>
         ) : (
-          upcomingEvents.map((event) => {
-            const firstDate = event.date[0];
+          upcoming.map((reg) => {
+            const event = reg.position.event;
+            const firstDate = event.date && event.date.length > 0 ? new Date(event.date[0]) : new Date();
+
             return (
               <EventCard
-                key={event.id}
-                image="/event1.jpg"
+                key={reg.id}
+                id={event.id} // Link to the general event page
+                image="/event1.jpg" // Fallback or use event.images[0]
                 title={event.name}
-                time={event.startTime}
+                startTime={new Date(event.startTime)}
+                endTime={new Date(reg.position.endTime)}
                 location={event.addressLine1}
                 date={firstDate}
-                id={event.id}
-              />
+
+                // 👇 THIS IS THE FIX: Pass the positionId to the register page
+                onEdit={() => router.push(`/register/${reg.positionId}`)}
+
+                onVolunteer={() => router.push(`/event/${event.id}`)}
+                onRemove={() => handleRemove(reg.id)} />
             );
           })
         )}
@@ -186,77 +241,75 @@ export default function ProfilePage() {
       </div>
 
       {/* PAST EVENTS */}
+      {/* PAST EVENTS SECTION */}
       <div className="mt-[41.05px] ml-[120px]">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
           Past Events
         </div>
 
+        {/* Table Header */}
         <div className="mt-[18px] flex w-[690px] items-center">
           <div className="w-[120px]" />
-          <div className="mt-[24.81px] flex-1 text-center text-[14px] font-bold">
-            Event name
-          </div>
-          <div className="mt-[24.81px] w-[170px] text-center text-[14px] font-bold">
-            Position
-          </div>
-          <div className="mt-[24.81px] w-[170px] text-center text-[14px] font-bold">
-            Volunteer hours
-          </div>
+          <div className="mt-[24.81px] flex-1 text-center text-[14px] font-bold">Event name</div>
+          <div className="mt-[24.81px] w-[170px] text-center text-[14px] font-bold">Position</div>
+          <div className="mt-[24.81px] w-[170px] text-center text-[14px] font-bold">Volunteer hours</div>
         </div>
 
-        <div className="mt-[7.08px] mb-[96px] h-[155px] w-[690px] border-[2px] border-black bg-white">
-          <div className="grid h-full grid-rows-3">
-            {[
-              {
-                month: "OCT",
-                day: "01",
-                name: "Event Name",
-                role: "Volunteer",
-                hours: "05",
-              },
-              {
-                month: "OCT",
-                day: "01",
-                name: "Event Name",
-                role: "Volunteer",
-                hours: "05",
-              },
-              {
-                month: "OCT",
-                day: "01",
-                name: "Event Name",
-                role: "Volunteer",
-                hours: "05",
-              },
-            ].map((row, idx) => (
-              <div
-                key={idx}
-                className={[
-                  "grid grid-cols-[120px_1fr_170px_170px] items-center",
-                  idx !== 2 ? "border-b border-[#8C8C8C]" : "",
-                ].join(" ")}
-              >
-                <div className="pl-[24px] leading-none">
-                  <div className="text-[14px]">OCT</div>
-                  <div className="ml-[4px] -mt-[2px] text-[20px] font-bold">
-                    01
+        {/* Table Body */}
+        <div className="mt-[7.08px] mb-[96px] w-[690px] border-[2px] border-black bg-white">
+          {past.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No past events found.</div>
+          ) : (
+            <div className="flex flex-col">
+              {past.map((reg, idx) => {
+                const dateObj = new Date(reg.position.event.date[0]);
+                const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
+                const day = dateObj.getDate().toString().padStart(2, '0');
+
+                // Calculate duration in hours
+                const start = new Date(reg.position.event.startTime).getTime();
+                const end = new Date(reg.position.endTime).getTime(); // Position needs endTime in query!
+                const hours = !isNaN(end - start)
+                  ? ((end - start) / (1000 * 60 * 60)).toFixed(1) // e.g., "5.0"
+                  : "—";
+
+                const isLast = idx === past.length - 1;
+
+                return (
+                  <div
+                    key={reg.id}
+                    className={[
+                      "grid grid-cols-[120px_1fr_170px_170px] items-center h-[52px]", // Fixed height per row
+                      !isLast ? "border-b border-[#8C8C8C]" : "",
+                    ].join(" ")}
+                  >
+                    {/* Date Column */}
+                    <div className="pl-[24px] leading-none">
+                      <div className="text-[14px]">{month}</div>
+                      <div className="ml-[4px] -mt-[2px] text-[20px] font-bold">
+                        {day}
+                      </div>
+                    </div>
+
+                    {/* Name Column */}
+                    <div className="text-center text-[16px] truncate px-2">
+                      {reg.position.event.name}
+                    </div>
+
+                    {/* Position Column */}
+                    <div className="text-center text-[14px] truncate px-2">
+                      {reg.position.position}
+                    </div>
+
+                    {/* Hours Column */}
+                    <div className="text-center text-[14px]">
+                      {hours}
+                    </div>
                   </div>
-                </div>
-
-                <div className="text-center text-[16px]">
-                  {row.name}
-                </div>
-
-                <div className="text-center text-[14px]">
-                  {row.role}
-                </div>
-
-                <div className="text-center text-[14px]">
-                  {row.hours}
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </main>

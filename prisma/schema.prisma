@@ -110,6 +110,8 @@ model Guest {
   relation     String?     // relation to main user (friend, family, etc.)
   phoneNumber  String?
 
+  dateOfBirth  String?     
+  comments     String?
   signupId  String
   signup    EventSignup @relation(fields: [signupId], references: [id])
 }
@@ -133,6 +135,8 @@ model WaitlistGuest {
   lastName   String
   email      String?
   relation   String?
+  dateOfBirth  String?
+  comments     String?
   waitlistId String
   waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id])
 }

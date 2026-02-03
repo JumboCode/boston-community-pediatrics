@@ -8,7 +8,7 @@ interface RegisterPageProps {
   params: Promise<{ id: string }>;
 }
 
-// 1. Define proper types so we don't use 'any'
+// --- Types ---
 interface UserData {
   id: string;
   firstName: string;
@@ -20,87 +20,142 @@ interface UserData {
 
 interface EventData {
   name: string;
-  date: string;
-  time: string;
+  date: string; // or Date[] depending on your prisma response
+  time: string; // or Date
 }
 
 interface PositionData {
   id: string;
   position: string;
   description: string;
-  event?: EventData; // Optional in case the fetch fails or data is partial
+  event?: {
+    name: string;
+    date: string[];
+    startTime: string;
+  }; 
+}
+
+interface GuestData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  dateOfBirth: string;
+  relationship: string;
+  comments: string;
+}
+
+interface RegistrationData {
+  id: string;
+  status: "registered" | "waitlisted";
+  guests: GuestData[];
 }
 
 interface PageData {
   user: UserData;
   position: PositionData;
+  registration?: RegistrationData | null;
 }
 
 export default function RegisterPage({ params }: RegisterPageProps) {
   const resolvedParams = use(params);
-  const positionId = resolvedParams.id;
+  const positionId = resolvedParams.id; // This is the ID from the URL
 
   const { user, isLoaded } = useUser();
-  const [data, setData] = useState<PageData | null>(null); // keeping type loose for simplicity
+  const [data, setData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isLoaded && user?.id) {
       const fetchData = async () => {
         try {
+          // 1. Fetch User and Position Details in parallel
           const [userRes, posRes] = await Promise.all([
             fetch(`/api/users?id=${user.id}`),
-            fetch(`/api/eventPosition?id=${positionId}`) 
+            fetch(`/api/eventPosition?id=${positionId}`)
           ]);
 
-          if (userRes.ok && posRes.ok) {
-            const userData = await userRes.json();
-            const positionData = await posRes.json(); 
-            
-            // positionData now looks like: 
-            // { id: "...", position: "Volunteer", event: { name: "Gala", date: "..." } }
-            
-            setData({ user: userData, position: positionData });
+          let userData: UserData | null = null;
+          let positionData: PositionData | null = null;
+          let registrationData: RegistrationData | null = null;
+
+          if (userRes.ok) userData = await userRes.json();
+          if (posRes.ok) positionData = await posRes.json();
+
+          // 2. If we found the user and position, check for an existing registration
+          if (userData && positionData) {
+            try {
+              const regRes = await fetch(
+                `/api/registrations?userId=${userData.id}&positionId=${positionId}`
+              );
+              
+              if (regRes.ok) {
+                // If 200 OK, we have a registration (either signed up or waitlisted)
+                registrationData = await regRes.json();
+              }
+            } catch (err) {
+              console.warn("No existing registration found (this is normal for new signups)");
+            }
           }
+
+          if (userData && positionData) {
+            setData({ 
+              user: userData, 
+              position: positionData, 
+              registration: registrationData 
+            });
+          }
+
         } catch (error) {
           console.error("Data fetch failed", error);
         } finally {
           setLoading(false);
         }
       };
+
       fetchData();
     }
   }, [isLoaded, user?.id, positionId]);
 
-  if (!isLoaded || loading) return <div className="text-center p-10">Loading...</div>;
-  if (!data) return <div className="text-center p-10">Error loading details.</div>;
+  if (!isLoaded || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-gray-500">Loading details...</div>
+      </div>
+    );
+  }
 
-  // --- Helper to format dates ---
-  // The DB returns ISO strings (e.g. "2025-01-01T00:00:00.000Z")
-  // Allow 'dateStr' to be undefined
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "TBD";
-    return new Date(dateStr).toLocaleDateString("en-US");
-  };
+  if (!data || !data.user || !data.position) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Error loading event details. Please try again.
+      </div>
+    );
+  }
 
-  // Allow 'timeStr' to be undefined
-  const formatTime = (timeStr?: string) => {
-    if (!timeStr) return "TBD";
-    return new Date(timeStr).toLocaleTimeString("en-US", { 
-      hour: 'numeric', minute: '2-digit' 
-    });
-  };
+  // Helper to safely format array or string dates
+  const eventDateStr = Array.isArray(data.position.event?.date) 
+    ? data.position.event?.date[0] 
+    : data.position.event?.date;
+
+  const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString("en-US") : "TBD";
+  const formatTime = (t?: string) => t ? new Date(t).toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit' }) : "TBD";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <EventSignUpForm 
-        userData={data?.user} 
-        positionData={data?.position} // Pass the position object directly
+        userData={data.user} 
+        positionData={data.position} 
         
-        // 👇 PASS THE DATA HERE
-        eventName={data?.position?.event?.name}
-        eventDate={formatDate(data.position.event?.date)}
-        eventTime={formatTime(data.position.event?.time)}
+        // Display Info
+        eventName={data.position.event?.name}
+        eventDate={formatDate(eventDateStr)}
+        eventTime={formatTime(data.position.event?.startTime)}
+        
+        // Pre-fill Data (if existing registration found)
+        initialRegistrationId={data.registration?.id}
+        initialGuests={data.registration?.guests || []}
       />
     </div>
   );
