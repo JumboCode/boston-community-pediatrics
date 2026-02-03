@@ -136,12 +136,3 @@ model WaitlistGuest {
   waitlistId String
   waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id])
 }
-
-model Settings {
-  id    String @id @default(cuid())
-  key   String @unique
-  value String
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
