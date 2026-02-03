@@ -523,6 +523,7 @@ export async function DELETE(req: NextRequest) {
                 hasGuests: candidate.guests.length > 0,
                 guests: {
                   create: candidate.guests.map((g) => ({
+                    positionId: candidate.positionId,
                     firstName: g.firstName,
                     lastName: g.lastName,
                     emailAddress: g.email, // Map email -> emailAddress
