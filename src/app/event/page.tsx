@@ -2,8 +2,12 @@ import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/app/api/events/controller";
 import { Event } from "@prisma/client";
+import { getCurrentUser } from "@/lib/auth";
+import PinButton from "@/components/events/PinButton";
 
 export default async function EventsPage() {
+  const user = await getCurrentUser();
+
   let events: Event[] = [];
   let error: string | null = null;
   try {
@@ -30,7 +34,7 @@ export default async function EventsPage() {
       <div className="relative w-full">
         {/* Scrollable container */}
         <div className="w-full overflow-x-auto scrollbar-hide">
-          <div className="flex gap-12 mt-12 p-4 w-max mx-auto">
+          <div className="flex gap-[24px] mt-12 ml-[120px] w-max">
             {error ? (
               <p className="text-red-600 text-lg font-semibold">{error}</p>
             ) : events.length === 0 ? (
@@ -49,7 +53,12 @@ export default async function EventsPage() {
                       location={event.addressLine1}
                       date={firstDate}
                       id={event.id}
-                    />
+                      pinned={event.pinned}
+                    >
+                      {user?.role === "ADMIN" && (
+                        <PinButton eventId={event.id} pinned={event.pinned} />
+                      )}
+                    </EventCard>
                   );
                 })
             )}

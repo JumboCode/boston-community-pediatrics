@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   getSignupsByEventId,
+  getSignupsByUserId,
   getUsersByPositionId,
   createEventSignup,
   updateEventSignup,
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get("eventId");
     const positionId = searchParams.get("positionId");
+    const userId = searchParams.get("userId");
 
     let isAdmin = false;
     const user = await getCurrentUser();
@@ -27,7 +29,10 @@ export async function GET(req: NextRequest) {
         isAdmin = true;
       }
     }
-
+    if(userId){
+      const signups = await getSignupsByUserId(userId);
+      return NextResponse.json(signups);
+    }
     if (positionId) {
       const users = await getUsersByPositionId(positionId, isAdmin);
       if (!users)

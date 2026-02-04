@@ -8,6 +8,7 @@ import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 
+
 type SignupFormData = {
   firstName: string;
   lastName: string;
@@ -123,6 +124,7 @@ const SignupForm = () => {
         code,
       });
 
+
       if (completeSignUp.status !== "complete") {
         setError("Verification incomplete. Please check your code.");
         setLoading(false);
@@ -172,6 +174,7 @@ const SignupForm = () => {
 
       // 4. Set active session (Log them in)
       await setActive({ session: completeSignUp.createdSessionId });
+      // after setActive()
 
       // 5. Redirect
       router.push("/event"); // or wherever you want them to go
