@@ -3,7 +3,6 @@
 import React from "react";
 import homepage from "@/assets/images/homepage.png";
 import welcome from "@/assets/images/welcome.png";
-import aboutus from "@/assets/images/aboutus.jpg";
 import bcpmascot from "@/assets/images/bcpmascot.jpeg";
 import box from "@/assets/images/box.jpeg";
 import Image from "next/image";

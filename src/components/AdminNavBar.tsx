@@ -1,7 +1,6 @@
 "use client";
 import bcp_logo from "@/assets/icons/BCP.svg";
 import blankProfile from "@/assets/icons/empty-profile-picture.svg";
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "@headlessui/react";
@@ -24,7 +23,7 @@ function AdminNavBar() {
         <li>
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <li>
-              <Link href="/event/createEvent" className="text-white text-sm">
+              <Link href="/admin/createEvent" className="text-white text-sm">
                 Create Event
               </Link>
             </li>
@@ -42,7 +41,6 @@ function AdminNavBar() {
                     alt="Dropdown Arrow"
                     className="w-3 h-3 inline-block ml-1"
                   />
-                  
                 </Menu.Button>
 
                 <Menu.Items className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md p-1">

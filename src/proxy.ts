@@ -1,46 +1,30 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "./lib/auth";
+import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 import { getUserById } from "@/app/api/users/controller";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { UserRole } from "@prisma/client";
 
-const isProtectedRoute = createRouteMatcher([
-  "/admin(.*)",
-  "/event/createEvent(.*)",
-]);
-
 export default clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth();
 
-  // If not a protected route allow user to continue
-  if (!isProtectedRoute(req)) {
-    return NextResponse.next();
-  }
+  // Only protect /admin routes
+  if (req.nextUrl.pathname.startsWith("/admin")) {
 
-    // await auth.protect((has) => {
-    //   return has({ permission: 'org:admin:example1' }) || has({ permission: 'org:admin:example2' })
-    // })
-    const { userId } = await auth();
-    if (!userId) return null;
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    const currentUser = await getUserById(user.id);
-    // const currentUser = await getCurrentUser();
-    
-
-    if (currentUser) {
-      if (currentUser.role === UserRole.ADMIN) {
-        return NextResponse.next();
-      }
+    if (!userId) {
+      return NextResponse.redirect(new URL("/", req.url));
     }
-    const homeURL = new URL('/', req.url);
-    return NextResponse.redirect(homeURL);
-  
+
+    const user = await getUserById(userId);
+
+    if (user && user.role !== UserRole.ADMIN) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
 });
 
 export const config = {
   matcher: [
-    "/((?!_next|.*\\..*).*)", // all routes except static files
-    "/api/(.*)", // ALL api routes
+    "/admin/:path*",
+    "/api/:path*", // Add this to protect API routes
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest))(?:.*))",
   ],
 };
