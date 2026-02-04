@@ -1,23 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
 import { Event } from "@prisma/client";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-
-interface EventSignupWithEvent {
-  id: string;
-  userId: string;
-  eventId: string;
-  positionId: string;
-  hoursVolunteered?: number;
-  event: Event;
-  position?: {
-    id: string;
-    name: string;
-  };
-}
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -77,10 +63,10 @@ export default function ProfilePage() {
     return <main className="min-h-screen p-8" />;
   }
 
-  const firstName = isSignedIn ? user?.firstName ?? "" : "Guest";
-  const lastName = isSignedIn ? user?.lastName ?? "" : "";
+  const firstName = isSignedIn ? (user?.firstName ?? "") : "Guest";
+  const lastName = isSignedIn ? (user?.lastName ?? "") : "";
   const emailAddress = isSignedIn
-    ? user?.primaryEmailAddress?.emailAddress ?? "—"
+    ? (user?.primaryEmailAddress?.emailAddress ?? "—")
     : "—";
   const memberSince =
     isSignedIn && user?.createdAt
@@ -112,6 +98,7 @@ export default function ProfilePage() {
             const firstDate = event.date[0];
             return (
               <EventCard
+                pinned={false}
                 key={event.id}
                 image="/event1.jpg"
                 title={event.name}
@@ -140,9 +127,7 @@ export default function ProfilePage() {
 
         <div className="mt-6 flex flex-col space-y-2">
           <div className="flex justify-between">
-            <div className="ml-[25px] text-[16px] text-white">
-              Phone number
-            </div>
+            <div className="ml-[25px] text-[16px] text-white">Phone number</div>
             <div className="mr-[25px] text-[16px] text-white">
               {phoneNumber}
             </div>
@@ -243,17 +228,11 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="text-center text-[16px]">
-                  {row.name}
-                </div>
+                <div className="text-center text-[16px]">{row.name}</div>
 
-                <div className="text-center text-[14px]">
-                  {row.role}
-                </div>
+                <div className="text-center text-[14px]">{row.role}</div>
 
-                <div className="text-center text-[14px]">
-                  {row.hours}
-                </div>
+                <div className="text-center text-[14px]">{row.hours}</div>
               </div>
             ))}
           </div>
