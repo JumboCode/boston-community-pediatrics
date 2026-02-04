@@ -15,6 +15,15 @@ export async function getUserById(id: string) {
   return user;
 }
 
+export async function getUserByEmail(id: string) {
+  const user = await prisma.user.findUnique({
+    where: {
+      emailAddress: id,
+    },
+  });
+  return user;
+}
+
 // We use 'any' here because the input JSON has dateOfBirth as a string
 export async function createUser(data: any) {
   const newUser = await prisma.user.create({
