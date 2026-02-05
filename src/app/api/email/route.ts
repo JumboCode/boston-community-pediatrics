@@ -4,7 +4,21 @@ import { z } from "zod";
 const emailSchema = z.object({
   recipients: z.array(z.string().email()).min(1),
   subject: z.string().min(1),
-  html: z.string().min(1),
+  type: z.enum(["signup", "waitlist", "other"]).optional(), //for testing rn
+  html: z.string().optional(),
+  data: z
+    .object({
+      firstName: z.string().optional(),
+      eventName: z.string().optional(),
+      eventDate: z.string().optional(),
+      position: z.string().optional(),
+      startTime: z.string().optional(),
+      endTime: z.string().optional(),
+      filledSlots: z.number().optional(),
+      location: z.string().optional(),
+      waitlistPosition: z.number().optional(),
+    })
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -19,7 +33,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error(err);
     return Response.json(
-      { error: "Invalid request or email failed" },
+      { error: (err as Error)?.message ?? "Invalid request or email failed" },
       { status: 500 }
     );
   }

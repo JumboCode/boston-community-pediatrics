@@ -5,13 +5,14 @@ import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { SendEmailProps } from "@/lib/email/types";
+//import {EmailTemplateProps} from "@/lib/email/templates/BaseLayout"
 
 interface FrontEndUser {
   userId: string;
   signUpId: string;
   firstName: string;
   lastName: string;
-  emailAddress: string;
+  emailAddress: string; 
   phoneNumber: string;
   selected: boolean;
 }
@@ -114,12 +115,24 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     }
   };
 
+  //Test code for ticket
   const testEmailProps: SendEmailProps = {
-    recipients: ["jlongi01@tufts.edu", "tmaran02@tufts.edu"],
-    subject: "DID THIS WORK",
-    html: "<strong>It works!</strong>",
+    recipients: ["bcpjumbocode@gmail.com"],
+    subject: "You've got mail!", 
+    type: "waitlist", 
+    html: "<strong>sup brah</strong>" ,
+    data: { firstName: "Jack",
+      eventName: "Test Event", 
+      eventDate: new Date().toDateString(),
+      position: "Volunteer",
+      startTime: "10:00 AM",
+      endTime: "12:00 PM",
+      filledSlots: 5,
+      location: "123 Main St",
+      waitlistPosition: 2,
+    }
   };
-
+  
   const handleTestEmail = async () => {
     try {
       console.log("SENDING");
@@ -137,6 +150,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       console.error("Error testing send email:", error);
     }
   };
+// end of test code
 
   return (
     <div className="min-w-[1100px] flex items-center justify-center p-6">
