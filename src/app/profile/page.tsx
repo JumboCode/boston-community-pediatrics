@@ -10,6 +10,7 @@ interface MyRegistration {
   id: string; // Registration ID
   positionId: string;
   status: string;
+  imageUrl?: string; // <--- Add this property
   position: {
     id: string;
     position: string;
@@ -60,9 +61,37 @@ export default function ProfilePage() {
       try {
         const response = await fetch(`/api/registrations?userId=${user.id}`);
         if (response.ok) {
-          const data = await response.json();
-          console.log(data);
-          setMyEvents(data);
+          const rawData: MyRegistration[] = await response.json();
+
+          // Process images in parallel
+          const enrichedData = await Promise.all(
+            rawData.map(async (reg) => {
+              const images = reg.position.event.images;
+              let resolvedUrl = "/event1.jpg"; // Default fallback
+
+              // If we have an image filename, fetch the public URL
+              if (images && images.length > 0) {
+                try {
+                  const filename = images[0];
+                  // Call your image API
+                  const imgRes = await fetch(`/api/images?filename=${filename}`);
+                  if (imgRes.ok) {
+                    const imgData = await imgRes.json();
+                    if (imgData.url) {
+                      resolvedUrl = imgData.url;
+                    }
+                  }
+                } catch (err) {
+                  console.error("Failed to fetch image for event", reg.position.event.id);
+                }
+              }
+
+              // Return the registration object with the new URL attached
+              return { ...reg, imageUrl: resolvedUrl };
+            })
+          );
+
+          setMyEvents(enrichedData);
         }
       } catch (err) {
         console.error("Failed to load profile data", err);
@@ -147,7 +176,7 @@ export default function ProfilePage() {
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
-          Uupcoming Events
+          Upcoming Events
         </div>
       </div>
 
@@ -163,7 +192,7 @@ export default function ProfilePage() {
               <EventCard
                 key={reg.id}
                 id={event.id} // Link to the general event page
-                image="/event1.jpg" // Fallback or use event.images[0]
+                image={reg.imageUrl || "/event1.jpg"}
                 title={event.name}
                 startTime={new Date(event.startTime)}
                 endTime={new Date(reg.position.endTime)}
