@@ -10,6 +10,8 @@ interface EventCardProps {
   startTime: Date;
   endTime: Date;
   location: string;
+  filledSlots: number;
+  totalSlots: number;
   date: Date;
   id: string;
   onEdit?: () => void;
@@ -23,6 +25,8 @@ const EventCard = ({
   startTime,
   endTime,
   location,
+  filledSlots,
+  totalSlots,
   date,
   id,
   onEdit,
@@ -130,7 +134,7 @@ const EventCard = ({
       {/* Bottom Footer */}
       <div className="flex justify-between items-end mt-auto pb-1">
          <p className="text-[14px] text-gray-500">{formattedDate}</p>
-         <p className="text-[18px] font-medium text-black">00/00 sign ups</p>
+         <p className="text-[18px] font-medium text-black">{filledSlots}/{totalSlots}</p>
       </div>
     </Link>
   );

@@ -15,6 +15,8 @@ interface MyRegistration {
     id: string;
     position: string;
     endTime: string;
+    filledSlots: number; // <--- Add this
+    totalSlots: number;
     event: {
       id: string;
       name: string;
@@ -198,6 +200,8 @@ export default function ProfilePage() {
                 endTime={new Date(reg.position.endTime)}
                 location={event.addressLine1}
                 date={firstDate}
+                filledSlots={reg.position.filledSlots}
+                totalSlots={reg.position.totalSlots}
 
                 // 👇 THIS IS THE FIX: Pass the positionId to the register page
                 onEdit={() => router.push(`/register/${reg.positionId}`)}
