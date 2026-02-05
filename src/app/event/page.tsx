@@ -10,6 +10,7 @@ export default async function EventsPage() {
 
   let events: Event[] = [];
   let error: string | null = null;
+
   try {
     events = await getEvents();
   } catch {
@@ -17,9 +18,15 @@ export default async function EventsPage() {
     error = "Failed to load events";
   }
 
+  const featuredEvents = events
+    .filter((event) => event.pinned && event.date?.length > 0)
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned));
+
+  const regularEvents = events.filter((event) => !event.pinned);
+
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="w-full overflow-hidden">
         <Image
           src="/event-page-image-low.jpg"
@@ -30,56 +37,73 @@ export default async function EventsPage() {
         />
       </div>
 
-      {/* Events Section */}
-      <div className="relative w-full">
-        {/* Scrollable container */}
-        <div className="w-full overflow-x-auto scrollbar-hide">
-          <div className="flex gap-[24px] mt-12 ml-[60px] pr-[60px] w-max">
-            {error ? (
-              <p className="text-red-600 text-lg font-semibold">{error}</p>
-            ) : events.length === 0 ? (
-              <p className="text-gray-500 text-lg">No events available.</p>
-            ) : (
-              <>
-                {[...events]
-                  .filter((event) => event.date && event.date.length > 0)
-                  .sort((a, b) => Number(b.pinned) - Number(a.pinned))
-                  .map((event) => {
-                    const firstDate = event.date[0];
-                    return (
-                      <EventCard
-                        key={event.id}
-                        image="/event1.jpg"
-                        title={event.name}
-                        time={event.startTime}
-                        location={event.addressLine1}
-                        date={firstDate}
-                        id={event.id}
-                        pinned={event.pinned}
-                        isAdmin={user?.role === "ADMIN"}
-                      ></EventCard>
-                    );
-                  })}
+      <div className="w-full max-w-[1200px] px-6 py-12">
+        {/* Featured Opportunities */}
+        <h2 className="text-2xl font-semibold mb-6">Featured Opportunities</h2>
 
-                {/* Add Event Card */}
-                {user && user.role === "ADMIN" && (
-                  <Link href="/event/createEvent">
-                    <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md active:scale-[0.99]">
-                      <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
-                        <span className="text-2xl text-gray-500 leading-none">
-                          +
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                )}
-              </>
+        {error ? (
+          <p className="text-red-600 font-medium">{error}</p>
+        ) : featuredEvents.length === 0 ? (
+          <p className="text-gray-500">
+            There are no featured opportunities at this time
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+            {/* Add Event Card (Admin only) */}
+            {user?.role === "ADMIN" && (
+              <Link href="/event/createEvent">
+                <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md">
+                  <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
+                    <span className="text-2xl text-gray-500">+</span>
+                  </div>
+                </div>
+              </Link>
             )}
-          </div>
-        </div>
 
-        {/* Right gradient overlay */}
-        <div className="pointer-events-none absolute top-0 right-0 h-full w-20 bg-gradient-to-l from-white to-transparent"></div>
+            {featuredEvents.map((event) => {
+              const firstDate = event.date[0];
+              return (
+                <EventCard
+                  key={event.id}
+                  image="/event1.jpg"
+                  title={event.name}
+                  time={event.startTime}
+                  location={event.addressLine1}
+                  date={firstDate}
+                  id={event.id}
+                  pinned={event.pinned}
+                  isAdmin={user?.role === "ADMIN"}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* All Opportunities */}
+        <h2 className="text-2xl font-semibold mb-6">Opportunities</h2>
+
+        {regularEvents.length === 0 ? (
+          <p className="text-gray-500">No events available.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {regularEvents.map((event) => {
+              const firstDate = event.date?.[0];
+              return (
+                <EventCard
+                  key={event.id}
+                  image="/event1.jpg"
+                  title={event.name}
+                  time={event.startTime}
+                  location={event.addressLine1}
+                  date={firstDate}
+                  id={event.id}
+                  pinned={event.pinned}
+                  isAdmin={user?.role === "ADMIN"}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
