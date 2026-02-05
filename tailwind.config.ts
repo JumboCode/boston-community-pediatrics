@@ -20,6 +20,7 @@ const config: Config = {
         "medium-grey-border": "#D9D9D9",
         "dark-blue": "#202D74",
         "light-blue": "#7890CD",
+        "bcp-blue": "#234254",
       },
     },
   },

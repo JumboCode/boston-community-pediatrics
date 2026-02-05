@@ -15,7 +15,7 @@ type SignupFormData = {
   email: string;
   phone: string;
   dob: string;
-  languages: string[];
+  speaksSpanish: boolean,
   street?: string;
   apt?: string;
   city?: string;
@@ -93,9 +93,7 @@ const SignupForm = () => {
         email,
         phone: formData.get("phone") as string,
         dob: formData.get("dob") as string,
-        languages: (formData.get("languages") as string)
-          .split(",")
-          .map((s) => s.trim()),
+        speaksSpanish: formData.get("speaksSpanish") === "true",
         street: formData.get("street") as string,
         apt: formData.get("apt") as string,
         city: formData.get("city") as string,
@@ -154,7 +152,7 @@ const SignupForm = () => {
               emailAddress: savedFormData.email,
               phoneNumber: savedFormData.phone,
               dateOfBirth: savedFormData.dob, // sends string "YYYY-MM-DD"
-              languages: savedFormData.languages,
+              speaksSpanish: savedFormData.speaksSpanish,
               streetAddress: savedFormData.street, // Map 'street' to 'streetAddress'
               city: savedFormData.city,
               state: savedFormData.state,
@@ -379,18 +377,45 @@ const SignupForm = () => {
         </div>
 
         {/* Languages */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-row items-start justify-between">
           <label
-            htmlFor="languages"
+            htmlFor="speakSpanish"
             className="text-base font-normal text-[#6B6B6B] mb-1"
           >
-            Languages Spoken
+            Do you speak Spanish?
           </label>
-          <input
-            name="languages"
-            id="languages"
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
-          />
+          <div className="flex flex-row items-center justify-between gap-[48px]">
+            <div className="flex flex-row items-center gap-[14px]">
+              <input
+                // type="checkbox"
+                type="radio"
+                name="speaksSpanish"
+                value="true"
+                className="accent-bcp-blue rounded-md"
+              />
+              <label
+                htmlFor="speaksSpanish"
+                className="flex flex-row text-base font-normal text-[#6B6B6B] mb-1"
+              >
+                Yes
+              </label>
+            </div>
+            <div className="flex flex-row items-center gap-[14px]">
+              <input
+                  type="radio"
+                  // type="checkbox"
+                  className="accent-bcp-blue rounded-md"
+                  name="speaksSpanish"
+                  value="false"
+                />
+              <label
+                htmlFor="speaksSpanish"
+                className="text-base font-normal text-[#6B6B6B] mb-1 gap-14"
+              >
+                No
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Street Address */}
