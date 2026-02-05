@@ -48,11 +48,11 @@ export default async function EventDetailsPage(props: {
 
           {/* Event details */}
           <section className="max-w-[1000px] mt-[56px]">
-            <h1 className="text-bcp-blue text-[40px] leading-[44px]">
+            <h1 className="text-[#234254] text-[40px] leading-[44px]">
               {event.name ? event.name : "Event Name"}
             </h1>
             {/* Time / Date */}
-            <p className="mt-[8px] text-bcp-blue text-[28px] leading-[40px]">
+            <p className="mt-[8px] text-[#234254] text-[28px] leading-[40px]">
               {(() => {
                 const start = new Date(event.date[0]);
                 const end = new Date(event.date[1]);
@@ -73,7 +73,7 @@ export default async function EventDetailsPage(props: {
             </p>
 
             {/* Address */}
-            <p className="mt-[4px] text-bcp-blue text-[20px] leading-[32px]">
+            <p className="mt-[4px] text-[#234254] text-[20px] leading-[32px]">
               {[
                 event.addressLine1,
                 event.addressLine2,
@@ -83,7 +83,7 @@ export default async function EventDetailsPage(props: {
                 .join(", ")}
             </p>
 
-            <p className="mt-[32px] text-bcp-blue text-[16px] leading-[24px]">
+            <p className="mt-[32px] text-[#234254] text-[16px] leading-[24px]">
               {event.description}
             </p>
           </section>
