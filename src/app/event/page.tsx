@@ -62,7 +62,7 @@ export default async function EventsPage() {
                   })}
 
                 {/* Add Event Card */}
-                {user?.role === "ADMIN" && (
+                {user && user.role === "ADMIN" && (
                   <Link href="/event/createEvent">
                     <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md active:scale-[0.99]">
                       <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
