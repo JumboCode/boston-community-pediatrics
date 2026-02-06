@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createWaitlistSignup } from "./controller";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+
 
 import {
   getSignupsByEventId,
@@ -72,8 +78,37 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const newEventSignup = await createEventSignup(data);
-    return NextResponse.json(newEventSignup, { status: 201 });
+    const { positionId, userId } = data;
+
+    // count current signups
+    const signupCount = await prisma.eventSignup.count({
+      where: { positionId },
+    });
+
+    // get position capacity
+    const position = await prisma.eventPosition.findUnique({
+      where: { id: positionId },
+    });
+
+    if (!position) {
+      return NextResponse.json(
+        { error: "Position not found" },
+        { status: 404 }
+      );
+    }
+
+    // if space available → normal signup
+    if (signupCount < position.totalSlots) {
+      const newEventSignup = await createEventSignup(data);
+      return NextResponse.json(newEventSignup, { status: 201 });
+    }
+
+    // otherwise → WAITLIST
+    const waitlistEntry = await createWaitlistSignup(positionId, userId);
+    return NextResponse.json(
+      { waitlisted: true, waitlistEntry },
+      { status: 201 }
+    );
   } catch (err) {
     console.error(err);
     return NextResponse.json(

@@ -103,3 +103,16 @@ export const deleteEventSignup = async (eventSignupId: string) => {
   });
   return deletedEventSignup;
 };
+
+export const createWaitlistSignup = async (
+  positionId: string,
+  userId: string
+) => {
+  return prisma.eventWaitlist.create({
+    data: {
+      positionId,
+      userId,
+    },
+  });
+};
+

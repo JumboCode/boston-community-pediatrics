@@ -20,6 +20,7 @@ function toMidnight(date: string) {
   return new Date(`${date}T00:00:00`);
 }
 
+
 // GET handler
 export async function GET(req: NextRequest) {
   try {

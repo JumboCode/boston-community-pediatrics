@@ -54,21 +54,23 @@ export default async function EventDetailsPage(props: {
             {/* Time / Date */}
             <p className="mt-[8px] text-[#234254] text-[28px] leading-[40px]">
               {(() => {
-                const start = new Date(event.date[0]);
-                const end = new Date(event.date[1]);
+                const dates = event.date ?? [];
+                if (dates.length === 0) return "Date unavailable";
 
-                const month = start.toLocaleString(undefined, {
-                  month: "long",
-                });
+                const start = new Date(dates[0]);
+                if (isNaN(start.getTime())) return "Date unavailable";
+
+                const end =
+                  dates.length > 1 ? new Date(dates[dates.length - 1]) : start;
+
+                const month = start.toLocaleString(undefined, { month: "long" });
                 const year = start.getFullYear();
 
                 if (start.toDateString() === end.toDateString()) {
-                  // Single-day event
                   return `${month} ${start.getDate()}, ${year}`;
-                } else {
-                  // Multi-day event
-                  return `${month} ${start.getDate()}-${end.getDate()}, ${year}`;
                 }
+
+                return `${month} ${start.getDate()}-${end.getDate()}, ${year}`;
               })()}
             </p>
 
