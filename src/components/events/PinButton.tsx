@@ -71,7 +71,7 @@ function PinButton({ eventId, pinned: initialPinned }: PinButtonProps) {
       >
         <path
           d="M16 12V4H17V2H7V4H8V12L6 14V16H11.2V22H12.8V16H18V14L16 12Z"
-          fill={pinned ? "#234254" : "#000000"}
+          fill={pinned ? "#" : "#000000"}
         />
       </svg>
     </button>

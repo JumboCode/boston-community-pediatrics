@@ -194,7 +194,7 @@ export default function EventSignUpForm({
   // --- SUCCESS VIEW COMPONENT ---
   if (isSuccess) {
     return (
-      <div className="bg-[#426982] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
+      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
         <h2 className="text-3xl font-bold mb-2">Registration Confirmed!</h2>
         <p className="text-blue-100 mb-8">A confirmation has been sent to your email.</p>
         
@@ -214,7 +214,7 @@ export default function EventSignUpForm({
           <button onClick={() => setIsSuccess(false)} className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm">
             Edit details
           </button>
-          <button onClick={() => router.push("/")} className="px-6 py-2.5 bg-white text-[#426982] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm">
+          <button onClick={() => router.push("/")} className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm">
             Return to Home
           </button>
         </div>
@@ -283,7 +283,7 @@ export default function EventSignUpForm({
                   <input
                     type="text"
                     required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
                     value={guest.firstName}
                     onChange={(e) => updateGuest(guest.id, "firstName", e.target.value)}
                   />
@@ -293,7 +293,7 @@ export default function EventSignUpForm({
                   <input
                     type="text"
                     required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
                     value={guest.lastName}
                     onChange={(e) => updateGuest(guest.id, "lastName", e.target.value)}
                   />
@@ -307,7 +307,7 @@ export default function EventSignUpForm({
                   <input
                     type="date"
                     required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none text-gray-700"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none text-gray-700"
                     value={guest.dateOfBirth}
                     onChange={(e) => updateGuest(guest.id, "dateOfBirth", e.target.value)}
                   />
@@ -318,7 +318,7 @@ export default function EventSignUpForm({
                     type="text"
                     required
                     placeholder="e.g. Spouse, Child"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
                     value={guest.relationship}
                     onChange={(e) => updateGuest(guest.id, "relationship", e.target.value)}
                   />
@@ -330,7 +330,7 @@ export default function EventSignUpForm({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
                 <input
                   type="email"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
                   value={guest.email}
                   onChange={(e) => updateGuest(guest.id, "email", e.target.value)}
                 />
@@ -340,7 +340,7 @@ export default function EventSignUpForm({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (optional)</label>
                 <input
                   type="tel"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none"
+                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
                   value={guest.phoneNumber}
                   onChange={(e) => updateGuest(guest.id, "phoneNumber", e.target.value)}
                 />
@@ -350,7 +350,7 @@ export default function EventSignUpForm({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Additional comments</label>
                 <textarea
                   rows={4}
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-[#426982] outline-none resize-none"
+                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none resize-none"
                   value={guest.comments}
                   onChange={(e) => updateGuest(guest.id, "comments", e.target.value)}
                 />
@@ -388,7 +388,7 @@ export default function EventSignUpForm({
         <button
           onClick={handleSignUp}
           disabled={isSubmitting}
-          className="w-full py-3 bg-[#426982] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#35566b] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full py-3 bg-light-bcp-blue text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#35566b] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isSubmitting
             ? (registrationId ? "Updating..." : "Signing up...")
