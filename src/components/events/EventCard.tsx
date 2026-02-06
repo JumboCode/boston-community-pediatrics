@@ -36,6 +36,7 @@ const EventCard = ({
   const closeModal = () => {
     setModalTitle(null);
     setModalMessage(null);
+    router.refresh();
   };
 
   const router = useRouter();
@@ -75,8 +76,6 @@ const EventCard = ({
         setModalTitle("Event Pinned!");
         setModalMessage("The event has been successfully pinned.");
       }
-
-      router.refresh();
     } catch (err) {
       setModalTitle("Error");
       setModalMessage("Something went wrong. Please try again.");
@@ -125,7 +124,10 @@ const EventCard = ({
           label: pinned ? "Unpin" : "Pin",
           onClick: handlePinToggle,
         },
-        { label: "Edit", onClick: () => router.push(`/event/createEvent?id=${id}`) },
+        {
+          label: "Edit",
+          onClick: () => router.push(`/event/createEvent?id=${id}`),
+        },
         {
           label: "Delete",
           danger: true,
@@ -206,7 +208,8 @@ const EventCard = ({
           >
             <h2 className="text-4xl mb-4">Delete Event?</h2>
             <p className="text-xl text-gray-700 mb-8">
-              Are you sure you want to delete this event? This action cannot be undone.
+              Are you sure you want to delete this event? This action cannot be
+              undone.
             </p>
 
             <div className="flex gap-4">

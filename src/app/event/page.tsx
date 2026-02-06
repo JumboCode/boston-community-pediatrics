@@ -38,23 +38,37 @@ export default async function EventsPage() {
       </div>
 
       <div className="w-full max-w-[1200px] px-6 py-12">
+        <h1 className="text-[16px] font-semibold mb-6 color: #234254">
+          Home / Events
+        </h1>
         {/* Featured Opportunities */}
-        <h2 className="text-2xl font-semibold mb-6">Featured Opportunities</h2>
+        <h2 className="text-[32px] font-semibold mb-6 color: #234254">
+          Featured Opportunities
+        </h2>
 
         {error ? (
           <p className="text-red-600 font-medium">{error}</p>
-        ) : featuredEvents.length === 0 ? (
-          <p className="text-gray-500">
-            There are no featured opportunities at this time
-          </p>
-        ) : (
+        ) : featuredEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
             {/* Add Event Card (Admin only) */}
             {user?.role === "ADMIN" && (
               <Link href="/event/createEvent">
-                <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md">
-                  <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
-                    <span className="text-2xl text-gray-500">+</span>
+                <div className="relative flex flex-col w-[283px] rounded-2xl shadow p-4 gap-2 bg-white cursor-pointer transition hover:shadow-md hover:bg-gray-50">
+                  {/* Image placeholder (same height as event image) */}
+                  <div className="w-full h-[268px] rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
+                      <span className="text-2xl text-gray-500">+</span>
+                    </div>
+                  </div>
+
+                  {/* Text placeholders to match card height */}
+                  <div className="flex-1 flex flex-col justify-center items-center text-center gap-1">
+                    <p className="text-sm font-medium text-gray-600">
+                      Add Event
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Create a new opportunity
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -77,10 +91,40 @@ export default async function EventsPage() {
               );
             })}
           </div>
+        ) : user?.role === "ADMIN" ? (
+          <div className="mb-12">
+            <Link href="/event/createEvent">
+              <div className="relative flex flex-col w-[283px] h-[318px] rounded-2xl shadow p-4 gap-2 bg-white cursor-pointer transition hover:shadow-md hover:bg-gray-50 mb-4">
+                <div className="w-full h-[167.53px] rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
+                    <span className="text-2xl text-gray-500">+</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col justify-center items-center text-center gap-1">
+                  <p className="text-sm font-medium text-gray-600">Add Event</p>
+                  <p className="text-xs text-gray-400">
+                    Create a new opportunity
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <p className="text-gray-500">
+              There are currently no pinned events. Pin an event to display it
+              on the home page.
+            </p>
+          </div>
+        ) : (
+          <p className="text-gray-500 mb-12">
+            There are no featured events at this time.
+          </p>
         )}
 
         {/* All Opportunities */}
-        <h2 className="text-2xl font-semibold mb-6">Opportunities</h2>
+        <h2 className="text-[32px] font-semibold mb-6 color: #234254">
+          Opportunities
+        </h2>
 
         {regularEvents.length === 0 ? (
           <p className="text-gray-500">No events available.</p>
