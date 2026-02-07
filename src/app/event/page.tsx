@@ -1,7 +1,7 @@
 import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
 import { getEvents } from "@/app/api/events/controller";
-import { Event } from "@prisma/client";
+import { Event, UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 
@@ -20,9 +20,25 @@ export default async function EventsPage() {
 
   const featuredEvents = events
     .filter((event) => event.pinned && event.date?.length > 0)
-    .sort((a, b) => Number(b.pinned) - Number(a.pinned));
+    .sort((a, b) => {
+      const dateDiff =
+        new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
 
-  const regularEvents = events.filter((event) => !event.pinned);
+      if (dateDiff !== 0) return dateDiff;
+
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
+
+  const regularEvents = events
+    .filter((event) => !event.pinned && event.date?.length > 0)
+    .sort((a, b) => {
+      const dateDiff =
+        new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
+
+      if (dateDiff !== 0) return dateDiff;
+
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -51,24 +67,11 @@ export default async function EventsPage() {
         ) : featuredEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
             {/* Add Event Card (Admin only) */}
-            {user?.role === "ADMIN" && (
+            {user && user.role === UserRole.ADMIN && (
               <Link href="/event/createEvent">
-                <div className="relative flex flex-col w-[283px] rounded-2xl shadow p-4 gap-2 bg-white cursor-pointer transition hover:shadow-md hover:bg-gray-50">
-                  {/* Image placeholder (same height as event image) */}
-                  <div className="w-full h-[268px] rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
-                      <span className="text-2xl text-gray-500">+</span>
-                    </div>
-                  </div>
-
-                  {/* Text placeholders to match card height */}
-                  <div className="flex-1 flex flex-col justify-center items-center text-center gap-1">
-                    <p className="text-sm font-medium text-gray-600">
-                      Add Event
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Create a new opportunity
-                    </p>
+                <div className="w-[283px] h-[348px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md">
+                  <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
+                    <span className="text-2xl text-gray-500">+</span>
                   </div>
                 </div>
               </Link>
@@ -86,31 +89,22 @@ export default async function EventsPage() {
                   date={firstDate}
                   id={event.id}
                   pinned={event.pinned}
-                  isAdmin={user?.role === "ADMIN"}
+                  isAdmin={user?.role === UserRole.ADMIN}
                 />
               );
             })}
           </div>
-        ) : user?.role === "ADMIN" ? (
+        ) : user && user.role === UserRole.ADMIN ? (
           <div className="mb-12">
             <Link href="/event/createEvent">
-              <div className="relative flex flex-col w-[283px] h-[318px] rounded-2xl shadow p-4 gap-2 bg-white cursor-pointer transition hover:shadow-md hover:bg-gray-50 mb-4">
-                <div className="w-full h-[167.53px] rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
-                    <span className="text-2xl text-gray-500">+</span>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col justify-center items-center text-center gap-1">
-                  <p className="text-sm font-medium text-gray-600">Add Event</p>
-                  <p className="text-xs text-gray-400">
-                    Create a new opportunity
-                  </p>
+              <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md">
+                <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
+                  <span className="text-2xl text-gray-500">+</span>
                 </div>
               </div>
             </Link>
 
-            <p className="text-gray-500">
+            <p className="text-gray-500 mt-8">
               There are currently no pinned events. Pin an event to display it
               on the home page.
             </p>
@@ -142,7 +136,7 @@ export default async function EventsPage() {
                   date={firstDate}
                   id={event.id}
                   pinned={event.pinned}
-                  isAdmin={user?.role === "ADMIN"}
+                  isAdmin={user?.role === UserRole.ADMIN}
                 />
               );
             })}

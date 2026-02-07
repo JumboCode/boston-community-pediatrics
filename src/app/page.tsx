@@ -113,7 +113,7 @@ const Home: React.FC = () => {
           <p className="text-[#234254] text-lg">Loading events...</p>
         ) : pinnedEvents.length === 0 ? (
           <p className="text-[#234254] text-lg">
-            No featured events at this time.
+            There are no featured events at this time.
           </p>
         ) : (
           pinnedEvents.map((event) => {

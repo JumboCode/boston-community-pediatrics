@@ -64,7 +64,7 @@ export function KebabMenu({ items }: KebabMenuProps) {
       {/* Menu */}
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 w-[120px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+          className="absolute right-0 z-50 mt-2 w-[120px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden"
           role="menu"
         >
           {items.map((item, index) => (
