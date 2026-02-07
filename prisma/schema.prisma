@@ -72,8 +72,6 @@ model EventSignup {
   time       DateTime?
   notes      String?
   
-  status SignupStatus     @defaul(CONFIRMED)
-
   user       User?        @relation(fields: [userId], references: [id])
   event      Event        @relation(fields: [eventId], references: [id])
   position   EventPosition @relation(fields: [positionId], references: [id])

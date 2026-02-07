@@ -1,4 +1,5 @@
 import { UserRole, PrismaClient } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 export async function getUsers() {
@@ -32,7 +33,6 @@ export async function createUser(data: any) {
       zipCode: data.zipCode,
       // Handle the Role
       role: (data.role as UserRole) || "VOLUNTEER",
-      // If you added 'languages' to your schema, uncomment this:
     },
   });
   return newUser;
