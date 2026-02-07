@@ -7,11 +7,14 @@ import {
   createEventSignup,
   updateEventSignup,
   deleteEventSignup,
+  getEmailContextForSignup,
 } from "./controller";
 
 import { decrementEventPositionCount } from "../eventPosition/controller";
 import { UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
+
+import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -29,7 +32,7 @@ export async function GET(req: NextRequest) {
         isAdmin = true;
       }
     }
-    if(userId){
+    if (userId) {
       const signups = await getSignupsByUserId(userId);
       return NextResponse.json(signups);
     }
@@ -73,6 +76,59 @@ export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
     const newEventSignup = await createEventSignup(data);
+
+    try {
+      console.log("About to send signup email for signup:", newEventSignup.id);
+
+      const { user, event, position } = await getEmailContextForSignup(
+        newEventSignup.id
+      );
+
+      const tz = "America/New_York";
+      const fmtDate = (d: Date) =>
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }).format(d);
+
+      const fmtTime = (d: Date) =>
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(d);
+
+      const formatLocation = () => {
+        const parts = [
+          position.addressLine1,
+          position.addressLine2,
+          `${position.city}, ${position.state} ${position.zipCode}`,
+        ].filter(Boolean);
+        return parts.join(", ");
+      };
+
+      await sendSignupConfirmed({
+        // TODO: FIX BEFORE MERGEEEE
+        // to: user.emailAddress,
+        to: "bcpjumbocode@gmail.com",
+        firstName: user.firstName,
+        eventName: event.name,
+        position: position.position,
+        date: fmtDate(position.date),
+        startTime: fmtTime(position.startTime),
+        endTime: fmtTime(position.endTime),
+        filledSlots: position.filledSlots,
+        location: formatLocation(),
+      });
+    } catch (e) {
+      console.error("Email failed:", e);
+
+      console.error("Email failed (continuing anyway):", e);
+    }
+
     return NextResponse.json(newEventSignup, { status: 201 });
   } catch (err) {
     console.error(err);
