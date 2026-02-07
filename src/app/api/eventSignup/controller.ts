@@ -11,16 +11,13 @@ export const getSignupsByEventId = async (eventId: string) => {
   return signups;
 };
 
-export async function getSignupsByUserId(
-  userId: string
-){
+export async function getSignupsByUserId(userId: string) {
   const signups = await prisma.eventSignup.findMany({
     where: { userId },
     include: { event: true },
   });
   return signups;
 }
-
 
 // Fetch user signups by event position
 export async function getUsersByPositionId(
@@ -103,3 +100,22 @@ export const deleteEventSignup = async (eventSignupId: string) => {
   });
   return deletedEventSignup;
 };
+
+export async function getEmailContextForSignup(signupId: string) {
+  const signup = await prisma.eventSignup.findUnique({
+    where: { id: signupId },
+    include: { user: true, event: true, position: true },
+  });
+
+  if (!signup) throw new Error("Signup not found");
+  if (!signup.user) throw new Error("Signup user not found");
+  if (!signup.event) throw new Error("Signup event not found");
+  if (!signup.position) throw new Error("Signup position not found");
+
+  return {
+    signup,
+    user: signup.user,
+    event: signup.event,
+    position: signup.position,
+  };
+}
