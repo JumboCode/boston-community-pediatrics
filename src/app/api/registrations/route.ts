@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
 
 // --- Configuration ---
 const MAX_GUESTS = 20;
@@ -109,7 +110,11 @@ export async function POST(req: NextRequest) {
         data: { filledSlots: { increment: spotsNeeded } },
       });
 
+
+      
       return { status: "registered", data: newSignup };
+        
+
     });
 
     return NextResponse.json(result, { status: 201 });
