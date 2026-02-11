@@ -9,10 +9,8 @@ import {
   Column,
   Img,
 } from "@react-email/components";
-import event1 from "@/public/event1.jpg"; // Placeholder image for event to test
 
 const BASE_URL = "https://boston-community-pediatrics.vercel.app";
-
 
 // Could be good for actual event, but info should already be there on sign up
 interface SignedUpTemplateProps {

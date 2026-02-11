@@ -1,3 +1,6 @@
+// TODO: are we supposed to delete this or add auth
+// cuz we just use sendEmail directly in the email functions
+
 import { sendEmail } from "@/lib/email/resend";
 import { z } from "zod";
 

@@ -100,22 +100,3 @@ export const deleteEventSignup = async (eventSignupId: string) => {
   });
   return deletedEventSignup;
 };
-
-export async function getEmailContextForSignup(signupId: string) {
-  const signup = await prisma.eventSignup.findUnique({
-    where: { id: signupId },
-    include: { user: true, event: true, position: true },
-  });
-
-  if (!signup) throw new Error("Signup not found");
-  if (!signup.user) throw new Error("Signup user not found");
-  if (!signup.event) throw new Error("Signup event not found");
-  if (!signup.position) throw new Error("Signup position not found");
-
-  return {
-    signup,
-    user: signup.user,
-    event: signup.event,
-    position: signup.position,
-  };
-}
