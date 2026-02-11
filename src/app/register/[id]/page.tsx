@@ -68,8 +68,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
                 lastName: user.lastName || "",
                 emailAddress: user.primaryEmailAddress?.emailAddress || "",
                 phoneNumber: user.primaryPhoneNumber?.phoneNumber || "",
-                // Provide default/placeholder values for required fields
-                dateOfBirth: "2000-01-01", // Placeholder - user can update later
+                dateOfBirth: "2000-01-01", 
                 streetAddress: "",
                 city: "",
                 state: "",
@@ -90,18 +89,15 @@ export default function RegisterPage({ params }: RegisterPageProps) {
           userData = await createRes.json();
           console.log("User created successfully:", userData);
         } else if (!userRes.ok) {
-          // Some other error
           const errorText = await userRes.text();
           console.error("User API failed:", errorText);
           setError(`User API error: ${userRes.status} - ${errorText}`);
           setData(null);
           return;
         } else {
-          // User exists
           userData = await userRes.json();
         }
 
-        // Fetch position data
         const posRes = await fetch(`/api/eventPosition?id=${positionId}`);
 
         if (!posRes.ok) {

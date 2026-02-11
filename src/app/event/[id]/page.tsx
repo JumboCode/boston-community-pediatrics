@@ -41,22 +41,26 @@ export default async function EventDetailsPage(props: {
     }
 
     const imageUrls = (
-      await Promise.all(
-        (event.images ?? []).map(async (filename) => {
-          try {
-            const res = await fetch(
-              `${process.env.NEXT_PUBLIC_BASE_URL}/api/images?filename=${encodeURIComponent(filename)}`,
-              { cache: "no-store" }
-            );
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data.url as string;
-          } catch {
-            return null;
-          }
-        })
-      )
-    ).filter(Boolean) as string[];
+  await Promise.all(
+    (event.images ?? []).map(async (filename) => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/images?filename=${encodeURIComponent(filename)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) {
+          console.error(`Failed to fetch image ${filename}: ${res.status}`);
+          return null;
+        }
+        const data = await res.json();
+        return data.url as string;
+      } catch (error) {
+        console.error(`Error fetching image ${filename}:`, error);
+        return null;
+      }
+    })
+  )
+).filter(Boolean) as string[];
 
     return (
       <div className="flex flex-col justify-center items-center">

@@ -20,18 +20,16 @@ export async function getUserById(id: string) {
 export async function createUser(data: any) {
   const newUser = await prisma.user.create({
     data: {
-      id: data.id, // Explicitly set ID (from Clerk)
+      id: data.id, 
       firstName: data.firstName,
       lastName: data.lastName,
       emailAddress: data.emailAddress,
       phoneNumber: data.phoneNumber,
-      // FIX: Convert the string "YYYY-MM-DD" to a Date object
       dateOfBirth: new Date(data.dateOfBirth),
       streetAddress: data.streetAddress,
       city: data.city,
       state: data.state,
       zipCode: data.zipCode,
-      // Handle the Role
       role: (data.role as UserRole) || "VOLUNTEER",
     },
   });
