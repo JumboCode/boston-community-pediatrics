@@ -480,15 +480,25 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (signup) {
+        const positionId = signup.positionId;
+
+        // ==================================================================
+        // 0. LOCK THE ROW (Prevent Race Conditions)
+        // ==================================================================
+        // This locks the specific EventPosition row. No other transaction 
+        // can read or write to this position until this transaction finishes.
+        // We use "EventPosition" because that is the default table name in DB.
+        await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${positionId} FOR UPDATE`;
+
         // 1. Calculate how many slots are opening up
         const slotsFreed = 1 + signup.guests.length;
-        const positionId = signup.positionId;
 
         // 2. Delete the signup and its guests
         await tx.guest.deleteMany({ where: { signupId: id } });
         await tx.eventSignup.delete({ where: { id } });
 
-        // 3. Decrement filledSlots temporarily (we might fill them right back up)
+        // 3. Decrement filledSlots temporarily
+        // (The lock above ensures no one else sees this temporary state)
         const position = await tx.eventPosition.update({
           where: { id: positionId },
           data: { filledSlots: { decrement: slotsFreed } },
@@ -497,12 +507,11 @@ export async function DELETE(req: NextRequest) {
         // ----------------------------------------------------------
         // AUTO-PROMOTION LOGIC
         // ----------------------------------------------------------
-        // Fetch waitlist candidates for this position, ordered by who joined first
-        // (Assuming purely based on ID or insertion order if createdAt isn't available)
+        // Fetch waitlist candidates, ordered by creation time (FIFO)
         const waitlistCandidates = await tx.eventWaitlist.findMany({
           where: { positionId },
           include: { guests: true },
-          orderBy: { id: "asc" }, 
+          orderBy: { createdAt: "asc" }, // Ensure you ran `db push` for this field
         });
 
         let currentFilled = position.filledSlots;
@@ -519,18 +528,17 @@ export async function DELETE(req: NextRequest) {
               data: {
                 userId: candidate.userId,
                 positionId: candidate.positionId,
-                eventId: position.eventId, // We need to fetch eventId from position or candidate relation
+                eventId: position.eventId, 
                 hasGuests: candidate.guests.length > 0,
                 guests: {
                   create: candidate.guests.map((g) => ({
                     positionId: candidate.positionId,
                     firstName: g.firstName,
                     lastName: g.lastName,
-                    emailAddress: g.email, // Map email -> emailAddress
+                    emailAddress: g.email,
                     relation: g.relation,
                     dateOfBirth: g.dateOfBirth,
                     comments: g.comments,
-                    // Waitlist doesn't have phone, so it stays null
                   })),
                 },
               },
@@ -550,8 +558,7 @@ export async function DELETE(req: NextRequest) {
               data: { filledSlots: { increment: spotsNeeded } },
             });
           } else {
-            // If the first person doesn't fit, we stop.
-            // (Strict FIFO queue: we don't skip over people to find smaller groups)
+            // Strict FIFO: Stop if the next person doesn't fit
             break; 
           }
         }
@@ -567,7 +574,8 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (waitlistEntry) {
-        // Just delete it, no need to recalc slots
+        // Just delete it. No need to lock position because removing a waitlist 
+        // entry doesn't affect the filledSlots count.
         await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
         await tx.eventWaitlist.delete({ where: { id } });
         return { message: "Removed from waitlist." };

@@ -12,6 +12,7 @@ interface EventCardProps {
   location: string;
   filledSlots: number;
   totalSlots: number;
+  userRole: string;
   date: Date;
   id: string;
   onEdit?: () => void;
@@ -27,6 +28,7 @@ const EventCard = ({
   location,
   filledSlots,
   totalSlots,
+  userRole,
   date,
   id,
   onEdit,
@@ -35,6 +37,8 @@ const EventCard = ({
 }: EventCardProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const isAdmin = userRole === "ADMIN";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -74,7 +78,7 @@ const EventCard = ({
   return (
     <Link
       href={`/event/${id}`}
-      className="relative flex flex-col w-[305px] h-[330px] rounded-2xl shadow-sm p-4 gap-2 bg-white group hover:shadow-md transition-shadow border border-gray-50"
+      className="relative flex flex-col w-[275px] h-[300px] rounded-2xl shadow-sm p-4 gap-2 bg-white group hover:shadow-md transition-shadow border border-gray-50"
     >
       {/* Image */}
       <div className="w-full h-[165px] relative overflow-hidden rounded-xl bg-gray-200">
@@ -91,7 +95,7 @@ const EventCard = ({
         <h3 className="text-[20px] font-medium text-[#426982] leading-tight truncate pr-2">
           {title}
         </h3>
-        
+
         {/* Menu Trigger */}
         <button
           onClick={(e) => {
@@ -108,19 +112,50 @@ const EventCard = ({
 
         {/* Dropdown Menu */}
         {showMenu && (
-          <div 
+          <div
             ref={menuRef}
-            className="absolute top-8 right-0 w-36 bg-white rounded-lg shadow-xl border border-gray-100 z-20 overflow-hidden"
+            className="absolute top-8 right-0 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden"
+            onClick={(e) => e.preventDefault()}
           >
-            <button onClick={(e) => handleMenuClick(e, onEdit)} className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-50">
-              Edit
-            </button>
-            <button onClick={(e) => handleMenuClick(e, onRemove)} className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-50">
-              Remove
-            </button>
-            <button onClick={(e) => handleMenuClick(e, onVolunteer)} className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50">
-              Volunteer
-            </button>
+            {isAdmin ? (
+              // ADMIN MENU
+              <>
+                <button
+                  onClick={(e) => handleMenuClick(e, onEdit)}
+                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-100"
+                >
+                  Edit Event
+                </button>
+                <button
+                  onClick={(e) => handleMenuClick(e, onRemove)}
+                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 border-b border-gray-100"
+                >
+                  Remove Event
+                </button>
+                <button
+                  onClick={(e) => handleMenuClick(e, onVolunteer)}
+                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50"
+                >
+                  Volunteer
+                </button>
+              </>
+            ) : (
+              // USER MENU
+              <>
+                <button
+                  onClick={(e) => handleMenuClick(e, onEdit)}
+                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-100"
+                >
+                  Edit sign up
+                </button>
+                <button
+                  onClick={(e) => handleMenuClick(e, onRemove)}
+                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                >
+                  Cancel sign up
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -130,11 +165,11 @@ const EventCard = ({
         <p>{timeRange}</p>
         <p className="line-clamp-1">{location}</p>
       </div>
-      
+
       {/* Bottom Footer */}
       <div className="flex justify-between items-end mt-auto pb-1">
-         <p className="text-[14px] text-gray-500">{formattedDate}</p>
-         <p className="text-[18px] font-medium text-black">{filledSlots}/{totalSlots}</p>
+        <p className="text-[14px] text-gray-500">{formattedDate}</p>
+        <p className="text-[18px] font-medium text-black">{filledSlots}/{totalSlots}</p>
       </div>
     </Link>
   );

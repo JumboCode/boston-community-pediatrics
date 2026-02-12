@@ -28,6 +28,94 @@ interface MyRegistration {
   };
 }
 
+// --- DEMO DATA FOR VISUAL TESTING ---
+// const DEMO_UPCOMING_EVENTS: MyRegistration[] = [
+//   {
+//     id: "demo-1",
+//     positionId: "pos-1",
+//     status: "registered",
+//     imageUrl: "/event1.jpg", // Ensure this image exists in your public folder or use a placeholder URL
+//     position: {
+//       id: "pos-1",
+//       position: "Greeter",
+//       endTime: new Date(new Date().setHours(14, 0)).toISOString(),
+//       filledSlots: 5,
+//       totalSlots: 10,
+//       event: {
+//         id: "evt-1",
+//         name: "Community Garden Cleanup",
+//         startTime: new Date(new Date().setHours(10, 0)).toISOString(),
+//         addressLine1: "123 Green St, Springfield",
+//         date: [new Date(new Date().setDate(new Date().getDate() + 2)).toISOString()], // 2 days from now
+//         images: ["/event1.jpg"],
+//       },
+//     },
+//   },
+//   {
+//     id: "demo-2",
+//     positionId: "pos-2",
+//     status: "registered",
+//     imageUrl: "/event2.jpg",
+//     position: {
+//       id: "pos-2",
+//       position: "Food Server",
+//       endTime: new Date(new Date().setHours(18, 0)).toISOString(),
+//       filledSlots: 12,
+//       totalSlots: 15,
+//       event: {
+//         id: "evt-2",
+//         name: "Charity Gala Dinner",
+//         startTime: new Date(new Date().setHours(15, 0)).toISOString(),
+//         addressLine1: "Grand Hotel Ballroom",
+//         date: [new Date(new Date().setDate(new Date().getDate() + 5)).toISOString()], // 5 days from now
+//         images: ["/event2.jpg"],
+//       },
+//     },
+//   },
+//   {
+//     id: "demo-3",
+//     positionId: "pos-3",
+//     status: "registered",
+//     imageUrl: "/event3.jpg",
+//     position: {
+//       id: "pos-3",
+//       position: "Registration Desk",
+//       endTime: new Date(new Date().setHours(12, 0)).toISOString(),
+//       filledSlots: 3,
+//       totalSlots: 3,
+//       event: {
+//         id: "evt-3",
+//         name: "Morning Marathon",
+//         startTime: new Date(new Date().setHours(6, 0)).toISOString(),
+//         addressLine1: "City Park Entrance",
+//         date: [new Date(new Date().setDate(new Date().getDate() + 10)).toISOString()],
+//         images: ["/event3.jpg"],
+//       },
+//     },
+//   },
+//   {
+//     id: "demo-4", // <--- The 4th Event to test wrapping
+//     positionId: "pos-4",
+//     status: "registered",
+//     imageUrl: "/event4.jpg",
+//     position: {
+//       id: "pos-4",
+//       position: "Setup Crew",
+//       endTime: new Date(new Date().setHours(11, 0)).toISOString(),
+//       filledSlots: 8,
+//       totalSlots: 20,
+//       event: {
+//         id: "evt-4",
+//         name: "Music Festival Setup",
+//         startTime: new Date(new Date().setHours(8, 0)).toISOString(),
+//         addressLine1: "Downtown Arena",
+//         date: [new Date(new Date().setDate(new Date().getDate() + 12)).toISOString()],
+//         images: ["/event4.jpg"],
+//       },
+//     },
+//   },
+// ];
+
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
@@ -35,6 +123,7 @@ export default function ProfilePage() {
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
+  const [userRole, setUserRole] = useState<string>(""); // <--- NEW STATE
 
   // 1. Fetch User Phone Number
   useEffect(() => {
@@ -45,6 +134,7 @@ export default function ProfilePage() {
         if (response.ok) {
           const userData = await response.json();
           setPhoneNumber(userData.phoneNumber ?? "—");
+          setUserRole(userData.role ?? "VOLUNTEER");
         }
       } catch (err) {
         console.error("Failed to load phone number:", err);
@@ -131,6 +221,43 @@ export default function ProfilePage() {
     }
   };
 
+  // -------------------------------------------------------------
+  // ADMIN ACTION: Delete Entire Event
+  // -------------------------------------------------------------
+  const handleDeleteEvent = async (eventId: string, registrationId?: string) => {
+    const confirmDelete = window.confirm("ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?");
+    if (!confirmDelete) return;
+
+    if (eventId.startsWith("evt-") || eventId === "demo-event") {
+       alert("Demo event deleted.");
+       return;
+    }
+
+    try {
+      const res = await fetch(`/api/events?id=${eventId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // If successful, remove the card from the UI
+        // We use the registrationId to filter it out of the local state array
+        if (registrationId) {
+            setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
+        } else {
+            // Fallback: reload page if we can't find the specific card ID
+            window.location.reload();
+        }
+        alert("Event successfully deleted.");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to delete event.");
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("An error occurred while deleting the event.");
+    }
+  }
+
   if (!isLoaded || loading) {
     return <main className="min-h-screen p-8" />;
   }
@@ -166,12 +293,16 @@ export default function ProfilePage() {
     }
   });
 
+  // upcoming = DEMO_UPCOMING_EVENTS; // remove this after testing
+
   // Sort Past events: Most recent first (Descending)
   past.sort((a, b) => {
     const dateA = new Date(a.position.event.date[0]).getTime();
     const dateB = new Date(b.position.event.date[0]).getTime();
     return dateB - dateA;
   });
+
+  const isAdmin = userRole === "ADMIN";
 
   return (
     <main className="min-h-screen p-8">
@@ -182,7 +313,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="mt-[54px] ml-[120px] flex flex-wrap gap-[25px]">
+      <div className="mt-[54px] ml-[100px] grid grid-cols-3 gap-[50px] max-w-[800px]">
         {upcoming.length === 0 ? (
           <p className="text-lg text-gray-500">No upcoming events found.</p>
         ) : (
@@ -203,11 +334,31 @@ export default function ProfilePage() {
                 filledSlots={reg.position.filledSlots}
                 totalSlots={reg.position.totalSlots}
 
-                // 👇 THIS IS THE FIX: Pass the positionId to the register page
-                onEdit={() => router.push(`/register/${reg.positionId}`)}
+                userRole={userRole}
 
+                // 👇 THIS IS THE FIX: Pass the positionId to the register page
+                // CONDITIONAL ACTIONS
+                onEdit={() => {
+                   if (isAdmin) {
+                      // Admin -> Go to Event Details Page
+                      router.push(`/event/${event.id}`);
+                   } else {
+                      // User -> Go to Registration Page
+                      router.push(`/register/${reg.positionId}`);
+                   }
+                }}
+                
+                onRemove={() => {
+                    if (isAdmin) {
+                        // Admin -> Delete Event API
+                        handleDeleteEvent(event.id, reg.id);
+                    } else {
+                        // User -> Cancel Signup API
+                        handleRemove(reg.id);
+                    }
+                }}
                 onVolunteer={() => router.push(`/event/${event.id}`)}
-                onRemove={() => handleRemove(reg.id)} />
+                />
             );
           })
         )}
@@ -274,75 +425,85 @@ export default function ProfilePage() {
       </div>
 
       {/* PAST EVENTS */}
-      {/* PAST EVENTS SECTION */}
-      <div className="mt-[41.05px] ml-[120px]">
-        <div className="h-[36.19] w-[283px] text-[28px] font-bold">
-          Past Events
-        </div>
+      <div className="mt-[41px] ml-[120px] mb-20">
+        <h2 className="text-[28px] font-bold mb-6">Your Past Events</h2>
 
-        {/* Table Header */}
-        <div className="mt-[18px] flex w-[690px] items-center">
-          <div className="w-[120px]" />
-          <div className="mt-[24.81px] flex-1 text-center text-[14px] font-bold">Event name</div>
-          <div className="mt-[24.81px] w-[170px] text-center text-[14px] font-bold">Position</div>
-          <div className="mt-[24.81px] w-[170px] text-center text-[14px] font-bold">Volunteer hours</div>
-        </div>
+        {/* Card Container */}
+        <div className="w-[690px] rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          {/* Table Header */}
+          <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] border-b border-gray-200 bg-white py-4 px-4">
+            {/* Empty space above Date */}
+            <div className=""></div>
+            <div className="text-left text-[14px] font-medium text-gray-900">
+              Event
+            </div>
+            <div className="text-left text-[14px] font-medium text-gray-900">
+              Position
+            </div>
+            <div className="text-center text-[14px] font-medium text-gray-900">
+              Hours
+            </div>
+          </div>
 
-        {/* Table Body */}
-        <div className="mt-[7.08px] mb-[96px] w-[690px] border-[2px] border-black bg-white">
-          {past.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No past events found.</div>
-          ) : (
-            <div className="flex flex-col">
-              {past.map((reg, idx) => {
+          {/* Table Body - Scrollable to match screenshot scrollbar */}
+          <div className="max-h-[320px] overflow-y-auto">
+            {past.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No past events found.
+              </div>
+            ) : (
+              past.map((reg, idx) => {
                 const dateObj = new Date(reg.position.event.date[0]);
-                const month = dateObj.toLocaleString('default', { month: 'short' }).toUpperCase();
-                const day = dateObj.getDate().toString().padStart(2, '0');
+                const month = dateObj
+                  .toLocaleString("default", { month: "short" })
+                  .toUpperCase();
+                const day = dateObj.getDate().toString().padStart(2, "0");
 
                 // Calculate duration in hours
                 const start = new Date(reg.position.event.startTime).getTime();
-                const end = new Date(reg.position.endTime).getTime(); // Position needs endTime in query!
-                const hours = !isNaN(end - start)
-                  ? ((end - start) / (1000 * 60 * 60)).toFixed(1) // e.g., "5.0"
-                  : "—";
+                const end = new Date(reg.position.endTime).getTime();
+                const hoursVal = !isNaN(end - start)
+                  ? (end - start) / (1000 * 60 * 60)
+                  : 0;
 
-                const isLast = idx === past.length - 1;
+                // Format: if whole number show "5", if decimal show "5.5"
+                const hoursDisplay =
+                  hoursVal % 1 === 0 ? hoursVal.toString() : hoursVal.toFixed(1);
 
                 return (
                   <div
                     key={reg.id}
-                    className={[
-                      "grid grid-cols-[120px_1fr_170px_170px] items-center h-[52px]", // Fixed height per row
-                      !isLast ? "border-b border-[#8C8C8C]" : "",
-                    ].join(" ")}
+                    className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors"
                   >
                     {/* Date Column */}
-                    <div className="pl-[24px] leading-none">
-                      <div className="text-[14px]">{month}</div>
-                      <div className="ml-[4px] -mt-[2px] text-[20px] font-bold">
+                    <div className="flex flex-col items-center justify-center leading-none">
+                      <span className="text-[11px] font-bold uppercase text-gray-500">
+                        {month}
+                      </span>
+                      <span className="text-[22px] font-bold text-black">
                         {day}
-                      </div>
+                      </span>
                     </div>
 
-                    {/* Name Column */}
-                    <div className="text-center text-[16px] truncate px-2">
+                    {/* Event Name */}
+                    <div className="text-[16px] font-medium text-black truncate pr-2">
                       {reg.position.event.name}
                     </div>
 
-                    {/* Position Column */}
-                    <div className="text-center text-[14px] truncate px-2">
+                    {/* Position */}
+                    <div className="text-[14px] text-gray-600 truncate pr-2">
                       {reg.position.position}
                     </div>
 
-                    {/* Hours Column */}
-                    <div className="text-center text-[14px]">
-                      {hours}
+                    {/* Hours */}
+                    <div className="text-[14px] font-medium text-black text-center">
+                      {hoursDisplay}
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          )}
+              })
+            )}
+          </div>
         </div>
       </div>
     </main>
