@@ -313,7 +313,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="mt-[54px] ml-[100px] grid grid-cols-3 gap-[50px] max-w-[800px]">
+      <div className="mt-[54px] ml-[120px] grid grid-cols-3 gap-[50px] max-w-[800px]">
         {upcoming.length === 0 ? (
           <p className="text-lg text-gray-500">No upcoming events found.</p>
         ) : (
