@@ -15,6 +15,7 @@ model User {
   emailAddress  String          @unique
   phoneNumber   String
   dateOfBirth   DateTime?
+  speaksSpanish  Boolean?
   streetAddress String?
   city          String?
   state         String?
