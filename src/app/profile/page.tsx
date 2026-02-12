@@ -5,117 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Define the shape of the data from our API
-interface MyRegistration {
-  id: string; // Registration ID
-  positionId: string;
-  status: string;
-  imageUrl?: string; // <--- Add this property
-  position: {
-    id: string;
-    position: string;
-    endTime: string;
-    filledSlots: number; // <--- Add this
-    totalSlots: number;
-    event: {
-      id: string;
-      name: string;
-      startTime: string; // ISO String
-      addressLine1: string;
-      date: string[]; // ISO String array
-      images: string[];
-    };
-  };
-}
-
-// --- DEMO DATA FOR VISUAL TESTING ---
-// const DEMO_UPCOMING_EVENTS: MyRegistration[] = [
-//   {
-//     id: "demo-1",
-//     positionId: "pos-1",
-//     status: "registered",
-//     imageUrl: "/event1.jpg", // Ensure this image exists in your public folder or use a placeholder URL
-//     position: {
-//       id: "pos-1",
-//       position: "Greeter",
-//       endTime: new Date(new Date().setHours(14, 0)).toISOString(),
-//       filledSlots: 5,
-//       totalSlots: 10,
-//       event: {
-//         id: "evt-1",
-//         name: "Community Garden Cleanup",
-//         startTime: new Date(new Date().setHours(10, 0)).toISOString(),
-//         addressLine1: "123 Green St, Springfield",
-//         date: [new Date(new Date().setDate(new Date().getDate() + 2)).toISOString()], // 2 days from now
-//         images: ["/event1.jpg"],
-//       },
-//     },
-//   },
-//   {
-//     id: "demo-2",
-//     positionId: "pos-2",
-//     status: "registered",
-//     imageUrl: "/event2.jpg",
-//     position: {
-//       id: "pos-2",
-//       position: "Food Server",
-//       endTime: new Date(new Date().setHours(18, 0)).toISOString(),
-//       filledSlots: 12,
-//       totalSlots: 15,
-//       event: {
-//         id: "evt-2",
-//         name: "Charity Gala Dinner",
-//         startTime: new Date(new Date().setHours(15, 0)).toISOString(),
-//         addressLine1: "Grand Hotel Ballroom",
-//         date: [new Date(new Date().setDate(new Date().getDate() + 5)).toISOString()], // 5 days from now
-//         images: ["/event2.jpg"],
-//       },
-//     },
-//   },
-//   {
-//     id: "demo-3",
-//     positionId: "pos-3",
-//     status: "registered",
-//     imageUrl: "/event3.jpg",
-//     position: {
-//       id: "pos-3",
-//       position: "Registration Desk",
-//       endTime: new Date(new Date().setHours(12, 0)).toISOString(),
-//       filledSlots: 3,
-//       totalSlots: 3,
-//       event: {
-//         id: "evt-3",
-//         name: "Morning Marathon",
-//         startTime: new Date(new Date().setHours(6, 0)).toISOString(),
-//         addressLine1: "City Park Entrance",
-//         date: [new Date(new Date().setDate(new Date().getDate() + 10)).toISOString()],
-//         images: ["/event3.jpg"],
-//       },
-//     },
-//   },
-//   {
-//     id: "demo-4", // <--- The 4th Event to test wrapping
-//     positionId: "pos-4",
-//     status: "registered",
-//     imageUrl: "/event4.jpg",
-//     position: {
-//       id: "pos-4",
-//       position: "Setup Crew",
-//       endTime: new Date(new Date().setHours(11, 0)).toISOString(),
-//       filledSlots: 8,
-//       totalSlots: 20,
-//       event: {
-//         id: "evt-4",
-//         name: "Music Festival Setup",
-//         startTime: new Date(new Date().setHours(8, 0)).toISOString(),
-//         addressLine1: "Downtown Arena",
-//         date: [new Date(new Date().setDate(new Date().getDate() + 12)).toISOString()],
-//         images: ["/event4.jpg"],
-//       },
-//     },
-//   },
-// ];
-
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
@@ -262,10 +151,10 @@ export default function ProfilePage() {
     return <main className="min-h-screen p-8" />;
   }
 
-  const firstName = isSignedIn ? user?.firstName ?? "" : "Guest";
-  const lastName = isSignedIn ? user?.lastName ?? "" : "";
+  const firstName = isSignedIn ? (user?.firstName ?? "") : "Guest";
+  const lastName = isSignedIn ? (user?.lastName ?? "") : "";
   const emailAddress = isSignedIn
-    ? user?.primaryEmailAddress?.emailAddress ?? "—"
+    ? (user?.primaryEmailAddress?.emailAddress ?? "—")
     : "—";
   const memberSince =
     isSignedIn && user?.createdAt
@@ -379,9 +268,7 @@ export default function ProfilePage() {
 
         <div className="mt-6 flex flex-col space-y-2">
           <div className="flex justify-between">
-            <div className="ml-[25px] text-[16px] text-white">
-              Phone number
-            </div>
+            <div className="ml-[25px] text-[16px] text-white">Phone number</div>
             <div className="mr-[25px] text-[16px] text-white">
               {phoneNumber}
             </div>

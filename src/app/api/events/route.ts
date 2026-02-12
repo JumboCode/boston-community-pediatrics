@@ -8,11 +8,9 @@ import {
   updateEvent,
   deleteEvent,
 } from "./controller";
-import { Prisma, PrismaClient, UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { eventSchema } from "@/lib/schemas/eventSchema";
 import { getCurrentUser } from "@/lib/auth";
-
-const prisma = new PrismaClient();
 
 function combineDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00`);
