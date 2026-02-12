@@ -708,7 +708,7 @@ const EventForm = () => {
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
-        <Link href="/" className="cursor-pointer">
+        <Link href="/event" className="cursor-pointer">
           <Image
             src={BackArrow}
             alt="Back arrow"

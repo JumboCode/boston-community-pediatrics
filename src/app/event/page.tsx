@@ -54,8 +54,14 @@ export default async function EventsPage() {
       </div>
 
       <div className="w-full max-w-[1200px] px-6 py-12">
-        <h1 className="text-[16px] font-semibold mb-6 color: #234254">
-          Home / Events
+        <h1 className="text-[16px] font-semibold mb-6 text-[#234254]">
+          <Link href="/" className="hover:underline">
+            Home
+          </Link>
+          {" / "}
+          <Link href="/event" className="hover:underline">
+            Events
+          </Link>
         </h1>
         {/* Featured Opportunities */}
         <h2 className="text-[32px] font-semibold mb-6 color: #234254">
