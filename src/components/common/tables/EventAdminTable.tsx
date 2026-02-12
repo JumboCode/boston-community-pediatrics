@@ -15,7 +15,7 @@ interface FrontEndUser {
   phoneNumber: string;
   selected: boolean;
   guestOf?: string;
-  isGuest?: boolean;
+  isGuest?: boolean;     // ← ADD THIS LINE
 }
 
 interface EventAdminTableProps {
@@ -27,12 +27,12 @@ interface EventAdminTableProps {
   totalSlots: number;
   location: string;
   positionId: string;
-  isAdmin?: boolean;
+  isAdmin?: boolean; // Add this prop to control waitlist visibility
 }
 
 const EventAdminTable = (props: EventAdminTableProps) => {
   const {
-    position,
+    position, //pos name
     startTime,
     endTime,
     description,
@@ -40,10 +40,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     totalSlots,
     location,
     positionId,
-    isAdmin = false,
+    isAdmin = false, // Default to false if not provided
   } = props;
-
-  const router = useRouter();
 
   const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -53,53 +51,55 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     return res.json();
   };
 
-  // Fetch signups and waitlist data
+  // Fetch signups for the position (volunteers)
   const { data: signups } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
 
+  // Fetch waitlist ONLY if user is admin
   const { data: waitlistSignups } = useSWR<AdminUser[]>(
     positionId && isAdmin ? `/api/waitlist?positionId=${positionId}` : null,
     fetcher
   );
 
-  // Transform API data to frontend format
   const frontEndUsers = useMemo(() => {
-    if (!signups) return [];
+  if (!signups) return [];
 
-    return signups.map((s) => ({
-      signUpId: s.signupId,
-      userId: s.id,
-      firstName: s.firstName,
-      lastName: s.lastName,
-      emailAddress: s.emailAddress,
-      phoneNumber: s.phoneNumber,
-      selected: false,
-      guestOf: s.guestOf,
-      isGuest: s.isGuest,
-    }));
-  }, [signups]);
+  return signups.map((s) => ({
+    signUpId: s.signupId,
+    userId: s.id,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    emailAddress: s.emailAddress,
+    phoneNumber: s.phoneNumber,
+    selected: false,
+    guestOf: s.guestOf,
+    isGuest: s.isGuest,  // ← ADD THIS LINE
+  }));
+}, [signups]);
 
+  // Convert waitlistSignups -> FrontEndUser[]
   const frontEndWaitlistUsers = useMemo(() => {
-    if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
+  if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
 
-    return waitlistSignups.map((s) => ({
-      userId: s.userId,
-      waitlistId: s.waitlistId,
-      firstName: s.firstName,
-      lastName: s.lastName,
-      emailAddress: s.emailAddress,
-      phoneNumber: s.phoneNumber,
-      selected: false,
-      guestOf: s.guestOf,
-      isGuest: s.isGuest,
-    }));
-  }, [waitlistSignups]);
+  return waitlistSignups.map((s) => ({
+    userId: s.userId,
+    waitlistId: s.waitlistId,
+    firstName: s.firstName,
+    lastName: s.lastName,
+    emailAddress: s.emailAddress,
+    phoneNumber: s.phoneNumber,
+    selected: false,
+    guestOf: s.guestOf,
+    isGuest: s.isGuest,  // ← ADD THIS LINE
+  }));
+}, [waitlistSignups]);
 
-  // Local state
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const [waitlist, setWaitlist] = useState<FrontEndUser[]>([]);
+
+  const router = useRouter();
 
   useEffect(() => {
     setVolunteers(frontEndUsers);
@@ -109,23 +109,27 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     setWaitlist(frontEndWaitlistUsers);
   }, [frontEndWaitlistUsers]);
 
-  // Volunteer selection handlers
+  // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {
     if (!id) return;
-
+    
     setVolunteers((prev) => {
+      // Find the clicked item
       const clickedItem = prev.find((v) => v.signUpId === id);
       if (!clickedItem) return prev;
 
       const newSelectedState = !clickedItem.selected;
 
       return prev.map((v) => {
+        // If this is the clicked item, toggle it
         if (v.signUpId === id && !v.isGuest) {
           return { ...v, selected: newSelectedState };
         }
+        // If this is a guest of the clicked item, also toggle it
         if (v.signUpId === id && v.isGuest && !clickedItem.isGuest) {
           return { ...v, selected: newSelectedState };
         }
+        // Otherwise leave it unchanged
         return v;
       });
     });
@@ -140,21 +144,25 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anySelected = volunteers.some((v) => v.selected);
 
-  // Waitlist selection handlers
+  // Waitlist selection handlers - UPDATED to select guests with parent
   const toggleWaitlistSelect = (id: string) => {
     setWaitlist((prev) => {
+      // Find the clicked item
       const clickedItem = prev.find((v) => v.waitlistId === id);
       if (!clickedItem) return prev;
 
       const newSelectedState = !clickedItem.selected;
 
       return prev.map((v) => {
+        // If this is the clicked item, toggle it
         if (v.waitlistId === id && !v.isGuest) {
           return { ...v, selected: newSelectedState };
         }
+        // If this is a guest of the clicked item, also toggle it
         if (v.waitlistId === id && v.isGuest && !clickedItem.isGuest) {
           return { ...v, selected: newSelectedState };
         }
+        // Otherwise leave it unchanged
         return v;
       });
     });
@@ -167,81 +175,85 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anyWaitlistSelected = waitlist.some((v) => v.selected);
 
-  // Delete handlers
+  // Remove from event - FIXED to deduplicate signup IDs
   const handleDelete = async () => {
-    const volunteersToDel = volunteers.filter((v) => v.selected);
+    const volunteersToDel: FrontEndUser[] = volunteers.filter(
+      (v) => v.selected === true
+    );
+
     if (volunteersToDel.length === 0) return;
 
     try {
-      const uniqueSignupIds = [
-        ...new Set(volunteersToDel.map((vol) => vol.signUpId).filter(Boolean)),
-      ];
+      // Get unique signup IDs (since guests share the same ID as their parent)
+      const uniqueSignupIds = [...new Set(volunteersToDel.map((vol) => vol.signUpId).filter(Boolean))];
+
+      console.log("Deleting unique signup IDs:", uniqueSignupIds);
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
         const res = await fetch(`/api/eventSignup?id=${signUpId}`, {
           method: "DELETE",
         });
-
+        
         if (!res.ok) {
           const errorText = await res.text();
           console.error(`Failed to delete signup ${signUpId}:`, errorText);
           throw new Error(`Failed to remove from event`);
         }
-
+        
         return signUpId;
       });
 
       await Promise.all(deletePromises);
+
+      // Remove all selected entries from state (both parents and guests)
       setVolunteers((prev) => prev.filter((v) => !v.selected));
+
       router.refresh();
     } catch (error) {
       console.error("Error deleting signups:", error);
-      alert(
-        `Error: ${
-          error instanceof Error ? error.message : "Failed to remove from event"
-        }`
-      );
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to remove from event'}`);
     }
   };
 
+  // Remove from waitlist frontend action - FIXED to deduplicate waitlist IDs
   const handleWaitlistDelete = async () => {
-    const waitlistToDel = waitlist.filter((v) => v.selected);
+    const waitlistToDel: FrontEndUser[] = waitlist.filter((v) => v.selected);
+
     if (waitlistToDel.length === 0) return;
 
     try {
-      const uniqueWaitlistIds = [
-        ...new Set(waitlistToDel.map((vol) => vol.waitlistId).filter(Boolean)),
-      ];
+      // Get unique waitlist IDs (since guests share the same ID as their parent)
+      const uniqueWaitlistIds = [...new Set(waitlistToDel.map((vol) => vol.waitlistId).filter(Boolean))];
+
+      console.log("Deleting unique waitlist IDs:", uniqueWaitlistIds);
 
       const deletePromises = uniqueWaitlistIds.map(async (waitlistId) => {
         const res = await fetch(`/api/waitlist?id=${waitlistId}`, {
           method: "DELETE",
         });
-
+        
         if (!res.ok) {
           const errorText = await res.text();
           console.error(`Failed to delete waitlist ${waitlistId}:`, errorText);
           throw new Error(`Failed to delete from waitlist`);
         }
-
+        
         return waitlistId;
       });
 
       await Promise.all(deletePromises);
+
+      // Remove all selected entries from state (both parents and guests)
       setWaitlist((prev) => prev.filter((v) => !v.selected));
+
       router.refresh();
     } catch (error) {
       console.error("Error deleting waitlist signups:", error);
-      alert(
-        `Error: ${
-          error instanceof Error
-            ? error.message
-            : "Failed to delete from waitlist"
-        }`
-      );
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to delete from waitlist'}`);
     }
   };
 
+  // Add to Event (move selected waitlist users into volunteers)
   const handleAddToEvent = async () => {
     const selectedWaitlist = waitlist.filter((w) => w.selected);
     if (selectedWaitlist.length === 0) return;
@@ -259,19 +271,22 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         throw new Error("Failed to promote waitlist users");
       }
 
+      // Optimistic UI update
       setVolunteers((prev) => [
         ...prev,
-        ...selectedWaitlist.map((w) => ({
-          ...w,
-          selected: false,
+        ...selectedWaitlist.map((w) => ({ 
+          ...w, 
+          selected: false, 
           waitlistId: undefined,
-          signUpId: w.waitlistId,
+          signUpId: w.waitlistId // Temporarily use waitlistId, will be replaced on refresh
         })),
       ]);
       setWaitlist((prev) => prev.filter((w) => !w.selected));
+
       router.refresh();
     } catch (error) {
       console.error("Error promoting waitlist users:", error);
+      // Revert optimistic update on error
       router.refresh();
     }
   };
@@ -282,9 +297,15 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         {/* Header */}
         <div className="flex flex-col">
           <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
-            <div className="text-[#234254] flex-shrink-0" style={{ width: "280px" }}>
+            {/* Left Section */}
+            <div
+              className="text-[#234254] flex-shrink-0"
+              style={{ width: "280px" }}
+            >
               <h1 className="text-[24px] font-semibold">{position}</h1>
-              <p className="text-[16px] pt-2">{location || "No location"}</p>
+              <p className="text-[16px] pt-2">
+                {location ? location : "No location"}
+              </p>
               <p className="text-[16px]">
                 {new Date(startTime).toLocaleTimeString([], {
                   hour: "numeric",
@@ -300,14 +321,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </p>
             </div>
 
+            {/* Right Section */}
             <div className="text-[#234254] flex-1 flex flex-col justify-between mb-2">
               <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
             </div>
           </div>
-
           <div className="flex flex-row items-center gap-10 mb-1 px-5">
             <div className="w-[280px] block">
-              <p className="text-[24px]">
+              <p className="text-[24px] w-[280px] block">
                 {filledSlots}/{totalSlots} Spots Filled
               </p>
             </div>
@@ -333,7 +354,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <th className="py-3 px-4 pl-13 font-normal">
                 <button
                   onClick={toggleSelectAll}
-                  className="hover:underline transition-all duration-200"
+                  className="hover:underline transition-all duration-200 "
                 >
                   Select All
                 </button>
@@ -342,57 +363,43 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </thead>
           <tbody>
             {volunteers.map((p, i) => {
+              // Check if next person is a guest of this person
               const nextPerson = volunteers[i + 1];
               const hasGuestBelow = nextPerson && nextPerson.guestOf && !p.isGuest;
+              
+              // Sequential numbering for ALL people (users + guests)
               const rowNumber = i + 1;
-
+              
               return (
                 <tr
-                  key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : "")}
+                  key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : '')}
                   className={`transition-colors duration-200 ${
                     p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                  } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
-                    !hasGuestBelow && !p.isGuest ? "border-b border-gray-300" : ""
-                  } ${
-                    p.isGuest && !volunteers[i + 1]?.isGuest
-                      ? "border-b border-gray-300"
-                      : ""
-                  }`}
+                  } ${!p.isGuest ? 'border-t border-gray-300' : ''} ${
+                    !hasGuestBelow && !p.isGuest ? 'border-b border-gray-300' : ''
+                  } ${p.isGuest && !volunteers[i + 1]?.isGuest ? 'border-b border-gray-300' : ''}`}
                 >
                   <td className="py-3 px-6">{rowNumber}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       {p.isGuest ? (
                         <div className="flex items-start relative">
-                          <div
-                            className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
+                          {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
+                          <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
+                          {/* Guest circle - #D9D9D9 */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
                           <div className="ml-3">
-                            <div>
-                              {p.firstName} {p.lastName}
-                            </div>
+                            <div>{p.firstName} {p.lastName}</div>
                           </div>
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 relative">
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
+                          {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
                           {hasGuestBelow && (
-                            <div
-                              className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                              style={{ backgroundColor: "#D9D9D9" }}
-                            ></div>
+                            <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
                           )}
-                          <div>
-                            {p.firstName} {p.lastName}
-                          </div>
+                          <div>{p.firstName} {p.lastName}</div>
                         </div>
                       )}
                     </div>
@@ -400,6 +407,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <td className="py-3 px-4">{p.emailAddress}</td>
                   <td className="py-3 px-4">{p.phoneNumber}</td>
                   <td className="py-3 px-4 text-center">
+                    {/* Only show checkbox for main users, not guests */}
                     {!p.isGuest && (
                       <input
                         type="checkbox"
@@ -415,7 +423,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </tbody>
         </table>
 
-        {/* Volunteer Action Buttons */}
+        {/* Selection Buttons */}
         {anySelected && (
           <div className="border-t border-gray-200 bg-gray-50 w-full">
             <div className="flex justify-between px-6 py-4">
@@ -432,7 +440,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </div>
         )}
 
-        {/* Waitlist Section */}
+        {/* WAITLIST SECTION - Only show if admin */}
         {isAdmin && (
           <>
             <div className="px-5 pt-10">
@@ -451,7 +459,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <th className="py-3 px-4 pl-13 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
-                      className="hover:underline transition-all duration-200"
+                      className="hover:underline transition-all duration-200 "
                     >
                       Select All
                     </button>
@@ -460,42 +468,33 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </thead>
               <tbody>
                 {waitlist.map((p, i) => {
+                  // Check if next person is a guest of this person
                   const nextPerson = waitlist[i + 1];
                   const hasGuestBelow = nextPerson && nextPerson.guestOf && !p.isGuest;
+                  
+                  // Sequential numbering for ALL people (users + guests)
                   const rowNumber = i + 1;
-
+                  
                   return (
                     <tr
-                      key={p.waitlistId + (p.isGuest ? `-guest-${p.userId}` : "")}
+                      key={p.waitlistId + (p.isGuest ? `-guest-${p.userId}` : '')}
                       className={`transition-colors duration-200 ${
                         p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                      } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
-                        !hasGuestBelow && !p.isGuest
-                          ? "border-b border-gray-300"
-                          : ""
-                      } ${
-                        p.isGuest && !waitlist[i + 1]?.isGuest
-                          ? "border-b border-gray-300"
-                          : ""
-                      }`}
+                      } ${!p.isGuest ? 'border-t border-gray-300' : ''} ${
+                        !hasGuestBelow && !p.isGuest ? 'border-b border-gray-300' : ''
+                      } ${p.isGuest && !waitlist[i + 1]?.isGuest ? 'border-b border-gray-300' : ''}`}
                     >
                       <td className="py-3 px-6">{rowNumber}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           {p.isGuest ? (
                             <div className="flex items-start relative">
-                              <div
-                                className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
+                              {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
+                              <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
+                              {/* Guest circle - #D9D9D9 */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
                               <div className="ml-3">
-                                <div>
-                                  {p.firstName} {p.lastName}
-                                </div>
+                                <div>{p.firstName} {p.lastName}</div>
                                 {p.guestOf && (
                                   <div className="text-sm text-gray-500 italic">
                                     Guest of {p.guestOf}
@@ -505,19 +504,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative">
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
+                              {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
                               {hasGuestBelow && (
-                                <div
-                                  className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                                  style={{ backgroundColor: "#D9D9D9" }}
-                                ></div>
+                                <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
                               )}
-                              <div>
-                                {p.firstName} {p.lastName}
-                              </div>
+                              <div>{p.firstName} {p.lastName}</div>
                             </div>
                           )}
                         </div>
@@ -525,6 +517,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       <td className="py-3 px-4">{p.emailAddress}</td>
                       <td className="py-3 px-4">{p.phoneNumber}</td>
                       <td className="py-3 px-4 text-center">
+                        {/* Only show checkbox for main users */}
                         {!p.isGuest && (
                           <input
                             type="checkbox"
@@ -540,7 +533,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </tbody>
             </table>
 
-            {/* Waitlist Action Buttons */}
+            {/* WAITLIST BUTTONS (includes Add to Event) */}
             {anyWaitlistSelected && (
               <div className="border-t border-gray-200 bg-gray-50 w-full">
                 <div className="flex justify-between px-6 py-4">

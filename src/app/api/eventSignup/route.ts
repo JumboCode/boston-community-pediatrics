@@ -4,6 +4,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+
+
 import {
   getSignupsByEventId,
   getSignupsByUserId,
@@ -33,12 +35,10 @@ export async function GET(req: NextRequest) {
         isAdmin = true;
       }
     }
-    
-    if (userId) {
+    if(userId){
       const signups = await getSignupsByUserId(userId);
       return NextResponse.json(signups);
     }
-    
     if (positionId) {
       const users = await getUsersByPositionId(positionId, isAdmin);
       if (!users)
@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
       );
     }
   } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { error: "Failed to fetch event signups" },
       { status: 500 }
@@ -74,11 +75,15 @@ export async function GET(req: NextRequest) {
 }
 
 // POST handler
+// Updated POST handler with guest support
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
     const { positionId, userId, guests = [] } = data;
 
+    console.log("Registration with guests:", { positionId, userId, guestCount: guests.length });
+
+    // Get position and count current signups
     const [position, signupCount] = await Promise.all([
       prisma.eventPosition.findUnique({
         where: { id: positionId },
@@ -95,10 +100,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Calculate total people needed (user + guests)
     const totalPeopleNeeded = 1 + guests.length;
+
+    // Check if there's enough space for user + all guests
     const availableSlots = position.totalSlots - signupCount;
 
     if (availableSlots >= totalPeopleNeeded) {
+      // Enough space - create normal signup with guests
+      console.log(`Creating signup with ${guests.length} guests`);
+
       const newEventSignup = await prisma.eventSignup.create({
         data: {
           userId,
@@ -134,6 +145,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(newEventSignup, { status: 201 });
     } else {
       // Not enough space - add to waitlist with guests
+      console.log(`Adding to waitlist with ${guests.length} guests`);
 
       const waitlistEntry = await prisma.eventWaitlist.create({
         data: {
@@ -182,7 +194,6 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
-    
     const data = await req.json();
     const updatedEventSignup = await updateEventSignup(id, data);
     return NextResponse.json(updatedEventSignup, { status: 201 });

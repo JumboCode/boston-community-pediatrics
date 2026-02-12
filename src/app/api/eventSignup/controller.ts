@@ -1,8 +1,8 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { User } from "@prisma/client";
-
 const prisma = new PrismaClient();
 
+// Fetch signups by event ID
 export const getSignupsByEventId = async (eventId: string) => {
   const signups = await prisma.eventSignup.findMany({
     where: { eventId },
@@ -18,6 +18,8 @@ export async function getSignupsByUserId(userId: string) {
   return signups;
 }
 
+// Fetch user signups by event position
+// Updated getUsersByPositionId to include guest information
 export async function getUsersByPositionId(
   positionId: string,
   isAdmin: boolean
@@ -26,7 +28,7 @@ export async function getUsersByPositionId(
     where: { positionId },
     include: {
       user: true,
-      guests: true,
+      guests: true, // Include guests
     },
   });
 
@@ -35,11 +37,13 @@ export async function getUsersByPositionId(
   );
 
   if (isAdmin) {
+    // FIXED: Use flatMap to flatten the array of arrays
     return safeSignups.flatMap((s) => adminUserWithGuests(s));
   }
   return safeSignups.map((s) => publicUser(s));
 }
 
+// Updated AdminUser interface to include guest info
 export interface AdminUser {
   id: string;
   signupId: string;
@@ -47,8 +51,8 @@ export interface AdminUser {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
-  guestOf?: string;
-  isGuest?: boolean;
+  guestOf?: string; // For displaying "Guest of X"
+  isGuest?: boolean; // To mark if this row is a guest
 }
 
 function adminUserWithGuests(s: {
@@ -56,6 +60,7 @@ function adminUserWithGuests(s: {
   user: User;
   guests: any[];
 }): AdminUser[] {
+  // Return an array: main user + their guests
   const mainUser: AdminUser = {
     id: s.user.id,
     signupId: s.id,
@@ -66,8 +71,8 @@ function adminUserWithGuests(s: {
   };
 
   const guestUsers: AdminUser[] = s.guests.map((guest) => ({
-    id: guest.id,
-    signupId: s.id,
+    id: guest.id, // Use guest.id for unique key
+    signupId: s.id, // Same signup ID as the main user
     firstName: guest.firstName,
     lastName: guest.lastName,
     emailAddress: guest.emailAddress || "",
@@ -80,8 +85,8 @@ function adminUserWithGuests(s: {
 }
 
 export interface PublicUser {
-  id: string;
-  signupId: string;
+  id: string; // user id
+  signupId: string; // signup row id (needed for selection)
   firstName: string;
   lastName: string;
 }
@@ -95,12 +100,14 @@ function publicUser(s: { id: string; user: User }): PublicUser {
   };
 }
 
+// Create event signup
 export const createEventSignup = async (
   data: Prisma.EventSignupCreateInput
 ) => {
   return prisma.eventSignup.create({ data });
 };
 
+// Update event signup
 export const updateEventSignup = async (
   eventSignupId: string,
   data: Prisma.EventSignupUpdateInput
@@ -112,11 +119,14 @@ export const updateEventSignup = async (
   return eventSignup;
 };
 
+// Delete event signup - UPDATED to handle Guest foreign key
 export const deleteEventSignup = async (eventSignupId: string) => {
+  // First delete any associated guests
   await prisma.guest.deleteMany({
     where: { signupId: eventSignupId },
   });
 
+  // Then delete the signup
   const deletedEventSignup = await prisma.eventSignup.delete({
     where: { id: eventSignupId },
   });
