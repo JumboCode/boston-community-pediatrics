@@ -13,6 +13,7 @@ import { getPositionsByEventId } from "@/app/api/eventPosition/controller";
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import EventVolunteerTable from "@/components/common/tables/EventVolunteerTable";
+import { getPublicURL } from "@/lib/r2";
 
 export default async function EventDetailsPage(props: {
   params: { id: string };
@@ -40,33 +41,17 @@ export default async function EventDetailsPage(props: {
       return <p>Event does not exist</p>;
     }
 
-    const imageUrls = (
-  await Promise.all(
-    (event.images ?? []).map(async (filename) => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/images?filename=${encodeURIComponent(filename)}`,
-          { cache: "no-store" }
-        );
-        if (!res.ok) {
-          console.error(`Failed to fetch image ${filename}: ${res.status}`);
-          return null;
-        }
-        const data = await res.json();
-        return data.url as string;
-      } catch (error) {
-        console.error(`Error fetching image ${filename}:`, error);
-        return null;
-      }
-    })
-  )
-).filter(Boolean) as string[];
+    const imageUrls = (event.images ?? [])
+      .map((filename) => getPublicURL(filename))
+      .filter((url) => url.trim() !== "") as string[];
 
     return (
       <div className="flex flex-col justify-center items-center">
         <div className="pt-16 pb-12 flex flex-col items-center">
           {/* Carousel at the top */}
-          <Carousel images={imageUrls.length > 0 ? imageUrls : hardCodedEvent.images} />
+          <Carousel
+            images={imageUrls.length > 0 ? imageUrls : hardCodedEvent.images}
+          />
 
           {/* Event details */}
           <section className="max-w-[1000px] mt-[56px]">
@@ -85,7 +70,9 @@ export default async function EventDetailsPage(props: {
                 const end =
                   dates.length > 1 ? new Date(dates[dates.length - 1]) : start;
 
-                const month = start.toLocaleString(undefined, { month: "long" });
+                const month = start.toLocaleString(undefined, {
+                  month: "long",
+                });
                 const year = start.getFullYear();
 
                 if (start.toDateString() === end.toDateString()) {
@@ -142,7 +129,7 @@ export default async function EventDetailsPage(props: {
                   totalSlots={item.totalSlots}
                   positionId={item.id}
                   location={location}
-                  isAdmin={true}  // ← ADD THIS LINE!
+                  isAdmin={true} // ← ADD THIS LINE!
                 />
               );
             } else {
