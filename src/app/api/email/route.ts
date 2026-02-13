@@ -1,0 +1,43 @@
+// TODO: are we supposed to delete this or add auth
+// cuz we just use sendEmail directly in the email functions
+
+import { sendEmail } from "@/lib/email/resend";
+import { z } from "zod";
+
+const emailSchema = z.object({
+  recipients: z.array(z.string().email()).min(1),
+  subject: z.string().min(1),
+  type: z.enum(["signup", "waitlist", "other"]).optional(), //for testing rn
+  html: z.string().optional(),
+  data: z
+    .object({
+      firstName: z.string().optional(),
+      eventName: z.string().optional(),
+      eventDate: z.string().optional(),
+      position: z.string().optional(),
+      startTime: z.string().optional(),
+      endTime: z.string().optional(),
+      filledSlots: z.number().optional(),
+      location: z.string().optional(),
+      waitlistPosition: z.number().optional(),
+    })
+    .optional(),
+});
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const parsed = emailSchema.parse(body);
+
+    const result = await sendEmail(parsed);
+    console.log("sendEmail result:", result);
+
+    return Response.json({ ok: true, ...result });
+  } catch (err) {
+    console.error(err);
+    return Response.json(
+      { error: (err as Error)?.message ?? "Invalid request or email failed" },
+      { status: 500 }
+    );
+  }
+}

@@ -184,6 +184,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
     const data = await req.json();
+
+    let isAdmin = false;
+    const user = await getCurrentUser();
+    if (user) {
+      if (user.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
+    if (user?.id != data.userId || !isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const updatedEventSignup = await updateEventSignup(id, data);
     return NextResponse.json(updatedEventSignup, { status: 201 });
   } catch (err) {
@@ -198,11 +210,23 @@ export async function PUT(req: NextRequest) {
 // DELETE handler
 export async function DELETE(req: NextRequest) {
   try {
+    let isAdmin = false;
+    const currentUser = await getCurrentUser();
+
+    if (currentUser) {
+      if (currentUser.role === UserRole.ADMIN) {
+        isAdmin = true;
+      }
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    if (currentUser?.id != id && !isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const deletedEventSignup = await deleteEventSignup(id);

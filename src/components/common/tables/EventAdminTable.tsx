@@ -11,7 +11,7 @@ interface FrontEndUser {
   waitlistId?: string;
   firstName: string;
   lastName: string;
-  emailAddress: string;
+  emailAddress: string; 
   phoneNumber: string;
   selected: boolean;
   guestOf?: string;
