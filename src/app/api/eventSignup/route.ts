@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
         isAdmin = true;
       }
     }
-    if(userId){
+    if (userId) {
       const signups = await getSignupsByUserId(userId);
       return NextResponse.json(signups);
     }

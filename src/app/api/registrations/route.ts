@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
+import { sendWaitlisted } from "@/lib/email/sendWaitlisted";
 
 // --- Configuration ---
 const MAX_GUESTS = 20;
@@ -15,6 +17,35 @@ interface GuestInput {
   comments?: string | null;
 }
 
+const tz = "America/New_York";
+
+const fmtDate = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(d);
+
+const fmtTime = (d: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d);
+
+const formatLocation = (p: {
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+}) => {
+  const line2 = p.addressLine2 ? ` ${p.addressLine2}` : "";
+  return `${p.addressLine1}${line2}, ${p.city}, ${p.state} ${p.zipCode}`;
+};
+
 // ==========================================
 // POST: Create New Registration
 // ==========================================
@@ -25,7 +56,9 @@ export async function POST(req: NextRequest) {
     // 1. LIMIT CHECK
     if (guests && guests.length > MAX_GUESTS) {
       return NextResponse.json(
-        { error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.` },
+        {
+          error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.`,
+        },
         { status: 400 }
       );
     }
@@ -33,7 +66,6 @@ export async function POST(req: NextRequest) {
     const spotsNeeded = 1 + (guests?.length || 0);
 
     const result = await prisma.$transaction(async (tx) => {
-      
       // 2. DUPLICATE CHECK
       const existingSignup = await tx.eventSignup.findFirst({
         where: { userId, positionId },
@@ -48,42 +80,67 @@ export async function POST(req: NextRequest) {
       }
 
       // 3. Fetch Position Details
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { firstName: true, emailAddress: true },
+      });
+      if (!user) throw new Error("User not found");
+
       const position = await tx.eventPosition.findUnique({
         where: { id: positionId },
-        select: { 
-          eventId: true,
+        select: {
+          position: true,
+          date: true,
+          startTime: true,
+          endTime: true,
           filledSlots: true,
-          totalSlots: true
-        } 
+          totalSlots: true,
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          event: { select: { name: true } },
+          eventId: true,
+        },
       });
+      if (!position) throw new Error("Position not found");
 
-      if (!position) {
-        throw new Error("Position not found");
-      }
-
-      const isFull = (position.filledSlots + spotsNeeded) > position.totalSlots;
+      const isFull = position.filledSlots + spotsNeeded > position.totalSlots;
 
       // 4. SCENARIO A: WAITLIST
       if (isFull) {
+        const waitlistPosition =
+          (await tx.eventWaitlist.count({ where: { positionId } })) + 1;
+
         const waitlistEntry = await tx.eventWaitlist.create({
           data: {
             userId,
             positionId,
             guests: {
-              create: guests.map((guest: GuestInput) => ({
-                firstName: guest.firstName, 
+              create: (guests ?? []).map((guest: GuestInput) => ({
+                firstName: guest.firstName,
                 lastName: guest.lastName,
-                email: guest.email || null, 
+                email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
                 comments: guest.comments || null,
               })),
             },
           },
-          include: { guests: true }
+          include: { guests: true },
         });
 
-        return { status: "waitlisted", data: waitlistEntry };
+        return {
+          status: "waitlisted",
+          data: waitlistEntry,
+          email: {
+            kind: "waitlisted" as const,
+            user,
+            position,
+            waitlistPosition,
+          },
+        };
       }
 
       // 5. SCENARIO B: SIGNUP (Success)
@@ -92,9 +149,9 @@ export async function POST(req: NextRequest) {
           userId,
           positionId,
           eventId: position.eventId,
-          hasGuests: (guests && guests.length > 0),
+          hasGuests: (guests?.length ?? 0) > 0,
           guests: {
-            create: guests.map((guest: GuestInput) => ({
+            create: (guests ?? []).map((guest: GuestInput) => ({
               positionId,
               firstName: guest.firstName,
               lastName: guest.lastName,
@@ -114,17 +171,68 @@ export async function POST(req: NextRequest) {
         data: { filledSlots: { increment: spotsNeeded } },
       });
 
-      return { status: "registered", data: newSignup };
+      const filledSlotsAfter = position.filledSlots + spotsNeeded;
+
+      return {
+        status: "registered",
+        data: newSignup,
+        email: {
+          kind: "registered" as const,
+          user,
+          position,
+          filledSlotsAfter,
+        },
+      };
     });
 
-    return NextResponse.json(result, { status: 201 });
+    try {
+      const email = (result as any).email;
+      if (email) {
+        // TODO: FIX TS ONCE WE GET DOMAIN SHI
+        const to = "bcpjumbocode@gmail.com";
+        // const to = email.user.emailAddress;
 
+        if (email.kind === "registered") {
+          await sendSignupConfirmed({
+            to,
+            firstName: email.user.firstName,
+            eventName: email.position.event.name,
+            position: email.position.position,
+            date: fmtDate(email.position.date),
+            startTime: fmtTime(email.position.startTime),
+            endTime: fmtTime(email.position.endTime),
+            filledSlots: email.filledSlotsAfter,
+            location: formatLocation(email.position),
+          });
+        } else {
+          await sendWaitlisted({
+            to,
+            firstName: email.user.firstName,
+            eventName: email.position.event.name,
+            position: email.position.position,
+            date: fmtDate(email.position.date),
+            startTime: fmtTime(email.position.startTime),
+            endTime: fmtTime(email.position.endTime),
+            filledSlots: email.position.filledSlots,
+            location: formatLocation(email.position),
+            waitlistPosition: email.waitlistPosition,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Email failed (continuing anyway):", e);
+    }
+    // This is just so we don't leak email to client
+    const { email, ...safe } = result as any;
+    return NextResponse.json(safe, { status: 201 });
   } catch (error) {
     console.error("Failed to process registration:", error);
 
     if (error instanceof Error && error.message === "ALREADY_REGISTERED") {
       return NextResponse.json(
-        { error: "You are already registered or waitlisted for this position." },
+        {
+          error: "You are already registered or waitlisted for this position.",
+        },
         { status: 409 }
       );
     }
@@ -144,20 +252,25 @@ export async function PUT(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    if (!id) return NextResponse.json({ error: "Missing registration ID" }, { status: 400 });
+    if (!id)
+      return NextResponse.json(
+        { error: "Missing registration ID" },
+        { status: 400 }
+      );
 
     const { guests } = await req.json();
 
     // 1. LIMIT CHECK
     if (guests && guests.length > MAX_GUESTS) {
       return NextResponse.json(
-        { error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.` },
+        {
+          error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.`,
+        },
         { status: 400 }
       );
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      
       // -------------------------------------------------------
       // PATH A: User is currently in SIGNUP (Main List)
       // -------------------------------------------------------
@@ -173,11 +286,12 @@ export async function PUT(req: NextRequest) {
 
         if (!position) throw new Error("Position data missing");
 
-        const oldSpotsUsed = 1 + currentSignup.guests.length; 
-        const newSpotsNeeded = 1 + (guests?.length || 0);     
-        
+        const oldSpotsUsed = 1 + currentSignup.guests.length;
+        const newSpotsNeeded = 1 + (guests?.length || 0);
+
         const usageWithoutUser = position.filledSlots - oldSpotsUsed;
-        const willFit = (usageWithoutUser + newSpotsNeeded) <= position.totalSlots;
+        const willFit =
+          usageWithoutUser + newSpotsNeeded <= position.totalSlots;
 
         // SCENARIO 1: Still fits -> Update normally
         if (willFit) {
@@ -186,9 +300,9 @@ export async function PUT(req: NextRequest) {
           const updatedSignup = await tx.eventSignup.update({
             where: { id },
             data: {
-              hasGuests: (guests && guests.length > 0),
+              hasGuests: (guests?.length ?? 0) > 0,
               guests: {
-                create: guests.map((guest: GuestInput) => ({
+                create: (guests ?? []).map((guest: GuestInput) => ({
                   positionId: currentSignup.positionId,
                   firstName: guest.firstName,
                   lastName: guest.lastName,
@@ -213,8 +327,8 @@ export async function PUT(req: NextRequest) {
           }
 
           return { status: "registered", data: updatedSignup };
-        } 
-        
+        }
+
         // SCENARIO 2: Does NOT fit -> Move to Waitlist
         else {
           await tx.guest.deleteMany({ where: { signupId: id } }); // Delete guests first
@@ -230,23 +344,23 @@ export async function PUT(req: NextRequest) {
               userId: currentSignup.userId,
               positionId: currentSignup.positionId,
               guests: {
-                create: guests.map((guest: GuestInput) => ({
-                  firstName: guest.firstName, 
+                create: (guests ?? []).map((guest: GuestInput) => ({
+                  firstName: guest.firstName,
                   lastName: guest.lastName,
-                  email: guest.email || null, 
+                  email: guest.email || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
                   comments: guest.comments || null,
                 })),
               },
             },
-            include: { guests: true }
+            include: { guests: true },
           });
 
-          return { 
-            status: "moved_to_waitlist", 
+          return {
+            status: "moved_to_waitlist",
             message: "Capacity exceeded. You have been moved to the waitlist.",
-            data: newWaitlistEntry 
+            data: newWaitlistEntry,
           };
         }
       }
@@ -269,7 +383,8 @@ export async function PUT(req: NextRequest) {
         const newSpotsNeeded = 1 + (guests?.length || 0);
 
         // Check if they fit now (Waitlist users take up 0 slots, so we just check filled + needed)
-        const willFit = (position.filledSlots + newSpotsNeeded) <= position.totalSlots;
+        const willFit =
+          position.filledSlots + newSpotsNeeded <= position.totalSlots;
 
         // SCENARIO 3: Now they FIT -> Move to Signup
         if (willFit) {
@@ -283,9 +398,9 @@ export async function PUT(req: NextRequest) {
               userId: currentWaitlist.userId,
               positionId: currentWaitlist.positionId,
               eventId: position.eventId,
-              hasGuests: (guests && guests.length > 0),
+              hasGuests: (guests?.length ?? 0) > 0,
               guests: {
-                create: guests.map((guest: GuestInput) => ({
+                create: (guests ?? []).map((guest: GuestInput) => ({
                   positionId: currentWaitlist.positionId,
                   firstName: guest.firstName,
                   lastName: guest.lastName,
@@ -304,10 +419,10 @@ export async function PUT(req: NextRequest) {
             data: { filledSlots: { increment: newSpotsNeeded } },
           });
 
-          return { 
-            status: "registered", 
+          return {
+            status: "registered",
             message: "Space available! You have been moved to the main list.",
-            data: newSignup 
+            data: newSignup,
           };
         }
 
@@ -319,7 +434,7 @@ export async function PUT(req: NextRequest) {
             where: { id },
             data: {
               guests: {
-                create: guests.map((guest: GuestInput) => ({
+                create: (guests ?? []).map((guest: GuestInput) => ({
                   firstName: guest.firstName,
                   lastName: guest.lastName,
                   email: guest.email || null,
@@ -338,11 +453,14 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json(result, { status: 200 });
-
   } catch (error) {
     console.error("Failed to update registration:", error);
-    const status = error instanceof Error && error.message.includes("not found") ? 404 : 500;
-    return NextResponse.json({ error: "Failed to update registration" }, { status });
+    const status =
+      error instanceof Error && error.message.includes("not found") ? 404 : 500;
+    return NextResponse.json(
+      { error: "Failed to update registration" },
+      { status }
+    );
   }
 }
 

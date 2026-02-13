@@ -22,7 +22,7 @@ interface EventSignUpFormProps {
     lastName: string;
     emailAddress: string;
     phoneNumber: string;
-    dateOfBirth?: string;
+    dateOfBirth?: string; 
   };
   positionData: {
     id: string;

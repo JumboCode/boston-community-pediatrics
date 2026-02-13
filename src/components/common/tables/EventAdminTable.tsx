@@ -10,7 +10,7 @@ interface FrontEndUser {
   signUpId: string;
   firstName: string;
   lastName: string;
-  emailAddress: string;
+  emailAddress: string; 
   phoneNumber: string;
   selected: boolean;
 }
@@ -45,20 +45,20 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
-  
-  const frontEndUsers = useMemo(() => {
-  if (!signups) return [];
 
-  return signups.map((s) => ({
-    signUpId: s.signupId,
-    userId: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    emailAddress: s.emailAddress,
-    phoneNumber: s.phoneNumber,
-    selected: false,
-  }));
-}, [signups]);
+  const frontEndUsers = useMemo(() => {
+    if (!signups) return [];
+
+    return signups.map((s) => ({
+      signUpId: s.signupId,
+      userId: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      emailAddress: s.emailAddress,
+      phoneNumber: s.phoneNumber,
+      selected: false,
+    }));
+  }, [signups]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const router = useRouter();
