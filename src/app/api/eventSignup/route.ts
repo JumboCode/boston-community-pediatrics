@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createWaitlistSignup } from "./controller";
 import { PrismaClient } from "@prisma/client";
+import { Guest } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
-
 
 import {
   getSignupsByEventId,
   getSignupsByUserId,
   getUsersByPositionId,
-  createEventSignup,
   updateEventSignup,
   deleteEventSignup,
 } from "./controller";
@@ -35,7 +32,7 @@ export async function GET(req: NextRequest) {
         isAdmin = true;
       }
     }
-    if(userId){
+    if (userId) {
       const signups = await getSignupsByUserId(userId);
       return NextResponse.json(signups);
     }
@@ -81,8 +78,6 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     const { positionId, userId, guests = [] } = data;
 
-    console.log("Registration with guests:", { positionId, userId, guestCount: guests.length });
-
     // Get position and count current signups
     const [position, signupCount] = await Promise.all([
       prisma.eventPosition.findUnique({
@@ -108,8 +103,6 @@ export async function POST(req: NextRequest) {
 
     if (availableSlots >= totalPeopleNeeded) {
       // Enough space - create normal signup with guests
-      console.log(`Creating signup with ${guests.length} guests`);
-
       const newEventSignup = await prisma.eventSignup.create({
         data: {
           userId,
@@ -117,13 +110,13 @@ export async function POST(req: NextRequest) {
           eventId: position.eventId,
           hasGuests: guests.length > 0,
           guests: {
-            create: guests.map((guest: any) => ({
+            create: guests.map((guest: Guest) => ({
               positionId,
               firstName: guest.firstName,
               lastName: guest.lastName,
-              emailAddress: guest.email || null,
+              emailAddress: guest.emailAddress || null,
               phoneNumber: guest.phoneNumber || null,
-              relation: guest.relationship || null,
+              relation: guest.relation || null,
             })),
           },
         },
@@ -144,20 +137,17 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json(newEventSignup, { status: 201 });
     } else {
-      // Not enough space - add to waitlist with guests
-      console.log(`Adding to waitlist with ${guests.length} guests`);
-
       const waitlistEntry = await prisma.eventWaitlist.create({
         data: {
           userId,
           positionId,
           isGuest: false,
           guests: {
-            create: guests.map((guest: any) => ({
+            create: guests.map((guest: Guest) => ({
               firstName: guest.firstName,
               lastName: guest.lastName,
-              email: guest.email || null,
-              relation: guest.relationship || null,
+              email: guest.emailAddress || null,
+              relation: guest.relation || null,
             })),
           },
         },
@@ -176,8 +166,7 @@ export async function POST(req: NextRequest) {
         { status: 201 }
       );
     }
-  } catch (err) {
-    console.error("Error in POST:", err);
+  } catch {
     return NextResponse.json(
       { error: "Failed to create event signup" },
       { status: 500 }

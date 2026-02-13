@@ -3,40 +3,40 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+type WaitlistEntry = {
+  waitlistId: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  guestOf?: string;
+  isGuest: boolean;
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const positionId = searchParams.get("positionId");
-
-  console.log("Waitlist API called with positionId:", positionId);
 
   if (!positionId) {
     return NextResponse.json({ error: "Missing positionId" }, { status: 400 });
   }
 
-  // Skip invalid positionIds like "0"
-  if (positionId === "0") {
-    console.log("Invalid positionId: 0");
-    return NextResponse.json([], { status: 200 });
-  }
-
   try {
     const rows = await prisma.eventWaitlist.findMany({
       where: { positionId },
-      include: { 
+      include: {
         user: true,
         guests: true, // Include waitlist guests
       },
     });
 
-    console.log(`Found ${rows.length} waitlist entries for position ${positionId}`);
-
     // Flatten the results to show main user + their guests
-    const allEntries: any[] = [];
+    const allEntries: WaitlistEntry[] = [];
 
     for (const row of rows) {
       // Skip entries with null users
       if (!row.user || !row.userId) {
-        console.log(`Skipping waitlist entry ${row.id} - user is null`);
         continue;
       }
 
@@ -65,8 +65,6 @@ export async function GET(req: Request) {
         });
       }
     }
-
-    console.log(`Returning ${allEntries.length} total entries (users + guests)`);
 
     return NextResponse.json(allEntries);
   } catch (error) {

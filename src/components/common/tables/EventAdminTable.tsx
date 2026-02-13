@@ -15,7 +15,7 @@ interface FrontEndUser {
   phoneNumber: string;
   selected: boolean;
   guestOf?: string;
-  isGuest?: boolean;     // ← ADD THIS LINE
+  isGuest?: boolean; // ← ADD THIS LINE
 }
 
 interface EventAdminTableProps {
@@ -64,37 +64,37 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   );
 
   const frontEndUsers = useMemo(() => {
-  if (!signups) return [];
+    if (!signups) return [];
 
-  return signups.map((s) => ({
-    signUpId: s.signupId,
-    userId: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    emailAddress: s.emailAddress,
-    phoneNumber: s.phoneNumber,
-    selected: false,
-    guestOf: s.guestOf,
-    isGuest: s.isGuest,  // ← ADD THIS LINE
-  }));
-}, [signups]);
+    return signups.map((s) => ({
+      signUpId: s.signupId,
+      userId: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      emailAddress: s.emailAddress,
+      phoneNumber: s.phoneNumber,
+      selected: false,
+      guestOf: s.guestOf,
+      isGuest: s.isGuest, // ← ADD THIS LINE
+    }));
+  }, [signups]);
 
   // Convert waitlistSignups -> FrontEndUser[]
   const frontEndWaitlistUsers = useMemo(() => {
-  if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
+    if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
 
-  return waitlistSignups.map((s) => ({
-    userId: s.userId,
-    waitlistId: s.waitlistId,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    emailAddress: s.emailAddress,
-    phoneNumber: s.phoneNumber,
-    selected: false,
-    guestOf: s.guestOf,
-    isGuest: s.isGuest,  // ← ADD THIS LINE
-  }));
-}, [waitlistSignups]);
+    return waitlistSignups.map((s) => ({
+      userId: s.userId,
+      waitlistId: s.waitlistId,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      emailAddress: s.emailAddress,
+      phoneNumber: s.phoneNumber,
+      selected: false,
+      guestOf: s.guestOf,
+      isGuest: s.isGuest, // ← ADD THIS LINE
+    }));
+  }, [waitlistSignups]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const [waitlist, setWaitlist] = useState<FrontEndUser[]>([]);
@@ -112,7 +112,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {
     if (!id) return;
-    
+
     setVolunteers((prev) => {
       // Find the clicked item
       const clickedItem = prev.find((v) => v.signUpId === id);
@@ -185,21 +185,19 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
     try {
       // Get unique signup IDs (since guests share the same ID as their parent)
-      const uniqueSignupIds = [...new Set(volunteersToDel.map((vol) => vol.signUpId).filter(Boolean))];
-
-      console.log("Deleting unique signup IDs:", uniqueSignupIds);
+      const uniqueSignupIds = [
+        ...new Set(volunteersToDel.map((vol) => vol.signUpId).filter(Boolean)),
+      ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
         const res = await fetch(`/api/eventSignup?id=${signUpId}`, {
           method: "DELETE",
         });
-        
+
         if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`Failed to delete signup ${signUpId}:`, errorText);
           throw new Error(`Failed to remove from event`);
         }
-        
+
         return signUpId;
       });
 
@@ -209,9 +207,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       setVolunteers((prev) => prev.filter((v) => !v.selected));
 
       router.refresh();
-    } catch (error) {
-      console.error("Error deleting signups:", error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to remove from event'}`);
+    } catch {
+      alert(`Error: Failed to remove from event`);
     }
   };
 
@@ -223,21 +220,19 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
     try {
       // Get unique waitlist IDs (since guests share the same ID as their parent)
-      const uniqueWaitlistIds = [...new Set(waitlistToDel.map((vol) => vol.waitlistId).filter(Boolean))];
-
-      console.log("Deleting unique waitlist IDs:", uniqueWaitlistIds);
+      const uniqueWaitlistIds = [
+        ...new Set(waitlistToDel.map((vol) => vol.waitlistId).filter(Boolean)),
+      ];
 
       const deletePromises = uniqueWaitlistIds.map(async (waitlistId) => {
         const res = await fetch(`/api/waitlist?id=${waitlistId}`, {
           method: "DELETE",
         });
-        
+
         if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`Failed to delete waitlist ${waitlistId}:`, errorText);
           throw new Error(`Failed to delete from waitlist`);
         }
-        
+
         return waitlistId;
       });
 
@@ -247,9 +242,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       setWaitlist((prev) => prev.filter((v) => !v.selected));
 
       router.refresh();
-    } catch (error) {
-      console.error("Error deleting waitlist signups:", error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to delete from waitlist'}`);
+    } catch {
+      alert(`Error: Failed to delete from waitlist`);
     }
   };
 
@@ -274,11 +268,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       // Optimistic UI update
       setVolunteers((prev) => [
         ...prev,
-        ...selectedWaitlist.map((w) => ({ 
-          ...w, 
-          selected: false, 
+        ...selectedWaitlist.map((w) => ({
+          ...w,
+          selected: false,
           waitlistId: undefined,
-          signUpId: w.waitlistId // Temporarily use waitlistId, will be replaced on refresh
+          signUpId: w.waitlistId, // Temporarily use waitlistId, will be replaced on refresh
         })),
       ]);
       setWaitlist((prev) => prev.filter((w) => !w.selected));
@@ -365,19 +359,22 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             {volunteers.map((p, i) => {
               // Check if next person is a guest of this person
               const nextPerson = volunteers[i + 1];
-              const hasGuestBelow = nextPerson && nextPerson.guestOf && !p.isGuest;
-              
+              const hasGuestBelow =
+                nextPerson && nextPerson.guestOf && !p.isGuest;
+
               // Sequential numbering for ALL people (users + guests)
               const rowNumber = i + 1;
-              
+
               return (
                 <tr
-                  key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : '')}
+                  key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : "")}
                   className={`transition-colors duration-200 ${
                     p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                  } ${!p.isGuest ? 'border-t border-gray-300' : ''} ${
-                    !hasGuestBelow && !p.isGuest ? 'border-b border-gray-300' : ''
-                  } ${p.isGuest && !volunteers[i + 1]?.isGuest ? 'border-b border-gray-300' : ''}`}
+                  } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
+                    !hasGuestBelow && !p.isGuest
+                      ? "border-b border-gray-300"
+                      : ""
+                  } ${p.isGuest && !volunteers[i + 1]?.isGuest ? "border-b border-gray-300" : ""}`}
                 >
                   <td className="py-3 px-6">{rowNumber}</td>
                   <td className="py-3 px-4">
@@ -385,21 +382,37 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       {p.isGuest ? (
                         <div className="flex items-start relative">
                           {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                          <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
+                          <div
+                            className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
+                            style={{ backgroundColor: "#D9D9D9" }}
+                          ></div>
                           {/* Guest circle - #D9D9D9 */}
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
+                          <div
+                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
+                            style={{ backgroundColor: "#D9D9D9" }}
+                          ></div>
                           <div className="ml-3">
-                            <div>{p.firstName} {p.lastName}</div>
+                            <div>
+                              {p.firstName} {p.lastName}
+                            </div>
                           </div>
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 relative">
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
+                          <div
+                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
+                            style={{ backgroundColor: "#D9D9D9" }}
+                          ></div>
                           {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
                           {hasGuestBelow && (
-                            <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
+                            <div
+                              className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
+                              style={{ backgroundColor: "#D9D9D9" }}
+                            ></div>
                           )}
-                          <div>{p.firstName} {p.lastName}</div>
+                          <div>
+                            {p.firstName} {p.lastName}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -470,19 +483,24 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 {waitlist.map((p, i) => {
                   // Check if next person is a guest of this person
                   const nextPerson = waitlist[i + 1];
-                  const hasGuestBelow = nextPerson && nextPerson.guestOf && !p.isGuest;
-                  
+                  const hasGuestBelow =
+                    nextPerson && nextPerson.guestOf && !p.isGuest;
+
                   // Sequential numbering for ALL people (users + guests)
                   const rowNumber = i + 1;
-                  
+
                   return (
                     <tr
-                      key={p.waitlistId + (p.isGuest ? `-guest-${p.userId}` : '')}
+                      key={
+                        p.waitlistId + (p.isGuest ? `-guest-${p.userId}` : "")
+                      }
                       className={`transition-colors duration-200 ${
                         p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                      } ${!p.isGuest ? 'border-t border-gray-300' : ''} ${
-                        !hasGuestBelow && !p.isGuest ? 'border-b border-gray-300' : ''
-                      } ${p.isGuest && !waitlist[i + 1]?.isGuest ? 'border-b border-gray-300' : ''}`}
+                      } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
+                        !hasGuestBelow && !p.isGuest
+                          ? "border-b border-gray-300"
+                          : ""
+                      } ${p.isGuest && !waitlist[i + 1]?.isGuest ? "border-b border-gray-300" : ""}`}
                     >
                       <td className="py-3 px-6">{rowNumber}</td>
                       <td className="py-3 px-4">
@@ -490,11 +508,19 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           {p.isGuest ? (
                             <div className="flex items-start relative">
                               {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                              <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
+                              <div
+                                className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
+                                style={{ backgroundColor: "#D9D9D9" }}
+                              ></div>
                               {/* Guest circle - #D9D9D9 */}
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
+                              <div
+                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
+                                style={{ backgroundColor: "#D9D9D9" }}
+                              ></div>
                               <div className="ml-3">
-                                <div>{p.firstName} {p.lastName}</div>
+                                <div>
+                                  {p.firstName} {p.lastName}
+                                </div>
                                 {p.guestOf && (
                                   <div className="text-sm text-gray-500 italic">
                                     Guest of {p.guestOf}
@@ -504,12 +530,20 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative">
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10" style={{ backgroundColor: '#D9D9D9' }}></div>
+                              <div
+                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
+                                style={{ backgroundColor: "#D9D9D9" }}
+                              ></div>
                               {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
                               {hasGuestBelow && (
-                                <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]" style={{ backgroundColor: '#D9D9D9' }}></div>
+                                <div
+                                  className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
+                                  style={{ backgroundColor: "#D9D9D9" }}
+                                ></div>
                               )}
-                              <div>{p.firstName} {p.lastName}</div>
+                              <div>
+                                {p.firstName} {p.lastName}
+                              </div>
                             </div>
                           )}
                         </div>

@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { User } from "@prisma/client";
+import { User, Guest } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // Fetch signups by event ID
@@ -58,7 +58,7 @@ export interface AdminUser {
 function adminUserWithGuests(s: {
   id: string;
   user: User;
-  guests: any[];
+  guests: Guest[];
 }): AdminUser[] {
   // Return an array: main user + their guests
   const mainUser: AdminUser = {

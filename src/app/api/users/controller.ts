@@ -1,4 +1,4 @@
-import { UserRole, PrismaClient } from "@prisma/client";
+import { UserRole, PrismaClient, User } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -17,15 +17,15 @@ export async function getUserById(id: string) {
 }
 
 // We use 'any' here because the input JSON has dateOfBirth as a string
-export async function createUser(data: any) {
+export async function createUser(data: User) {
   const newUser = await prisma.user.create({
     data: {
-      id: data.id, 
+      id: data.id,
       firstName: data.firstName,
       lastName: data.lastName,
       emailAddress: data.emailAddress,
       phoneNumber: data.phoneNumber,
-      dateOfBirth: new Date(data.dateOfBirth),
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       streetAddress: data.streetAddress,
       city: data.city,
       state: data.state,
