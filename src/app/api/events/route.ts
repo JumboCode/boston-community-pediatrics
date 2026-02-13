@@ -1,3 +1,5 @@
+// src/app/api/events/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import {
   getEvents,

@@ -14,6 +14,7 @@ interface GuestInput {
   phoneNumber?: string | null;
   relationship?: string | null;
   dateOfBirth?: string | null;
+  comments?: string | null;
 }
 
 const tz = "America/New_York";
@@ -122,6 +123,8 @@ export async function POST(req: NextRequest) {
                 lastName: guest.lastName,
                 email: guest.email || null,
                 relation: guest.relationship || null,
+                dateOfBirth: guest.dateOfBirth || null,
+                comments: guest.comments || null,
               })),
             },
           },
@@ -155,6 +158,8 @@ export async function POST(req: NextRequest) {
               emailAddress: guest.email || null,
               phoneNumber: guest.phoneNumber || null,
               relation: guest.relationship || null,
+              dateOfBirth: guest.dateOfBirth || null,
+              comments: guest.comments || null,
             })),
           },
         },
@@ -304,6 +309,8 @@ export async function PUT(req: NextRequest) {
                   emailAddress: guest.email || null,
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
+                  dateOfBirth: guest.dateOfBirth || null,
+                  comments: guest.comments || null,
                 })),
               },
             },
@@ -342,6 +349,8 @@ export async function PUT(req: NextRequest) {
                   lastName: guest.lastName,
                   email: guest.email || null,
                   relation: guest.relationship || null,
+                  dateOfBirth: guest.dateOfBirth || null,
+                  comments: guest.comments || null,
                 })),
               },
             },
@@ -451,6 +460,256 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json(
       { error: "Failed to update registration" },
       { status }
+    );
+  }
+}
+
+// ==========================================
+// GET: Fetch Registration(s)
+// ==========================================
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+    const positionId = searchParams.get("positionId");
+
+    // ---------------------------------------------------------
+    // SCENARIO A: Fetch ONE registration (Used by Register Page)
+    // ---------------------------------------------------------
+    if (userId && positionId) {
+      // 1. Check Signup
+      const signup = await prisma.eventSignup.findFirst({
+        where: { userId, positionId },
+        include: { guests: true },
+      });
+
+      if (signup) {
+        // Normalize Guest Data
+        const normalizedGuests = signup.guests.map((g) => ({
+          id: g.id,
+          firstName: g.firstName,
+          lastName: g.lastName,
+          email: g.emailAddress,
+          phoneNumber: g.phoneNumber,
+          relationship: g.relation,
+          // FIX: Ensure we read from DB
+          dateOfBirth: g.dateOfBirth || "", 
+          comments: g.comments || "", 
+        }));
+
+        return NextResponse.json(
+          { ...signup, guests: normalizedGuests, status: "registered" },
+          { status: 200 }
+        );
+      }
+
+      // 2. Check Waitlist
+      const waitlist = await prisma.eventWaitlist.findFirst({
+        where: { userId, positionId },
+        include: { guests: true },
+      });
+
+      if (waitlist) {
+        // Normalize Guest Data
+        const normalizedGuests = waitlist.guests.map((g) => ({
+          id: g.id,
+          firstName: g.firstName,
+          lastName: g.lastName,
+          email: g.email,
+          phoneNumber: "", // Waitlist schema usually doesn't have phone
+          relationship: g.relation,
+          // FIX: Ensure we read from DB (Previously this was hardcoded "")
+          dateOfBirth: g.dateOfBirth || "", 
+          comments: g.comments || "",       
+        }));
+
+        return NextResponse.json(
+          { ...waitlist, guests: normalizedGuests, status: "waitlisted" },
+          { status: 200 }
+        );
+      }
+
+      return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+    }
+
+    // ---------------------------------------------------------
+    // SCENARIO B: Fetch ALL registrations (Used by Profile Page)
+    // ---------------------------------------------------------
+    if (userId) {
+      const signups = await prisma.eventSignup.findMany({
+        where: { userId },
+        include: {
+          guests: true,
+          position: {
+            // This include fetches ALL fields in Position (including startTime/endTime)
+            include: { 
+                // This include fetches ALL fields in Event (including name, address, etc.)
+                event: true 
+            },
+          },
+        },
+      });
+
+      const waitlists = await prisma.eventWaitlist.findMany({
+        where: { userId },
+        include: {
+          guests: true,
+          position: {
+            include: { event: true },
+          },
+        },
+      });
+
+      // Combine and return
+      const combined = [
+        ...signups.map((s) => ({ ...s, type: "signup", status: "registered" })),
+        ...waitlists.map((w) => ({ ...w, type: "waitlist", status: "waitlisted" })),
+      ];
+
+      return NextResponse.json(combined, { status: 200 });
+    }
+
+    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+  } catch (error) {
+    console.error("Failed to fetch registrations:", error);
+    return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
+  }
+}
+
+// ... (Your existing GET, POST, PUT code) ...
+
+// ==========================================
+// DELETE: Remove Registration & Auto-Promote
+// ==========================================
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) return NextResponse.json({ error: "Missing registration ID" }, { status: 400 });
+
+    const result = await prisma.$transaction(async (tx) => {
+      // ------------------------------------------------------------
+      // CHECK 1: Is this a CONFIRMED Signup?
+      // ------------------------------------------------------------
+      const signup = await tx.eventSignup.findUnique({
+        where: { id },
+        include: { guests: true },
+      });
+
+      if (signup) {
+        const positionId = signup.positionId;
+
+        // ==================================================================
+        // 0. LOCK THE ROW (Prevent Race Conditions)
+        // ==================================================================
+        // This locks the specific EventPosition row. No other transaction 
+        // can read or write to this position until this transaction finishes.
+        // We use "EventPosition" because that is the default table name in DB.
+        await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${positionId} FOR UPDATE`;
+
+        // 1. Calculate how many slots are opening up
+        const slotsFreed = 1 + signup.guests.length;
+
+        // 2. Delete the signup and its guests
+        await tx.guest.deleteMany({ where: { signupId: id } });
+        await tx.eventSignup.delete({ where: { id } });
+
+        // 3. Decrement filledSlots temporarily
+        // (The lock above ensures no one else sees this temporary state)
+        const position = await tx.eventPosition.update({
+          where: { id: positionId },
+          data: { filledSlots: { decrement: slotsFreed } },
+        });
+
+        // ----------------------------------------------------------
+        // AUTO-PROMOTION LOGIC
+        // ----------------------------------------------------------
+        // Fetch waitlist candidates, ordered by creation time (FIFO)
+        const waitlistCandidates = await tx.eventWaitlist.findMany({
+          where: { positionId },
+          include: { guests: true },
+          orderBy: { createdAt: "asc" }, // Ensure you ran `db push` for this field
+        });
+
+        let currentFilled = position.filledSlots;
+        const totalSlots = position.totalSlots;
+        let slotsAvailable = totalSlots - currentFilled;
+
+        for (const candidate of waitlistCandidates) {
+          const spotsNeeded = 1 + candidate.guests.length;
+
+          // If the candidate fits in the available slots...
+          if (spotsNeeded <= slotsAvailable) {
+            // A. Move to Signup
+            await tx.eventSignup.create({
+              data: {
+                userId: candidate.userId,
+                positionId: candidate.positionId,
+                eventId: position.eventId, 
+                hasGuests: candidate.guests.length > 0,
+                guests: {
+                  create: candidate.guests.map((g) => ({
+                    positionId: candidate.positionId,
+                    firstName: g.firstName,
+                    lastName: g.lastName,
+                    emailAddress: g.email,
+                    relation: g.relation,
+                    dateOfBirth: g.dateOfBirth,
+                    comments: g.comments,
+                  })),
+                },
+              },
+            });
+
+            // B. Remove from Waitlist
+            await tx.waitlistGuest.deleteMany({ where: { waitlistId: candidate.id } });
+            await tx.eventWaitlist.delete({ where: { id: candidate.id } });
+
+            // C. Update counters
+            slotsAvailable -= spotsNeeded;
+            currentFilled += spotsNeeded;
+
+            // Update the DB count
+            await tx.eventPosition.update({
+              where: { id: positionId },
+              data: { filledSlots: { increment: spotsNeeded } },
+            });
+          } else {
+            // Strict FIFO: Stop if the next person doesn't fit
+            break; 
+          }
+        }
+
+        return { message: "Registration removed and waitlist processed." };
+      }
+
+      // ------------------------------------------------------------
+      // CHECK 2: Is this a WAITLIST Entry?
+      // ------------------------------------------------------------
+      const waitlistEntry = await tx.eventWaitlist.findUnique({
+        where: { id },
+      });
+
+      if (waitlistEntry) {
+        // Just delete it. No need to lock position because removing a waitlist 
+        // entry doesn't affect the filledSlots count.
+        await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
+        await tx.eventWaitlist.delete({ where: { id } });
+        return { message: "Removed from waitlist." };
+      }
+
+      throw new Error("Registration not found");
+    });
+
+    return NextResponse.json(result, { status: 200 });
+
+  } catch (error) {
+    console.error("Delete failed:", error);
+    const is404 = error instanceof Error && error.message === "Registration not found";
+    return NextResponse.json(
+      { error: is404 ? "Registration not found" : "Failed to remove registration" }, 
+      { status: is404 ? 404 : 500 }
     );
   }
 }
