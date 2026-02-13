@@ -1,5 +1,4 @@
 "use client";
-
 import EventCard from "@/components/events/EventCard";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";

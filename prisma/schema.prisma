@@ -71,7 +71,7 @@ model EventSignup {
   date       DateTime?
   time       DateTime?
   notes      String?
-
+  
   user       User?        @relation(fields: [userId], references: [id])
   event      Event        @relation(fields: [eventId], references: [id])
   position   EventPosition @relation(fields: [positionId], references: [id])
