@@ -72,9 +72,9 @@ model EventSignup {
   time       DateTime?
   notes      String?
 
-  user       User?        @relation(fields: [userId], references: [id])
-  event      Event        @relation(fields: [eventId], references: [id])
-  position   EventPosition @relation(fields: [positionId], references: [id])
+  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   guests     Guest[]
 }
 
@@ -96,7 +96,7 @@ model EventPosition {
   country           String          @default("")
   zipCode           String          @default("")
 
-  event          Event              @relation(fields: [eventId], references: [id])
+  event          Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   signups        EventSignup[]
   waitlists      EventWaitlist[]
 }
@@ -111,7 +111,7 @@ model Guest {
   phoneNumber  String?
 
   signupId  String
-  signup    EventSignup @relation(fields: [signupId], references: [id])
+  signup    EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 
@@ -121,8 +121,8 @@ model EventWaitlist {
   positionId String
   isGuest    Boolean       @default(false)
 
-  user       User?         @relation(fields: [userId], references: [id])
-  position   EventPosition @relation(fields: [positionId], references: [id])
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   guests     WaitlistGuest[]
 
 }
@@ -134,5 +134,5 @@ model WaitlistGuest {
   email      String?
   relation   String?
   waitlistId String
-  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id])
+  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }

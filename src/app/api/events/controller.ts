@@ -65,26 +65,9 @@ export const removeEventImage = async (eventId: string, imageKey: string) => {
 
 // DELETE event - cascades delete to EventSignups and EventPositions, but preserves Users
 export const deleteEvent = async (id: string) => {
-  return prisma.$transaction([
-    // Delete all EventSignups for positions in this event (preserves Users)
-    prisma.eventSignup.deleteMany({
+  return prisma.event.delete({
       where: {
-        position: {
-          eventId: id,
-        },
-      },
-    }),
-    // Delete all EventPositions for this event
-    prisma.eventPosition.deleteMany({
-      where: {
-        eventId: id,
-      },
-    }),
-    // Finally delete the Event itself
-    prisma.event.delete({
-      where: {
-        id,
-      },
-    }),
-  ]);
+        id
+      }
+    })
 };
