@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useState, useCallback } from "react";
 import { KebabMenu } from "../common/buttons/KebabMenu";
 import PinnedIndicator from "./PinnedIndicator";
 import { useEffect } from "react";
+import Modal from "../common/Modal";
 
 interface EventCardProps {
   image: string;
@@ -32,13 +33,6 @@ const EventCard = ({
   const [modalTitle, setModalTitle] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const closeModal = () => {
-    setModalTitle(null);
-    setModalMessage(null);
-    router.refresh();
-  };
-
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -51,6 +45,12 @@ const EventCard = ({
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     timeZone: "America/New_York",
   });
+
+  const closeModal = useCallback(() => {
+    setModalTitle(null);
+    setModalMessage(null);
+    router.refresh();
+  }, [router]);
 
   async function handlePinToggle() {
     if (isLoading) return;
@@ -147,7 +147,7 @@ const EventCard = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [modalMessage]);
+  }, [modalMessage, closeModal]);
 
   return (
     <div className="relative flex flex-col w-[283px] rounded-2xl shadow p-4 gap-2 bg-white">
@@ -175,61 +175,43 @@ const EventCard = ({
       <p className="text-sm text-gray-700">{location}</p>
       <p className="text-sm text-gray-700">{formattedDate}</p>
 
-      {modalMessage && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
-          onClick={closeModal}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[792px] h-[336px] rounded-lg border-2 border-black-500 p-8 shadow-xl flex flex-col items-center justify-center text-center"
-          >
-            <h2 className="text-4xl mb-4">{modalTitle}</h2>
-            <p className="text-xl text-gray-700 mb-6">{modalMessage}</p>
-
-            <button
-              onClick={closeModal}
-              className="px-16 py-2 rounded-md bg-[#234254] text-white hover:bg-[#1b3443] transition"
-            >
-              Return
-            </button>
-          </div>
-        </div>
+      {modalMessage && modalTitle && (
+        <Modal
+          open={true}
+          title={modalTitle}
+          message={modalMessage}
+          onClose={closeModal}
+          buttons={[
+            {
+              label: "Return",
+              variant: "primary",
+              onClick: closeModal,
+            },
+          ]}
+        />
       )}
 
       {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[792px] rounded-lg border-2 border-black-500 p-8 shadow-xl flex flex-col items-center justify-center text-center"
-          >
-            <h2 className="text-4xl mb-4">Delete Event?</h2>
-            <p className="text-xl text-gray-700 mb-8">
-              Are you sure you want to delete this event? This action cannot be
-              undone.
-            </p>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-12 py-2 rounded-md bg-gray-300 text-black hover:bg-gray-400 transition"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-12 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <Modal
+          open={showDeleteConfirm}
+          title="Delete Event?"
+          message="Are you sure you want to delete this event? This action cannot be undone."
+          onClose={() => setShowDeleteConfirm(false)}
+          buttons={[
+            {
+              label: "Cancel",
+              variant: "secondary",
+              onClick: () => setShowDeleteConfirm(false),
+              disabled: isLoading,
+            },
+            {
+              label: "Delete",
+              variant: "primary",
+              onClick: handleDelete,
+              disabled: isLoading,
+            },
+          ]}
+        />
       )}
     </div>
   );
