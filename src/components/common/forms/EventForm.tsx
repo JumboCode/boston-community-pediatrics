@@ -12,14 +12,65 @@ import { useSearchParams } from 'next/navigation';
 
 
 
-export async function fetchEventById(id: string): Promise<Event | null> {
+// API shapes used by this component
+type APIPosition = Partial<{
+  id: string;
+  position: string;
+  date: string | Date;
+  startTime: string | Date;
+  endTime: string | Date;
+  description: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+  totalSlots: number | null;
+}>;
+
+type ApiEvent = Partial<{
+  id: string;
+  name: string;
+  date: string[] | Date[];
+  startTime: string | Date;
+  endTime: string | Date;
+  description: string;
+  resourcesLink: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+  positions: APIPosition[];
+  images: string[];
+}>;
+
+type PositionState = {
+  id?: string;
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  description: string;
+  address: string;
+  apt?: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  participants: string;
+  sameAsDate: boolean;
+  sameAsTime: boolean;
+  sameAsAddress: boolean;
+};
+
+export async function fetchEventById(id: string): Promise<ApiEvent | null> {
   try {
     const response = await fetch(`/api/events?id=${id}`);
     if (!response.ok) {
       console.error('Failed to fetch event', response.statusText);
       return null;
     }
-    const data: Event = await response.json();
+    const data = (await response.json()) as ApiEvent;
     return data;
   } catch (error) {
     console.error('Error fetching event:', error);
@@ -42,132 +93,9 @@ const EventForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const searchParams = useSearchParams();
-  const eventIdtest = searchParams.get('id');
+  const eventIdParam = searchParams.get('id');
 
-  useEffect(() => {
-    const load = async () => {
-      const id = eventIdtest;
-      if (!id) return;
-      const result = await fetchEventById(id);
-      if (!result) return;
-
-      // Map event-level fields
-      setEvent({
-        title: result.name ?? "",
-        date:
-          result.date && result.date.length
-            ? new Date(result.date[0]).toISOString().slice(0, 10)
-            : "",
-        startTime: result.startTime
-          ? new Date(result.startTime).toISOString().slice(11, 16)
-          : "",
-        endTime: result.endTime
-          ? new Date(result.endTime).toISOString().slice(11, 16)
-          : "",
-        description: result.description ?? "",
-        resourcesLink: (result as any).resourcesLink ?? undefined,
-        address: result.addressLine1 ?? "",
-        apt: result.addressLine2 ?? "",
-        city: result.city ?? "",
-        state: result.state ?? "",
-        zip: result.zipCode ?? "",
-      });
-
-      // Try to fetch positions from the eventPosition API; fall back to embedded positions
-      try {
-        const posRes = await fetch(`/api/eventPosition?eventId=${id}`);
-        if (posRes.ok) {
-          const posData = await posRes.json();
-          if (Array.isArray(posData) && posData.length) {
-            setPositions(
-              posData.map((p: any) => ({
-                id: p.id ?? undefined,
-                name: p.position ?? "",
-                date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
-                startTime: p.startTime
-                  ? new Date(p.startTime).toISOString().slice(11, 16)
-                  : "",
-                endTime: p.endTime
-                  ? new Date(p.endTime).toISOString().slice(11, 16)
-                  : "",
-                description: p.description ?? "",
-                address: p.addressLine1 ?? "",
-                apt: p.addressLine2 ?? "",
-                city: p.city ?? "",
-                state: p.state ?? "",
-                zip: p.zipCode ?? "",
-                participants: p.totalSlots != null ? String(p.totalSlots) : "",
-                sameAsDate: false,
-                sameAsTime: false,
-                sameAsAddress: false,
-              }))
-            );
-            setOriginalPositionIds(posData.map((p: any) => p.id).filter(Boolean));
-          }
-        } else if (Array.isArray((result as any).positions) && (result as any).positions.length) {
-          setPositions(
-            (result as any).positions.map((p: any) => ({
-              id: p.id ?? undefined,
-              name: p.position ?? "",
-              date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
-              startTime: p.startTime
-                ? new Date(p.startTime).toISOString().slice(11, 16)
-                : "",
-              endTime: p.endTime
-                ? new Date(p.endTime).toISOString().slice(11, 16)
-                : "",
-              description: p.description ?? "",
-              address: p.addressLine1 ?? "",
-              apt: p.addressLine2 ?? "",
-              city: p.city ?? "",
-              state: p.state ?? "",
-              zip: p.zipCode ?? "",
-              participants: p.totalSlots != null ? String(p.totalSlots) : "",
-              sameAsDate: false,
-              sameAsTime: false,
-              sameAsAddress: false,
-            }))
-          );
-          setOriginalPositionIds((result as any).positions.map((p: any) => p.id).filter(Boolean));
-        }
-      } catch (err) {
-        console.error("Failed to fetch positions:", err);
-        if (Array.isArray((result as any).positions) && (result as any).positions.length) {
-          setPositions(
-            (result as any).positions.map((p: any) => ({
-              name: p.position ?? "",
-              date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
-              startTime: p.startTime
-                ? new Date(p.startTime).toISOString().slice(11, 16)
-                : "",
-              endTime: p.endTime
-                ? new Date(p.endTime).toISOString().slice(11, 16)
-                : "",
-              description: p.description ?? "",
-              address: p.addressLine1 ?? "",
-              apt: p.addressLine2 ?? "",
-              city: p.city ?? "",
-              state: p.state ?? "",
-              zip: p.zipCode ?? "",
-              participants: p.totalSlots != null ? String(p.totalSlots) : "",
-              sameAsDate: false,
-              sameAsTime: false,
-              sameAsAddress: false,
-            }))
-          );
-        }
-      }
-
-      // Map images (best-effort)
-      if (Array.isArray((result as any).images) && (result as any).images.length) {
-        setCarouselImages(
-          (result as any).images.map((url: string) => createStaticImageData(url))
-        );
-      }
-    };
-
-    load();
-  }, [eventIdtest]);
+  
 
 
   const inputBase =
@@ -206,9 +134,9 @@ const EventForm = () => {
     state: "",
     zip: "",
   });
-  const [positions, setPositions] = useState([
+  const [positions, setPositions] = useState<PositionState[]>([
     {
-      id: undefined as string | undefined,
+      id: undefined,
       name: "",
       date: "",
       startTime: "",
@@ -496,13 +424,13 @@ const EventForm = () => {
 
       setErrors({});
 
-      const isEdit = !!eventIdtest;
-      const url = isEdit ? `/api/events?id=${eventIdtest}` : "/api/events";
+      const isEdit = !!eventIdParam;
+      const url = isEdit ? `/api/events?id=${eventIdParam}` : "/api/events";
       const method = isEdit ? "PUT" : "POST";
 
       // When editing, send only the top-level event fields in the shape
       // the server's PUT handler expects (Prisma EventUpdateInput-compatible).
-      let payload: any;
+      let payload: Record<string, unknown>;
       if (isEdit) {
         const combineDateTime = (date: string, time: string) =>
           new Date(`${date}T${time}:00`);
@@ -540,7 +468,7 @@ const EventForm = () => {
       const createdEvent = await res.json();
 
       const eventId: string = isEdit
-        ? (eventIdtest as string)
+        ? (eventIdParam as string)
         : createdEvent.id ?? createdEvent.event?.id;
 
       if (!eventId) {
@@ -561,7 +489,7 @@ const EventForm = () => {
           new Date(`${date}T${time}:00`);
         const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
 
-        const currentIds = normalizedPositions.map((p) => (p as any).id).filter(Boolean) as string[];
+        const currentIds = normalizedPositions.map((p) => p.id).filter(Boolean) as string[];
         const toDelete = originalPositionIds.filter((id) => !currentIds.includes(id));
 
         // delete removed positions
@@ -575,7 +503,7 @@ const EventForm = () => {
 
         // upsert remaining positions (PUT if id, POST if new)
         await Promise.all(
-          normalizedPositions.map(async (p: any) => {
+          normalizedPositions.map(async (p: PositionState) => {
             const posPayload = {
               position: p.name,
               description: p.description || "",
@@ -693,16 +621,85 @@ const EventForm = () => {
     </div>
   );
 
-  const [eventId, setEventId] = useState('');
-  const handleSearch = async () => {
-    if (!eventId) return;
-    // setLoading(true);
-    const result = await fetchEventById(eventId);
-    // setEvent(result);
-    console.log("here is event:")
-    console.log(result)
-    // setLoading(false);
-  };
+  useEffect(() => {
+    const mapPositionsArray = (arr: APIPosition[]): PositionState[] =>
+      arr.map((p: APIPosition) => ({
+        id: p.id ?? undefined,
+        name: p.position ?? "",
+        date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+        startTime: p.startTime ? new Date(p.startTime).toISOString().slice(11, 16) : "",
+        endTime: p.endTime ? new Date(p.endTime).toISOString().slice(11, 16) : "",
+        description: p.description ?? "",
+        address: p.addressLine1 ?? "",
+        apt: p.addressLine2 ?? undefined,
+        city: p.city ?? "",
+        state: p.state ?? "",
+        zip: p.zipCode ?? "",
+        participants: p.totalSlots != null ? String(p.totalSlots) : "",
+        sameAsDate: false,
+        sameAsTime: false,
+        sameAsAddress: false,
+      }));
+
+    const load = async () => {
+      const id = eventIdParam;
+      if (!id) return;
+      const result = await fetchEventById(id);
+      if (!result) return;
+
+      // Map event-level fields
+      setEvent({
+        title: result.name ?? "",
+        date:
+          result.date && result.date.length
+            ? new Date(result.date[0]).toISOString().slice(0, 10)
+            : "",
+        startTime: result.startTime
+          ? new Date(result.startTime).toISOString().slice(11, 16)
+          : "",
+        endTime: result.endTime
+          ? new Date(result.endTime).toISOString().slice(11, 16)
+          : "",
+        description: result.description ?? "",
+        resourcesLink: result.resourcesLink ?? undefined,
+        address: result.addressLine1 ?? "",
+        apt: result.addressLine2 ?? undefined,
+        city: result.city ?? "",
+        state: result.state ?? "",
+        zip: result.zipCode ?? "",
+      });
+
+      // Try to fetch positions from the eventPosition API; fall back to embedded positions
+      try {
+        const posRes = await fetch(`/api/eventPosition?eventId=${id}`);
+        if (posRes.ok) {
+          const posData = await posRes.json();
+          if (Array.isArray(posData) && posData.length) {
+            const mapped = mapPositionsArray(posData as APIPosition[]);
+            setPositions(mapped);
+            setOriginalPositionIds(mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]);
+          }
+        } else if (Array.isArray(result.positions) && result.positions.length) {
+          const mapped = mapPositionsArray(result.positions as APIPosition[]);
+          setPositions(mapped);
+          setOriginalPositionIds(mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch positions:", err);
+        if (Array.isArray(result.positions) && result.positions.length) {
+          const mapped = mapPositionsArray(result.positions as APIPosition[]);
+          setPositions(mapped);
+        }
+      }
+
+      // Map images (best-effort)
+      if (Array.isArray(result.images) && result.images.length) {
+        setCarouselImages(result.images.map((url) => createStaticImageData(url)));
+      }
+    };
+
+    load();
+  }, [eventIdParam]);
 
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
@@ -718,7 +715,7 @@ const EventForm = () => {
       </div>
       {/* title */}
       <h1 className="mt-[22px] text-center text-[36px] font-medium leading-tight text-[#234254]">
-        {eventIdtest ? "Edit event" : "Create a new event"}
+        {eventIdParam ? "Edit event" : "Create a new event"}
       </h1>
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
