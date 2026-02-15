@@ -71,10 +71,10 @@ model EventSignup {
   date       DateTime?
   time       DateTime?
   notes      String?
-  
-  user       User?        @relation(fields: [userId], references: [id])
-  event      Event        @relation(fields: [eventId], references: [id])
-  position   EventPosition @relation(fields: [positionId], references: [id])
+
+  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   guests     Guest[]
 }
 
@@ -96,7 +96,7 @@ model EventPosition {
   country           String          @default("")
   zipCode           String          @default("")
 
-  event          Event              @relation(fields: [eventId], references: [id])
+  event          Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   signups        EventSignup[]
   waitlists      EventWaitlist[]
 }
@@ -113,7 +113,7 @@ model Guest {
   dateOfBirth  String?     
   comments     String?
   signupId  String
-  signup    EventSignup @relation(fields: [signupId], references: [id])
+  signup    EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 
@@ -124,8 +124,8 @@ model EventWaitlist {
   isGuest    Boolean       @default(false)
   createdAt  DateTime      @default(now())
 
-  user       User?         @relation(fields: [userId], references: [id])
-  position   EventPosition @relation(fields: [positionId], references: [id])
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   guests     WaitlistGuest[]
 
 }
@@ -139,5 +139,5 @@ model WaitlistGuest {
   dateOfBirth  String?
   comments     String?
   waitlistId String
-  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id])
+  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }

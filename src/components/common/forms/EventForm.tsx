@@ -2,12 +2,81 @@
 import { eventSchema } from "@/lib/schemas/eventSchema";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef, useEffect, type ChangeEvent } from "react";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import Button from "@/components/common/buttons/Button";
 import Carousel from "../Carousel";
 import { mutate } from "swr";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from 'next/navigation';
+
+
+
+// API shapes used by this component
+type APIPosition = Partial<{
+  id: string;
+  position: string;
+  date: string | Date;
+  startTime: string | Date;
+  endTime: string | Date;
+  description: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+  totalSlots: number | null;
+}>;
+
+type ApiEvent = Partial<{
+  id: string;
+  name: string;
+  date: string[] | Date[];
+  startTime: string | Date;
+  endTime: string | Date;
+  description: string;
+  resourcesLink: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string;
+  state: string;
+  zipCode: string;
+  positions: APIPosition[];
+  images: string[];
+}>;
+
+type PositionState = {
+  id?: string;
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  description: string;
+  address: string;
+  apt?: string | null;
+  city: string;
+  state: string;
+  zip: string;
+  participants: string;
+  sameAsDate: boolean;
+  sameAsTime: boolean;
+  sameAsAddress: boolean;
+};
+
+export async function fetchEventById(id: string): Promise<ApiEvent | null> {
+  try {
+    const response = await fetch(`/api/events?id=${id}`);
+    if (!response.ok) {
+      console.error('Failed to fetch event', response.statusText);
+      return null;
+    }
+    const data = (await response.json()) as ApiEvent;
+    return data;
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    return null;
+  }
+}
 
 const createStaticImageData = (url: string): StaticImageData =>
   ({
@@ -23,6 +92,10 @@ const EventForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventIdParam = searchParams.get('id');
+
+  
 
   const inputBase =
     "rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
@@ -60,8 +133,9 @@ const EventForm = () => {
     state: "",
     zip: "",
   });
-  const [positions, setPositions] = useState([
+  const [positions, setPositions] = useState<PositionState[]>([
     {
+      id: undefined,
       name: "",
       date: "",
       startTime: "",
@@ -78,6 +152,7 @@ const EventForm = () => {
       sameAsAddress: false,
     },
   ]);
+  const [originalPositionIds, setOriginalPositionIds] = useState<string[]>([]);
 
   const clearError = (key: string) => {
     setErrors((prev) => {
@@ -351,30 +426,116 @@ const EventForm = () => {
 
       setErrors({});
 
-      const res = await fetch("/api/events", {
-        method: "POST",
+      const isEdit = !!eventIdParam;
+      const url = isEdit ? `/api/events?id=${eventIdParam}` : "/api/events";
+      const method = isEdit ? "PUT" : "POST";
+
+      // When editing, send only the top-level event fields in the shape
+      // the server's PUT handler expects (Prisma EventUpdateInput-compatible).
+      let payload: Record<string, unknown>;
+      if (isEdit) {
+        const combineDateTime = (date: string, time: string) =>
+          new Date(`${date}T${time}:00`);
+        const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
+
+        payload = {
+          name: parseResult.data.title,
+          description: parseResult.data.description || "",
+          startTime: combineDateTime(parseResult.data.date, parseResult.data.startTime),
+          endTime: combineDateTime(parseResult.data.date, parseResult.data.endTime),
+          addressLine1: parseResult.data.address,
+          addressLine2: parseResult.data.apt || null,
+          city: parseResult.data.city,
+          state: parseResult.data.state,
+          country: "USA",
+          zipCode: parseResult.data.zip,
+          date: [toMidnight(parseResult.data.date)],
+        };
+      } else {
+        payload = parseResult.data;
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parseResult.data),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
         const text = await res.text();
-        alert(`Failed to create event: ${text}`);
+        alert(`Failed to ${isEdit ? "update":"create"} event: ${text}`);
         return;
       }
 
       const createdEvent = await res.json();
 
-      const eventId: string = createdEvent.id ?? createdEvent.event?.id;
+      const eventId: string = isEdit
+        ? (eventIdParam as string)
+        : createdEvent.id ?? createdEvent.event?.id;
+
       if (!eventId) {
-        console.error("Create event response:", createdEvent);
-        alert("Event created but no eventId returned from /api/events");
+        console.error("Event response:", createdEvent);
+        alert(isEdit ? "Event updated but no id available" : "Event created but no eventId returned from /api/events");
         return;
       }
 
       if (selectedFiles.length > 0) {
         await Promise.all(
           selectedFiles.map((f) => uploadEventImage(eventId, f))
+        );
+      }
+
+      // Sync positions: create/update/delete via eventPosition API
+      if (isEdit) {
+        const combineDateTime = (date: string, time: string) =>
+          new Date(`${date}T${time}:00`);
+        const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
+
+        const currentIds = normalizedPositions.map((p) => p.id).filter(Boolean) as string[];
+        const toDelete = originalPositionIds.filter((id) => !currentIds.includes(id));
+
+        // delete removed positions
+        await Promise.all(
+          toDelete.map((id) =>
+            fetch(`/api/eventPosition?id=${id}`, { method: "DELETE" }).catch((e) => {
+              console.error("Failed to delete position", id, e);
+            })
+          )
+        );
+
+        // upsert remaining positions (PUT if id, POST if new)
+        await Promise.all(
+          normalizedPositions.map(async (p: PositionState) => {
+            const posPayload = {
+              position: p.name,
+              description: p.description || "",
+              date: toMidnight(p.date),
+              startTime: combineDateTime(p.date, p.startTime),
+              endTime: combineDateTime(p.date, p.endTime),
+              totalSlots: Number(p.participants || 0),
+              // filledSlots: leave undefined to avoid overwriting
+              addressLine1: p.address || "",
+              addressLine2: p.apt || null,
+              city: p.city || "",
+              state: p.state || "",
+              country: "USA",
+              zipCode: p.zip || "",
+            };
+
+            if (p.id) {
+              await fetch(`/api/eventPosition?id=${p.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(posPayload),
+              }).catch((e) => console.error("Failed to update position", p.id, e));
+            } else {
+              await fetch(`/api/eventPosition`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...posPayload, eventId }),
+              }).catch((e) => console.error("Failed to create position", e));
+            }
+          })
         );
       }
 
@@ -462,11 +623,91 @@ const EventForm = () => {
     </div>
   );
 
+  useEffect(() => {
+    const mapPositionsArray = (arr: APIPosition[]): PositionState[] =>
+      arr.map((p: APIPosition) => ({
+        id: p.id ?? undefined,
+        name: p.position ?? "",
+        date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+        startTime: p.startTime ? new Date(p.startTime).toISOString().slice(11, 16) : "",
+        endTime: p.endTime ? new Date(p.endTime).toISOString().slice(11, 16) : "",
+        description: p.description ?? "",
+        address: p.addressLine1 ?? "",
+        apt: p.addressLine2 ?? undefined,
+        city: p.city ?? "",
+        state: p.state ?? "",
+        zip: p.zipCode ?? "",
+        participants: p.totalSlots != null ? String(p.totalSlots) : "",
+        sameAsDate: false,
+        sameAsTime: false,
+        sameAsAddress: false,
+      }));
+
+    const load = async () => {
+      const id = eventIdParam;
+      if (!id) return;
+      const result = await fetchEventById(id);
+      if (!result) return;
+
+      // Map event-level fields
+      setEvent({
+        title: result.name ?? "",
+        date:
+          result.date && result.date.length
+            ? new Date(result.date[0]).toISOString().slice(0, 10)
+            : "",
+        startTime: result.startTime
+          ? new Date(result.startTime).toISOString().slice(11, 16)
+          : "",
+        endTime: result.endTime
+          ? new Date(result.endTime).toISOString().slice(11, 16)
+          : "",
+        description: result.description ?? "",
+        resourcesLink: result.resourcesLink ?? undefined,
+        address: result.addressLine1 ?? "",
+        apt: result.addressLine2 ?? undefined,
+        city: result.city ?? "",
+        state: result.state ?? "",
+        zip: result.zipCode ?? "",
+      });
+
+      // Try to fetch positions from the eventPosition API; fall back to embedded positions
+      try {
+        const posRes = await fetch(`/api/eventPosition?eventId=${id}`);
+        if (posRes.ok) {
+          const posData = await posRes.json();
+          if (Array.isArray(posData) && posData.length) {
+            const mapped = mapPositionsArray(posData as APIPosition[]);
+            setPositions(mapped);
+            setOriginalPositionIds(mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]);
+          }
+        } else if (Array.isArray(result.positions) && result.positions.length) {
+          const mapped = mapPositionsArray(result.positions as APIPosition[]);
+          setPositions(mapped);
+          setOriginalPositionIds(mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch positions:", err);
+        if (Array.isArray(result.positions) && result.positions.length) {
+          const mapped = mapPositionsArray(result.positions as APIPosition[]);
+          setPositions(mapped);
+        }
+      }
+
+      // Map images (best-effort)
+      if (Array.isArray(result.images) && result.images.length) {
+        setCarouselImages(result.images.map((url) => createStaticImageData(url)));
+      }
+    };
+
+    load();
+  }, [eventIdParam]);
+
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
-        <Link href="/" className="cursor-pointer">
+        <Link href="/event" className="cursor-pointer">
           <Image
             src={BackArrow}
             alt="Back arrow"
@@ -476,7 +717,7 @@ const EventForm = () => {
       </div>
       {/* title */}
       <h1 className="mt-[22px] text-center text-[36px] font-medium leading-tight text-[#234254]">
-        Create a new event
+        {eventIdParam ? "Edit event" : "Create a new event"}
       </h1>
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
@@ -1014,7 +1255,7 @@ const EventForm = () => {
           />
           <Button
             onClick={handleCreateEvent}
-            label="Create event"
+            label="Submit"
             altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
           />
         </div>

@@ -2,7 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
+import { KebabMenu } from "../common/buttons/KebabMenu";
+import PinnedIndicator from "./PinnedIndicator";
+import { useEffect } from "react";
+import Modal from "../common/Modal";
 
 interface EventCardProps {
   image: string;
@@ -15,9 +20,8 @@ interface EventCardProps {
   userRole: string;
   date: Date;
   id: string;
-  onEdit?: () => void;
-  onRemove?: () => void;
-  onVolunteer?: () => void;
+  pinned: boolean;
+  isAdmin?: boolean;
 }
 
 const EventCard = ({
@@ -31,147 +35,193 @@ const EventCard = ({
   userRole,
   date,
   id,
-  onEdit,
-  onRemove,
-  onVolunteer,
+  pinned,
+  isAdmin,
 }: EventCardProps) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [modalTitle, setModalTitle] = useState<string | null>(null);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isAdmin = userRole === "ADMIN";
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const formatTime = (d: Date) => {
-    if (!d || isNaN(d.getTime())) return "undefined";
-    return d
-      .toLocaleTimeString("en-US", {
-        timeZone: "America/New_York",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .replace(/ (AM|PM)/, "");
-  };
-
-  const timeRange = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+  const formattedTime = new Date(time).toLocaleTimeString("en-US", {
+    timeZone: "America/New_York",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     timeZone: "America/New_York",
   });
 
-  const handleMenuClick = (e: React.MouseEvent, action?: () => void) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (action) action();
-    setShowMenu(false);
-  };
+  const closeModal = useCallback(() => {
+    setModalTitle(null);
+    setModalMessage(null);
+    router.refresh();
+  }, [router]);
+
+  async function handlePinToggle() {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const endpoint = pinned ? "unpin" : "pin";
+      const res = await fetch(`/api/events/${id}/${endpoint}`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        // Only pin can fail due to the 2-pin rule
+        setModalTitle("Unable to pin event");
+        setModalMessage("Please unpin at least 1 event.");
+        return;
+      }
+
+      if (pinned) {
+        setModalTitle("Event Unpinned.");
+        setModalMessage("The event has been successfully unpinned.");
+      } else {
+        setModalTitle("Event Pinned!");
+        setModalMessage("The event has been successfully pinned.");
+      }
+    } catch (err) {
+      setModalTitle("Error");
+      setModalMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`/api/events?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        setModalTitle("Error");
+        setModalMessage("Failed to delete event. Please try again.");
+        setShowDeleteConfirm(false);
+        return;
+      }
+
+      setModalTitle("Event Deleted!");
+      setModalMessage("The event has been successfully deleted.");
+      setShowDeleteConfirm(false);
+
+      // Redirect after a short delay to show the confirmation message
+      setTimeout(() => {
+        router.push("/event");
+        router.refresh();
+      }, 1500);
+    } catch (err) {
+      setModalTitle("Error");
+      setModalMessage("Something went wrong. Please try again.");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const menuItems = isAdmin
+    ? [
+        {
+          label: pinned ? "Unpin" : "Pin",
+          onClick: handlePinToggle,
+        },
+        {
+          label: "Edit",
+          onClick: () => router.push(`/event/createEvent?id=${id}`),
+        },
+        {
+          label: "Delete",
+          danger: true,
+          onClick: () => setShowDeleteConfirm(true),
+        },
+      ]
+    : [];
+
+  useEffect(() => {
+    if (!modalMessage) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [modalMessage, closeModal]);
 
   return (
-    <Link
-      href={`/event/${id}`}
-      className="relative flex flex-col w-[275px] h-[300px] rounded-2xl shadow-sm p-4 gap-2 bg-white group hover:shadow-md transition-shadow border border-gray-50"
-    >
-      {/* Image */}
-      <div className="w-full h-[165px] relative overflow-hidden rounded-xl bg-gray-200">
+    <div className="relative flex flex-col w-[283px] rounded-2xl shadow p-4 gap-2 bg-white">
+      <Link href={`/event/${id}`}>
         <Image
           src={image}
           alt={title}
-          fill
-          className="object-cover"
+          width={600}
+          height={600}
+          className="w-full h-[167.53px] object-cover"
         />
+      </Link>
+
+      {isAdmin && pinned && <PinnedIndicator />}
+
+      <div className="flex items-start justify-between">
+        <Link href={`/event/${id}`}>
+          <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
+        </Link>
+
+        {isAdmin && <KebabMenu items={menuItems} />}
       </div>
 
-      {/* Title + 3 Dots Menu */}
-      <div className="flex justify-between items-start mt-2 relative">
-        <h3 className="text-[20px] font-medium text-[#426982] leading-tight truncate pr-2">
-          {title}
-        </h3>
+      <p className="text-sm text-gray-700">{formattedTime}</p>
+      <p className="text-sm text-gray-700">{location}</p>
+      <p className="text-sm text-gray-700">{formattedDate}</p>
 
-        {/* Menu Trigger */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowMenu(!showMenu);
-          }}
-          className="text-black hover:bg-gray-100 rounded-full p-0.5 transition"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-          </svg>
-        </button>
+      {modalMessage && modalTitle && (
+        <Modal
+          open={true}
+          title={modalTitle}
+          message={modalMessage}
+          onClose={closeModal}
+          buttons={[
+            {
+              label: "Return",
+              variant: "primary",
+              onClick: closeModal,
+            },
+          ]}
+        />
+      )}
 
-        {/* Dropdown Menu */}
-        {showMenu && (
-          <div
-            ref={menuRef}
-            className="absolute top-8 right-0 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden"
-            onClick={(e) => e.preventDefault()}
-          >
-            {isAdmin ? (
-              // ADMIN MENU
-              <>
-                <button
-                  onClick={(e) => handleMenuClick(e, onEdit)}
-                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-100"
-                >
-                  Edit Event
-                </button>
-                <button
-                  onClick={(e) => handleMenuClick(e, onRemove)}
-                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 border-b border-gray-100"
-                >
-                  Remove Event
-                </button>
-                <button
-                  onClick={(e) => handleMenuClick(e, onVolunteer)}
-                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50"
-                >
-                  Volunteer
-                </button>
-              </>
-            ) : (
-              // USER MENU
-              <>
-                <button
-                  onClick={(e) => handleMenuClick(e, onEdit)}
-                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-100"
-                >
-                  Edit sign up
-                </button>
-                <button
-                  onClick={(e) => handleMenuClick(e, onRemove)}
-                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                >
-                  Cancel sign up
-                </button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Time and Location Info */}
-      <div className="flex flex-col gap-1 text-[16px] text-black">
-        <p>{timeRange}</p>
-        <p className="line-clamp-1">{location}</p>
-      </div>
-
-      {/* Bottom Footer */}
-      <div className="flex justify-between items-end mt-auto pb-1">
-        <p className="text-[14px] text-gray-500">{formattedDate}</p>
-        <p className="text-[18px] font-medium text-black">{filledSlots}/{totalSlots}</p>
-      </div>
-    </Link>
+      {showDeleteConfirm && (
+        <Modal
+          open={showDeleteConfirm}
+          title="Delete Event?"
+          message="Are you sure you want to delete this event? This action cannot be undone."
+          onClose={() => setShowDeleteConfirm(false)}
+          buttons={[
+            {
+              label: "Cancel",
+              variant: "secondary",
+              onClick: () => setShowDeleteConfirm(false),
+              disabled: isLoading,
+            },
+            {
+              label: "Delete",
+              variant: "primary",
+              onClick: handleDelete,
+              disabled: isLoading,
+            },
+          ]}
+        />
+      )}
+    </div>
   );
 };
 
