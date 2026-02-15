@@ -12,8 +12,12 @@ import Modal from "../common/Modal";
 interface EventCardProps {
   image: string;
   title: string;
-  time: Date;
+  startTime: Date;
+  endTime: Date;
   location: string;
+  filledSlots: number;
+  totalSlots: number;
+  userRole: string;
   date: Date;
   id: string;
   pinned: boolean;
@@ -23,8 +27,12 @@ interface EventCardProps {
 const EventCard = ({
   image,
   title,
-  time,
+  startTime,
+  endTime,
   location,
+  filledSlots,
+  totalSlots,
+  userRole,
   date,
   id,
   pinned,

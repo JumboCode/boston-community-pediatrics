@@ -97,7 +97,6 @@ const EventForm = () => {
 
   
 
-
   const inputBase =
     "rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
 
@@ -413,7 +412,10 @@ const EventForm = () => {
         };
 
         for (const issue of parseResult.error.issues) {
-          const finalPath = redirectPath(issue.path).join(".");
+          const path = issue.path.filter(
+            (p) => typeof p === "string" || typeof p === "number"
+          ) as (string | number)[];
+          const finalPath = redirectPath(path).join(".");
           if (!(finalPath in fieldErrors))
             fieldErrors[finalPath] = issue.message;
         }

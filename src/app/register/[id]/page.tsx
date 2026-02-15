@@ -1,7 +1,6 @@
 "use client";
-
 import { useUser } from "@clerk/nextjs";
-import { useEffect, useState, use } from "react"; 
+import { useEffect, useState, use } from "react";
 import EventSignUpForm from "@/components/common/forms/EventSignUpForm";
 
 interface RegisterPageProps {
@@ -34,6 +33,7 @@ interface PositionData {
 interface PageData {
   user: UserData;
   position: PositionData;
+  registration?: RegistrationData | null;
 }
 
 export default function RegisterPage({ params }: RegisterPageProps) {
@@ -41,8 +41,9 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const positionId = resolvedParams.id;
 
   const { user, isLoaded } = useUser();
-  const [data, setData] = useState<PageData | null>(null); // keeping type loose for simplicity
+  const [data, setData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoaded && user?.id) {
