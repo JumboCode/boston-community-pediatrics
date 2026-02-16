@@ -4,6 +4,7 @@ import EventCard from "@/components/events/EventCard";
 import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -316,7 +317,12 @@ export default function ProfilePage() {
         </div>
 
         <button className="ml-[99.62px] mt-[30.82px] h-[44px] w-[113px] rounded-lg border-[1px] bg-white text-black hover:bg-gray-300">
-          <div className="text-[16px]">Edit details</div>
+          <div className="text-[16px]">
+            <Link href="/profile/edit">
+            
+            Edit details
+            </Link>
+            </div>
         </button>
       </div>
 
