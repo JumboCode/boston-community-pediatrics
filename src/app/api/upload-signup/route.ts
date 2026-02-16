@@ -30,8 +30,9 @@ export async function POST(req: NextRequest) {
       ContentType: fileType,
     });
 
-    // Generate a temporary upload URL (valid for 60 seconds)
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
+    // Generate a temporary upload URL (valid for 600 seconds)
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 });
+    console.log(uploadUrl);
 
     return NextResponse.json({
       uploadUrl,

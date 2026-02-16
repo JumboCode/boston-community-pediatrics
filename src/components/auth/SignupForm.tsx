@@ -520,7 +520,7 @@ const SignupForm = () => {
           {/* Clickable Circle Image */}
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className="w-[264px] h-[264px] relative cursor-pointer rounded-full overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
+            className="w-[264px] h-[264px] relative cursor-pointer  overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
           >
             {previewUrl ? (
               <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
