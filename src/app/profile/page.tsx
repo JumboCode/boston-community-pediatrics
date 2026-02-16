@@ -1,12 +1,14 @@
 "use client";
 import EventCard from "@/components/events/EventCard";
-import { useUser } from "@clerk/nextjs";
+// import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const { signOut } = useClerk();
 
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +119,8 @@ export default function ProfilePage() {
     if (!confirmDelete) return;
 
     if (eventId.startsWith("evt-") || eventId === "demo-event") {
-       alert("Demo event deleted.");
-       return;
+      alert("Demo event deleted.");
+      return;
     }
 
     try {
@@ -130,10 +132,10 @@ export default function ProfilePage() {
         // If successful, remove the card from the UI
         // We use the registrationId to filter it out of the local state array
         if (registrationId) {
-            setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
+          setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
         } else {
-            // Fallback: reload page if we can't find the specific card ID
-            window.location.reload();
+          // Fallback: reload page if we can't find the specific card ID
+          window.location.reload();
         }
         alert("Event successfully deleted.");
       } else {
@@ -194,6 +196,14 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen p-8">
+      <div className="w-full flex justify-center mt-3">
+        <button
+          onClick={() => signOut(() => router.push("/"))}
+          className="text-black text-sm hover:text-red-200 transition-colors font-medium underline decoration-transparent hover:decoration-red-200"
+        >
+          Sign Out
+        </button>
+      </div>
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
@@ -227,26 +237,26 @@ export default function ProfilePage() {
                 // 👇 THIS IS THE FIX: Pass the positionId to the register page
                 // CONDITIONAL ACTIONS
                 onEdit={() => {
-                   if (isAdmin) {
-                      // Admin -> Go to Event Details Page
-                      router.push(`/event/${event.id}`);
-                   } else {
-                      // User -> Go to Registration Page
-                      router.push(`/register/${reg.positionId}`);
-                   }
+                  if (isAdmin) {
+                    // Admin -> Go to Event Details Page
+                    router.push(`/event/${event.id}`);
+                  } else {
+                    // User -> Go to Registration Page
+                    router.push(`/register/${reg.positionId}`);
+                  }
                 }}
-                
+
                 onRemove={() => {
-                    if (isAdmin) {
-                        // Admin -> Delete Event API
-                        handleDeleteEvent(event.id, reg.id);
-                    } else {
-                        // User -> Cancel Signup API
-                        handleRemove(reg.id);
-                    }
+                  if (isAdmin) {
+                    // Admin -> Delete Event API
+                    handleDeleteEvent(event.id, reg.id);
+                  } else {
+                    // User -> Cancel Signup API
+                    handleRemove(reg.id);
+                  }
                 }}
                 onVolunteer={() => router.push(`/event/${event.id}`)}
-                />
+              />
             );
           })
         )}
@@ -392,6 +402,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      
     </main>
   );
 }
