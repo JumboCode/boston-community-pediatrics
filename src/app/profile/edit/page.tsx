@@ -176,8 +176,8 @@ export default function EditProfilePage() {
         <div className="bg-white w-full max-w-[700px] border rounded-md shadow-sm p-10">
 
           <Link href="/profile">
-            <div className="mb-6 text-gray-500 hover:text-gray-700 cursor-pointer">
-              ← Back
+            <div className="mb-6 text-3xl text-gray-500 hover:text-gray-700 cursor-pointer">
+              ←
             </div>
           </Link>
 
@@ -317,7 +317,7 @@ export default function EditProfilePage() {
             </div>
 
             {/* Profile Photo Logic */}
-            <div className="flex items-center gap-8 pt-6">
+            <div className="flex gap-6 mt-6 items-center">
               <input
                 type="file"
                 hidden
@@ -326,46 +326,67 @@ export default function EditProfilePage() {
                 onChange={handleFileChange}
               />
 
-              <div className="w-[160px] h-[160px] border-2 border-dashed border-gray-300 flex items-center justify-center rounded-md overflow-hidden relative">
-                {previewUrl ? (
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-gray-400 text-sm">No Image</span>
-                )}
+              {/* Left: Dashed Box - capped width, centered */}
+              <div className="flex-1 flex justify-center max-w-[50%]">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-[160px] h-[160px] border-2 border-dashed border-gray-500 rounded flex items-center justify-center bg-[#f9f9f9] cursor-pointer hover:bg-gray-100 transition-colors shrink-0 overflow-hidden relative"
+                >
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    // Landscape Icon Placeholder
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#333"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  )}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <p className="text-sm">
-                  Upload a profile photo (optional)
-                </p>
+              {/* Right: Text & Controls - centered in right half */}
+              <div className="flex-1 flex justify-center max-w-[50%]">
+                <div className="flex flex-col justify-center">
+                  <p className="text-[16px] font-medium text-gray-700 mb-4 leading-tight">
+                    Upload a profile photo
+                    <br />
+                    (optional)
+                  </p>
 
-                {/* Logic: If image exists, show Remove. Else show Upload. */}
-                {previewUrl ? (
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border px-4 py-1 rounded-md text-sm hover:bg-gray-100"
-                    >
-                      Change
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-red-500 text-sm hover:underline"
-                    >
-                      Remove photo
-                    </button>
+                  <div>
+                    {previewUrl ? (
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="px-4 py-2 border border-gray-400 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Remove photo
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-4 py-2 border border-gray-400 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        Upload photo
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="bg-gray-100 border px-4 py-1 rounded-md text-sm hover:bg-gray-200"
-                  >
-                    Upload photo
-                  </button>
-                )}
+                </div>
               </div>
             </div>
 
