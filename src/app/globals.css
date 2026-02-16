@@ -10,14 +10,22 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-bcp-blue: #234254; 
+  --color-text-white: #1a3140;
+  --color-light-bcp-blue: #426982;
+  --color-medium-gray: #6B6B6B;
+  --color-black: #000000; 
+  --color-light-gray: #E5E5E5;
+  --color-white: #FFFFFF;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
 body {
   background: var(--background);
