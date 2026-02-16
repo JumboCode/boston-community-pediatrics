@@ -7,17 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  VOLUNTEER
-  ADMIN
-}
-
 model User {
-  id            String     @id @default(cuid())
-  clerkId       String     @default("placeholder")
+  id            String          @id @default(cuid())
+  clerkId       String          @default("placeholder")
   firstName     String
   lastName      String
-  emailAddress  String    @unique
+  emailAddress  String          @unique
   phoneNumber   String
   dateOfBirth   DateTime?
   streetAddress String?
@@ -25,119 +20,116 @@ model User {
   state         String?
   country       String?
   zipCode       String?
-  hoursWorked   Int         @default(0)
-  profileImage  String?
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  hoursWorked   Int             @default(0)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
   role          UserRole
-
+  profileImage  String?
+  speaksSpanish Boolean?
   signups       EventSignup[]
   waitlists     EventWaitlist[]
 
+  @@index([clerkId])
   @@map("users")
 }
 
 model Event {
-  id          String    @id @default(cuid())
-  name        String
-  description String
-  date        DateTime[]
-  startTime   DateTime
-  endTime     DateTime
-  pinned      Boolean @default(false)
-
-  // Location
-  addressLine1      String    @default("")
-  addressLine2      String?
-  city              String    @default("")
-  state             String    @default("")
-  country           String    @default("")
-  zipCode           String    @default("")
-  lat               Float?
-  lng               Float?
-
-  images     String[]
-
-  positions   EventPosition[]
-  signups     EventSignup[]
+  id           String          @id @default(cuid())
+  name         String
+  description  String
+  date         DateTime[]
+  startTime    DateTime
+  endTime      DateTime
+  city         String          @default("")
+  state        String          @default("")
+  country      String          @default("")
+  zipCode      String          @default("")
+  lat          Float?
+  lng          Float?
+  addressLine1 String          @default("")
+  addressLine2 String?
+  images       String[]
+  pinned       Boolean         @default(false)
+  positions    EventPosition[]
+  signups      EventSignup[]
 }
 
 model EventSignup {
-  id         String       @id @default(cuid())
-  userId     String?      // null if guest signup only
+  id         String        @id @default(cuid())
+  userId     String?
   eventId    String
   positionId String
-  hasGuests    Boolean      @default(false) 
+  hasGuests  Boolean       @default(false)
   date       DateTime?
   time       DateTime?
   notes      String?
-
-  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event      Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event      Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   guests     Guest[]
 }
 
 model EventPosition {
-  id             String             @id @default(cuid())
-  position       String
-  eventId        String
-  date           DateTime
-  startTime      DateTime
-  endTime        DateTime
-  description    String
-  filledSlots    Int
-  totalSlots     Int
-
-  addressLine1      String          @default("")
-  addressLine2      String?
-  city              String          @default("")
-  state             String          @default("")
-  country           String          @default("")
-  zipCode           String          @default("")
-
-  event          Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  signups        EventSignup[]
-  waitlists      EventWaitlist[]
+  id           String          @id @default(cuid())
+  position     String
+  eventId      String
+  date         DateTime
+  startTime    DateTime
+  endTime      DateTime
+  description  String
+  filledSlots  Int
+  totalSlots   Int
+  addressLine1 String          @default("")
+  addressLine2 String?
+  city         String          @default("")
+  country      String          @default("")
+  state        String          @default("")
+  zipCode      String          @default("")
+  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  signups      EventSignup[]
+  waitlists    EventWaitlist[]
 }
 
 model Guest {
-  id           String      @id @default(cuid())
-  positionId   String
-  firstName    String
-  lastName     String
-  emailAddress String?
-  relation     String?     // relation to main user (friend, family, etc.)
-  phoneNumber  String?
-
-  dateOfBirth  String?     
-  comments     String?
-  signupId  String
-  signup    EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  positionId    String
+  firstName     String
+  lastName      String
+  emailAddress  String?
+  relation      String?
+  phoneNumber   String?
+  signupId      String
+  dateOfBirth   String?
+  comments      String?
+  speaksSpanish Boolean?
+  signup        EventSignup @relation(fields: [signupId], references: [id])
 }
 
-
 model EventWaitlist {
-  id         String        @id @default(cuid())
+  id         String          @id @default(cuid())
   userId     String?
   positionId String
-  isGuest    Boolean       @default(false)
-  createdAt  DateTime      @default(now())
-
-  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  isGuest    Boolean         @default(false)
+  createdAt  DateTime?       @db.Timestamp(6)
+  position   EventPosition   @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  user       User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   guests     WaitlistGuest[]
-
 }
 
 model WaitlistGuest {
-  id         String       @id @default(cuid())
-  firstName  String
-  lastName   String
-  email      String?
-  relation   String?
-  dateOfBirth  String?
-  comments     String?
-  waitlistId String
-  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String?
+  relation      String?
+  waitlistId    String
+  dateOfBirth   String?
+  comments      String?
+  speaksSpanish Boolean?
+  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id])
+}
+
+enum UserRole {
+  VOLUNTEER
+  ADMIN
 }
