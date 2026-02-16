@@ -10,6 +10,7 @@ const ACCESS_KEY_ID = process.env.R2_ACCESS_KEY!;
 const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const ENDPOINT = process.env.R2_ENDPOINT!;
 const BUCKET = process.env.R2_BUCKET!;
+const PUBLIC_R2 = "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev";
 
 export const S3 = new S3Client({
   region: "auto",
@@ -35,10 +36,9 @@ export async function getPresignedURL(filename: string) {
 }
 
 export function getPublicURL(filename: string) {
-  const endpointURL = new URL(ENDPOINT);
-  const host = endpointURL.host;
+  const cleanFilename = filename.startsWith("/") ? filename.slice(1) : filename;
 
-  return `https://${BUCKET}.${host}/${filename}`;
+  return `${PUBLIC_R2}/${cleanFilename}`;
 }
 
 export async function deleteObject(filename: string) {

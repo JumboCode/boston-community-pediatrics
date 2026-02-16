@@ -62,31 +62,34 @@ model EventSignup {
   date       DateTime?
   time       DateTime?
   notes      String?
-  event      Event         @relation(fields: [eventId], references: [id])
-  position   EventPosition @relation(fields: [positionId], references: [id])
-  user       User?         @relation(fields: [userId], references: [id])
+
+  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   guests     Guest[]
 }
 
 model EventPosition {
-  id           String          @id @default(cuid())
-  position     String
-  eventId      String
-  date         DateTime
-  startTime    DateTime
-  endTime      DateTime
-  description  String
-  filledSlots  Int
-  totalSlots   Int
-  addressLine1 String          @default("")
-  addressLine2 String?
-  city         String          @default("")
-  country      String          @default("")
-  state        String          @default("")
-  zipCode      String          @default("")
-  event        Event           @relation(fields: [eventId], references: [id])
-  signups      EventSignup[]
-  waitlists    EventWaitlist[]
+  id             String             @id @default(cuid())
+  position       String
+  eventId        String
+  date           DateTime
+  startTime      DateTime
+  endTime        DateTime
+  description    String
+  filledSlots    Int
+  totalSlots     Int
+
+  addressLine1      String          @default("")
+  addressLine2      String?
+  city              String          @default("")
+  state             String          @default("")
+  country           String          @default("")
+  zipCode           String          @default("")
+
+  event          Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  signups        EventSignup[]
+  waitlists      EventWaitlist[]
 }
 
 model Guest {
@@ -97,19 +100,22 @@ model Guest {
   emailAddress String?
   relation     String?
   phoneNumber  String?
-  signupId     String
+
+  dateOfBirth  String?     
   comments     String?
-  dateOfBirth  String?
-  signup       EventSignup @relation(fields: [signupId], references: [id])
+  signupId  String
+  signup    EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 model EventWaitlist {
   id         String          @id @default(cuid())
   userId     String?
   positionId String
-  isGuest    Boolean         @default(false)
-  position   EventPosition   @relation(fields: [positionId], references: [id])
-  user       User?           @relation(fields: [userId], references: [id])
+  isGuest    Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   guests     WaitlistGuest[]
 }
 
@@ -122,7 +128,7 @@ model WaitlistGuest {
   waitlistId  String
   comments    String?
   dateOfBirth String?
-  waitlist    EventWaitlist @relation(fields: [waitlistId], references: [id])
+  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

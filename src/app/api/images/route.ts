@@ -8,6 +8,9 @@ import {
   removeEventImage,
   updateEventImage,
 } from "../events/controller";
+
+const R2_PUBLIC_DOMAIN = "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev";
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const filename = searchParams.get("filename");
@@ -20,7 +23,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const url = getPublicURL(filename);
+    // FIX: Handle leading slashes to avoid double slash (e.g., .dev//events)
+    const cleanFilename = filename.startsWith("/") ? filename.slice(1) : filename;
+    
+    // Construct the URL directly
+    const url = `${R2_PUBLIC_DOMAIN}/${cleanFilename}`;
+
     return NextResponse.json({ url });
   } catch (err) {
     console.error(err);
