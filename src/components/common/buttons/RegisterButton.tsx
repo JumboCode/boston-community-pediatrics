@@ -14,7 +14,7 @@ export default function RegisterButton({ positionId }: RegisterButtonProps) {
     <Button
       label="Register"
       onClick={() => router.push(`/register/${positionId}`)}
-      altStyle="w-[94px] h-[40px] mt-[12px] text-white bg-[#426982] rounded font-medium flex items-center justify-center hover:bg-[#426982]"
+      altStyle="w-[94px] h-[40px] mt-[12px] text-white bg-light-bcp-blue rounded font-medium flex items-center justify-center hover:bg-light-bcp-blue"
     />
   );
 }

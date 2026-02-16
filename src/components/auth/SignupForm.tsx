@@ -15,7 +15,7 @@ type SignupFormData = {
   email: string;
   phone: string;
   dob: string;
-  languages: string[];
+  speaksSpanish: boolean,
   street?: string;
   apt?: string;
   city?: string;
@@ -93,9 +93,7 @@ const SignupForm = () => {
         email,
         phone: formData.get("phone") as string,
         dob: formData.get("dob") as string,
-        languages: (formData.get("languages") as string)
-          .split(",")
-          .map((s) => s.trim()),
+        speaksSpanish: formData.get("speaksSpanish") === "true",
         street: formData.get("street") as string,
         apt: formData.get("apt") as string,
         city: formData.get("city") as string,
@@ -105,8 +103,12 @@ const SignupForm = () => {
 
       // 4. Switch UI to Verification Mode
       setPendingVerification(true);
-    } catch {
-      setError("Error creating account");
+    // } catch {
+    //   setError("Error creating account");
+    } catch (err: any) {
+  console.error("RAW Clerk error:", err)
+  console.error("Clerk errors:", err?.errors)
+
     } finally {
       setLoading(false);
     }
@@ -154,7 +156,7 @@ const SignupForm = () => {
               emailAddress: savedFormData.email,
               phoneNumber: savedFormData.phone,
               dateOfBirth: savedFormData.dob, // sends string "YYYY-MM-DD"
-              languages: savedFormData.languages,
+              speaksSpanish: savedFormData.speaksSpanish,
               streetAddress: savedFormData.street, // Map 'street' to 'streetAddress'
               city: savedFormData.city,
               state: savedFormData.state,
@@ -165,9 +167,9 @@ const SignupForm = () => {
             },
           }),
         });
-
+        const dbResult = await dbResponse.json();
         if (!dbResponse.ok) {
-          console.error("Failed to sync user to database");
+          console.error("Failed to sync user to database", dbResult);
           // Optional: Handle DB error (maybe retry logic or alert admin)
         }
       }
@@ -189,8 +191,8 @@ const SignupForm = () => {
   // --- RENDER: VERIFICATION FORM ---
   if (pendingVerification) {
     return (
-      <div className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[600px] p-10 relative">
-        <h1 className="text-[#234254] text-[36px] font-medium mb-6 text-center">
+      <div className="flex flex-col items-center border border-medium-gray rounded-lg mt-[220px] mb-[220px] w-[600px] p-10 relative">
+        <h1 className="text-bcp-blue text-[36px] font-medium mb-6 text-center">
           Verify your Email
         </h1>
         <p className="text-black text-xl mb-10 text-center">
@@ -205,7 +207,7 @@ const SignupForm = () => {
           <div className="flex flex-col items-start">
             <label
               htmlFor="code"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Verification Code
             </label>
@@ -215,7 +217,7 @@ const SignupForm = () => {
               name="code"
               id="code"
               placeholder="123456"
-              className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
@@ -224,7 +226,7 @@ const SignupForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#234254] text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors"
+            className="w-full py-3 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors"
           >
             {loading ? "Verifying..." : "Verify & Create Account"}
           </button>
@@ -237,7 +239,7 @@ const SignupForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col items-center border border-[#6B6B6B] rounded-lg mt-[220px] mb-[220px] w-[792px] relative"
+      className="flex flex-col items-center border border-medium-gray rounded-lg mt-[220px] mb-[220px] w-[792px] relative"
     >
       {/* Back arrow */}
       <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
@@ -247,7 +249,7 @@ const SignupForm = () => {
       </div>
 
       {/* Heading */}
-      <h1 className="text-[#234254] text-[36px] font-medium mt-[74px] mb-6 text-center leading-tight">
+      <h1 className="text-bcp-blue text-[36px] font-medium mt-[74px] mb-6 text-center leading-tight">
         Welcome to <br /> Boston Community Pediatrics!
       </h1>
       <p className="text-black text-2xl font-normal text-center mb-16">
@@ -257,7 +259,7 @@ const SignupForm = () => {
       <div className="w-[588px] mb-8">
         <button
           onClick={handleGoogleSignUp}
-          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-[#6B6B6B] rounded text-black hover:bg-gray-50 transition-colors font-medium"
+          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-medium-gray rounded text-black hover:bg-gray-50 transition-colors font-medium"
         >
           <svg
             width="20"
@@ -286,9 +288,9 @@ const SignupForm = () => {
           Sign up with Google
         </button>
         <div className="w-full flex items-center gap-4 mt-6">
-          <div className="h-px bg-[#6B6B6B] flex-1" />
-          <span className="text-[#6B6B6B] text-sm">OR</span>
-          <div className="h-px bg-[#6B6B6B] flex-1" />
+          <div className="h-px bg-medium-gray flex-1" />
+          <span className="text-medium-gray text-sm">OR</span>
+          <div className="h-px bg-medium-gray flex-1" />
         </div>
       </div>
 
@@ -299,7 +301,7 @@ const SignupForm = () => {
           <div className="flex flex-col items-start">
             <label
               htmlFor="first-name"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               First Name
             </label>
@@ -307,14 +309,14 @@ const SignupForm = () => {
               name="first-name"
               id="first-name"
               required
-              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
           <div className="flex flex-col items-start">
             <label
               htmlFor="last-name"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Last Name
             </label>
@@ -322,7 +324,7 @@ const SignupForm = () => {
               name="last-name"
               id="last-name"
               required
-              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
         </div>
@@ -331,7 +333,7 @@ const SignupForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="email"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Email
           </label>
@@ -340,7 +342,7 @@ const SignupForm = () => {
             id="email"
             type="email"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -348,7 +350,7 @@ const SignupForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="phone"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Phone Number
           </label>
@@ -357,7 +359,7 @@ const SignupForm = () => {
             id="phone"
             type="tel"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -365,7 +367,7 @@ const SignupForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="dob"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Date of Birth
           </label>
@@ -374,37 +376,64 @@ const SignupForm = () => {
             id="dob"
             type="date"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
         {/* Languages */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-row items-start justify-between">
           <label
-            htmlFor="languages"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            htmlFor="speakSpanish"
+            className="text-base font-normal text-medium-gray mb-1"
           >
-            Languages Spoken
+            Do you speak Spanish?
           </label>
-          <input
-            name="languages"
-            id="languages"
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
-          />
+          <div className="flex flex-row items-center justify-between gap-[48px]">
+            <div className="flex flex-row items-center gap-[14px]">
+              <input
+                // type="checkbox"
+                type="radio"
+                name="speaksSpanish"
+                value="true"
+                className="accent-bcp-blue rounded-md"
+              />
+              <label
+                htmlFor="speaksSpanish"
+                className="flex flex-row text-base font-normal text-medium-gray mb-1"
+              >
+                Yes
+              </label>
+            </div>
+            <div className="flex flex-row items-center gap-[14px]">
+              <input
+                  type="radio"
+                  // type="checkbox"
+                  className="accent-bcp-blue rounded-md"
+                  name="speaksSpanish"
+                  value="false"
+                />
+              <label
+                htmlFor="speaksSpanish"
+                className="text-base font-normal text-medium-gray mb-1 gap-14"
+              >
+                No
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Street Address */}
         <div className="flex flex-col items-start">
           <label
             htmlFor="street"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Street Address (optional)
           </label>
           <input
             name="street"
             id="street"
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -412,14 +441,14 @@ const SignupForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="apt"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Apt, suite, etc (optional)
           </label>
           <input
             name="apt"
             id="apt"
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -427,14 +456,14 @@ const SignupForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="city"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             City (optional)
           </label>
           <input
             name="city"
             id="city"
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -443,21 +472,21 @@ const SignupForm = () => {
           <div className="flex flex-col items-start">
             <label
               htmlFor="state"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               State (optional)
             </label>
             <input
               name="state"
               id="state"
-              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
           <div className="flex flex-col items-start">
             <label
               htmlFor="zip"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Zip code (optional)
             </label>
@@ -465,13 +494,13 @@ const SignupForm = () => {
               name="zip"
               id="zip"
               inputMode="numeric"
-              className="w-[264px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
         </div>
 
         {/* Upload helper text */}
-        <p className="flex items-center gap-[60px] text-[20px] text-[#6B6B6B]">
+        <p className="flex items-center gap-[60px] text-[20px] text-medium-gray">
           <Image
             src={ProfilePlaceholder}
             alt="Profile placeholder"
@@ -486,7 +515,7 @@ const SignupForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="password"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Create password
           </label>
@@ -495,14 +524,14 @@ const SignupForm = () => {
             id="password"
             type="password"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
         <div className="flex flex-col items-start">
           <label
             htmlFor="confirm-password"
-            className="text-base font-normal text-[#6B6B6B] mb-1"
+            className="text-base font-normal text-medium-gray mb-1"
           >
             Confirm password
           </label>
@@ -511,7 +540,7 @@ const SignupForm = () => {
             id="confirm-password"
             type="password"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
       </div>
@@ -525,7 +554,7 @@ const SignupForm = () => {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-[#234254] text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors"
+          className="px-6 py-2 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors"
         >
           {loading ? "Please wait..." : "Create Account"}
         </button>
