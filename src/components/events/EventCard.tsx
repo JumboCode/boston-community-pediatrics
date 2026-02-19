@@ -44,7 +44,7 @@ const EventCard = ({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const formattedTime = new Date(time).toLocaleTimeString("en-US", {
+  const formattedTime = new Date(startTime).toLocaleTimeString("en-US", {
     timeZone: "America/New_York",
     hour: "numeric",
     minute: "2-digit",
