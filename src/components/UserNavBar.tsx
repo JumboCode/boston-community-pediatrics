@@ -6,6 +6,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
+function getR2ImageUrl(fileName?: string) {
+  if (!fileName) return null; // fallback to placeholder
+  const endpoint = process.env.NEXT_PUBLIC_R2_ENDPOINT;
+  const bucket = process.env.NEXT_PUBLIC_R2_BUCKET;
+  return `${endpoint}${bucket}/${fileName}`;
+}
+
 function UserNavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
 
@@ -45,11 +52,14 @@ function UserNavBar() {
             {isSignedIn ? (
               <li className="flex items-center gap-2">
                 <span className="text-white font-medium">{firstName}</span>
-                <Image
-                  src={blankProfile}
-                  alt="Placeholder User"
-                  className="w-8 h-8 rounded-full"
-                />
+                <Link href="/profile">
+                  <Image
+                    src={blankProfile}
+                    alt="Placeholder User"
+                    className="w-8 h-8 rounded-full"
+                  />
+                  
+                </Link>
               </li>
             ) : (
               <li className="flex items-center gap-2">
