@@ -41,6 +41,7 @@ export default async function EventDetailsPage(props: {
       return <p>Event does not exist</p>;
     }
 
+    const isExpired = new Date(event.endTime) < new Date();
     const imageUrls = (event.images ?? [])
       .map((filename) => getPublicURL(filename))
       .filter((url) => url.trim() !== "") as string[];
@@ -97,6 +98,11 @@ export default async function EventDetailsPage(props: {
             <p className="mt-[32px] text-bcp-blue text-[16px] leading-[24px]">
               {event.description}
             </p>
+            {isExpired && (
+            <p className="mt-6 text-gray-500 italic">
+              This event has already taken place and is no longer accepting sign-ups.
+            </p>
+)}
           </section>
         </div>
 
