@@ -44,11 +44,16 @@ const EventCard = ({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const formattedTime = new Date(time).toLocaleTimeString("en-US", {
-    timeZone: "America/New_York",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // const formattedStartTime = new Date(startTime).toLocaleTimeString("en-US", {
+  //   timeZone: "America/New_York",
+  //   hour: "numeric",
+  //   minute: "2-digit",
+  // });
+  // const formattedEndTime = new Date(endTime).toLocaleTimeString("en-US", {
+  //   timeZone: "America/New_York",
+  //   hour: "numeric",
+  //   minute: "2-digit",
+  // });
 
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     timeZone: "America/New_York",
@@ -179,7 +184,8 @@ const EventCard = ({
         {isAdmin && <KebabMenu items={menuItems} />}
       </div>
 
-      <p className="text-sm text-gray-700">{formattedTime}</p>
+     {/* <p className="text-sm text-gray-700">{formattedStartTime} - {formattedEndTime}</p>
+     */}
       <p className="text-sm text-gray-700">{location}</p>
       <p className="text-sm text-gray-700">{formattedDate}</p>
 

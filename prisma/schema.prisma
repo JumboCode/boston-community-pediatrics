@@ -52,6 +52,7 @@ model Event {
   pinned       Boolean         @default(false)
   positions    EventPosition[]
   signups      EventSignup[]
+  imagesDeleted Boolean        @default(false)
 }
 
 model EventSignup {
