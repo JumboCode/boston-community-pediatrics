@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
+import Modal from "@/components/common/Modal";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import Link from "next/link";
 
@@ -45,6 +46,12 @@ const ManageRolesPage = () => {
   }, [allVols]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
+  const [modalTitle, setModalTitle] = useState<string | null>(null);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [showEditConfirm, setShowEditConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const router = useRouter();
 
@@ -69,19 +76,40 @@ const ManageRolesPage = () => {
   };
 
   const anySelected = volunteers.some((v) => v.selected);
+  const selectedCount = volunteers.filter((v) => v.selected).length;
 
-  // Delete User
-  const handleDelete = async () => {
+  const closeModal = useCallback(() => {
+    setModalTitle(null);
+    setModalMessage(null);
+    router.refresh();
+  }, [router]);
+
+  // Delete User - show confirmation first
+  const handleDeleteConfirm = () => {
+    setPendingCount(selectedCount);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteApproved = async () => {
+    setIsLoading(true);
     const volunteersToDel: FrontEndUser[] = volunteers.filter(
       (v) => v.selected === true
     );
 
-    if (volunteersToDel.length === 0) return;
+    if (volunteersToDel.length === 0) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const deletePromises = volunteersToDel.map(async (vol) => {
-        const res = await fetch(`/api/users?id=${vol.userId}`, {
+        console.log(`Deleting user with ID: ${vol.userId}\n\n\n`);
+        const res = await fetch("/api/users", {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id:vol.userId }),
         });
 
         if (!res.ok) {
@@ -93,40 +121,55 @@ const ManageRolesPage = () => {
 
       await Promise.all(deletePromises);
 
-      // Remove all selected entries from state (both parents and guests)
+      // Remove all selected entries from state
       setVolunteers((prev) => prev.filter((v) => !v.selected));
 
-      router.refresh();
+      // Show success modal
+      setShowDeleteConfirm(false);
+      setModalTitle("Users Removed!");
+      setModalMessage("Users successfully removed");
     } catch {
-      alert(`Error: Failed to delete user`);
+      setShowDeleteConfirm(false);
+      setModalTitle("Error");
+      setModalMessage("Failed to delete user. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleEdit = async () => {
-    const volunteersToDel: FrontEndUser[] = volunteers.filter(
+  // Edit roles - show confirmation first
+  const handleEditConfirm = () => {
+    setPendingCount(selectedCount);
+    setShowEditConfirm(true);
+  };
+
+  const handleEditApproved = async () => {
+    setIsLoading(true);
+    const volunteersToEdit: FrontEndUser[] = volunteers.filter(
       (v) => v.selected === true
     );
 
-    if (volunteersToDel.length === 0) return;
+    if (volunteersToEdit.length === 0) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const editPromises = volunteersToDel.map(async (vol) => {
-        const res = await fetch(`/api/admin/users/${vol.userId}/role?id=${vol.userId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            
-            id: vol.userId, // <--- IMPORTANT: Using Clerk ID as DB ID
-            role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN", // Toggle role
-            
-          }),
-        });
-        // const res = await fetch(`/api/admin/users/${vol.userId}/role?id=${vol.userId}`, {
-        //   method: "GET",
-        // });
+      const editPromises = volunteersToEdit.map(async (vol) => {
+        const res = await fetch(
+          `/api/admin/users/${vol.userId}/role?id=${vol.userId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: vol.userId,
+              role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN",
+            }),
+          }
+        );
 
         if (!res.ok) {
-          throw new Error(`Failed to delete user`);
+          throw new Error(`Failed to update role`);
         }
 
         return vol.userId;
@@ -134,12 +177,27 @@ const ManageRolesPage = () => {
 
       await Promise.all(editPromises);
 
-      // Remove all selected entries from state (both parents and guests)
-      setVolunteers((prev) => prev.filter((v) => !v.selected));
+      setVolunteers((prev) =>
+        prev.map((v) => ({
+          ...v,
+          role: v.selected
+            ? v.role === "ADMIN"
+              ? "VOLUNTEER"
+              : "ADMIN"
+            : v.role,
+        }))
+      );
 
-      router.refresh();
+      // Show success modal
+      setShowEditConfirm(false);
+      setModalTitle("Roles Updated!");
+      setModalMessage("role successfully assigned!");
     } catch {
-      alert(`Error: Failed to delete user`);
+      setShowEditConfirm(false);
+      setModalTitle("Error");
+      setModalMessage("Failed to update roles. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -222,14 +280,14 @@ const ManageRolesPage = () => {
                     <Button
                       label="Change Role"
                       altStyle="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
-                      onClick={handleEdit}
+                      onClick={handleEditConfirm}
                     />
                   </div>
                   <div>
                     <Button
                       label="Remove"
                       altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
-                      onClick={handleDelete}
+                      onClick={handleDeleteConfirm}
                     />
                   </div>
                 </div>
@@ -238,6 +296,71 @@ const ManageRolesPage = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Confirmation Modal */}
+      {showEditConfirm && (
+        <Modal
+          open={showEditConfirm}
+          title="Confirm Role Change"
+          message={`Are you sure you want to change roles for ${pendingCount} people?`}
+          onClose={() => setShowEditConfirm(false)}
+          buttons={[
+            {
+              label: "Cancel",
+              variant: "secondary",
+              onClick: () => setShowEditConfirm(false),
+              disabled: isLoading,
+            },
+            {
+              label: "Confirm",
+              variant: "primary",
+              onClick: handleEditApproved,
+              disabled: isLoading,
+            },
+          ]}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <Modal
+          open={showDeleteConfirm}
+          title="Confirm Removal"
+          message={`remove (${pendingCount}) users?`}
+          onClose={() => setShowDeleteConfirm(false)}
+          buttons={[
+            {
+              label: "Cancel",
+              variant: "secondary",
+              onClick: () => setShowDeleteConfirm(false),
+              disabled: isLoading,
+            },
+            {
+              label: "Remove",
+              variant: "danger",
+              onClick: handleDeleteApproved,
+              disabled: isLoading,
+            },
+          ]}
+        />
+      )}
+
+      {/* Success/Error Modal */}
+      {modalMessage && modalTitle && (
+        <Modal
+          open={true}
+          title={modalTitle}
+          message={modalMessage}
+          onClose={closeModal}
+          buttons={[
+            {
+              label: "Done",
+              variant: "primary",
+              onClick: closeModal,
+            },
+          ]}
+        />
+      )}
     </>
   );
 };
