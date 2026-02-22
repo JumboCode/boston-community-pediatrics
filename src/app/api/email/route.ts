@@ -1,8 +1,10 @@
 // TODO: are we supposed to delete this or add auth
-// cuz we just use sendEmail directly in the email functions
+// cuz we just use sendEmail directly in the email functionsw
 
 import { sendEmail } from "@/lib/email/resend";
 import { z } from "zod";
+import { getCurrentUser } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 const emailSchema = z.object({
   recipients: z.array(z.string().email()).min(1),
@@ -26,6 +28,15 @@ const emailSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Make sure only admins can send emails
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (currentUser.role !== UserRole.ADMIN) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json();
     const parsed = emailSchema.parse(body);
 
