@@ -188,7 +188,8 @@ export async function POST(req: NextRequest) {
     try {
       const email = (result as any).email;
       if (email) {
-        // TODO: FIX TS ONCE WE GET DOMAIN SHI
+        // TODO: What my colleague meant to say was replace this line with the
+        // commented out one below it
         const to = "bcpjumbocode@gmail.com";
         // const to = email.user.emailAddress;
 
