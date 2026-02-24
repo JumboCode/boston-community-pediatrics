@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
-import { AdminUser } from "@/app/api/eventSignup/controller";
 import Link from "next/link";
 
 interface FrontEndUser {
@@ -103,7 +102,6 @@ const ManageRolesPage = () => {
 
     try {
       const deletePromises = volunteersToDel.map(async (vol) => {
-        console.log(`Deleting user with ID: ${vol.userId}\n\n\n`);
         const res = await fetch("/api/users", {
           method: "DELETE",
           headers: {
