@@ -11,8 +11,9 @@ interface FrontEndUser {
   waitlistId?: string;
   firstName: string;
   lastName: string;
-  emailAddress: string; 
+  emailAddress: string;
   phoneNumber: string;
+  speaksSpanish: boolean;
   selected: boolean;
   guestOf?: string;
   isGuest?: boolean; // ← ADD THIS LINE
@@ -73,6 +74,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
+      speaksSpanish: s.speaksSpanish,
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest, // ← ADD THIS LINE
@@ -323,14 +325,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="flex flex-row items-center gap-10 mb-1 px-5">
             <div className="w-[280px] block">
               <p className="text-[24px] w-[280px] block">
-                {filledSlots}/{totalSlots} Spots Filled
+                {volunteers.length}/{totalSlots} Spots Filled
               </p>
             </div>
             <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
                 className="bg-light-bcp-blue h-4 rounded-full"
                 style={{
-                  width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
+                  width: `${totalSlots ? (volunteers.length / totalSlots) * 100 : 0}%`,
                 }}
               ></div>
             </div>
@@ -345,7 +347,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <th className="py-3 pl-29 px-4 font-normal">Name</th>
               <th className="py-3 px-4 font-normal">Email</th>
               <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-              <th className="py-3 px-4 pl-13 font-normal">
+              <th className="py-3 px-4 font-normal"></th>
+              {/* Spanish column header */}
+              <th className="py-3 px-4 font-normal">
                 <button
                   onClick={toggleSelectAll}
                   className="hover:underline transition-all duration-200 "
@@ -419,6 +423,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   </td>
                   <td className="py-3 px-4">{p.emailAddress}</td>
                   <td className="py-3 px-4">{p.phoneNumber}</td>
+                  <td className="py-3 px-4">
+                    {p.speaksSpanish && (
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                        S
+                      </div>
+                    )}
+                  </td>
+
                   <td className="py-3 px-4 text-center">
                     {/* Only show checkbox for main users, not guests */}
                     {!p.isGuest && (
@@ -469,6 +481,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <th className="py-3 pl-29 px-4 font-normal">Name</th>
                   <th className="py-3 px-4 font-normal">Email</th>
                   <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
+                  <th className="py-3 px-4 font-normal"></th>
+                  {/* Spanish column header */}
                   <th className="py-3 px-4 pl-13 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
@@ -550,6 +564,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       </td>
                       <td className="py-3 px-4">{p.emailAddress}</td>
                       <td className="py-3 px-4">{p.phoneNumber}</td>
+                      <td className="py-3 px-4">
+                        {p.speaksSpanish && (
+                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                            S
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-center">
                         {/* Only show checkbox for main users */}
                         {!p.isGuest && (

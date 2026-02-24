@@ -4,6 +4,7 @@ import { getEvents } from "@/app/api/events/controller";
 import { Event, UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
+import Button from "@/components/common/buttons/Button";
 
 export default async function EventsPage() {
   const user = await getCurrentUser();
@@ -54,15 +55,25 @@ export default async function EventsPage() {
       </div>
 
       <div className="w-full max-w-[1200px] px-6 py-12">
-        <h1 className="text-[16px] font-semibold mb-6 text-[#234254]">
-          <Link href="/" className="hover:underline">
-            Home
-          </Link>
-          {" / "}
-          <Link href="/event" className="hover:underline">
-            Events
-          </Link>
-        </h1>
+        <div className="flex">
+          <h1 className="text-[16px] font-semibold mb-6 text-[#234254]">
+            <Link href="/" className="hover:underline">
+              Home
+            </Link>
+            {" / "}
+            <Link href="/event" className="hover:underline">
+              Events
+            </Link>
+          </h1>
+          {user?.role === UserRole.ADMIN && (
+            <Link
+              href="/event/createEvent"
+              className="ml-auto rounded-lg bg-bcp-blue text-white mx-4 mt-1"
+            >
+              <Button label="Create New Event" />
+            </Link>
+          )}
+        </div>
         {/* Featured Opportunities */}
         <h2 className="text-[32px] font-semibold mb-6 color: #234254">
           Featured Opportunities
@@ -72,17 +83,6 @@ export default async function EventsPage() {
           <p className="text-red-600 font-medium">{error}</p>
         ) : featuredEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-            {/* Add Event Card (Admin only) */}
-            {user && user.role === UserRole.ADMIN && (
-              <Link href="/event/createEvent">
-                <div className="w-[283px] h-[348px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md">
-                  <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
-                    <span className="text-2xl text-gray-500">+</span>
-                  </div>
-                </div>
-              </Link>
-            )}
-
             {featuredEvents.map((event) => {
               const firstDate = event.date[0];
               return (
@@ -90,30 +90,15 @@ export default async function EventsPage() {
                   key={event.id}
                   image="/event1.jpg"
                   title={event.name}
-                  time={event.startTime}
                   location={event.addressLine1}
                   date={firstDate}
+                  startTime={event.startTime}
                   id={event.id}
                   pinned={event.pinned}
                   isAdmin={user?.role === UserRole.ADMIN}
                 />
               );
             })}
-          </div>
-        ) : user && user.role === UserRole.ADMIN ? (
-          <div className="mb-12">
-            <Link href="/event/createEvent">
-              <div className="w-[283px] h-[318px] border-2 border-dashed border-gray-300 rounded-xl bg-white flex items-center justify-center cursor-pointer transition hover:border-gray-400 hover:bg-gray-50 hover:shadow-md">
-                <div className="w-12 h-12 rounded-full border border-gray-400 flex items-center justify-center">
-                  <span className="text-2xl text-gray-500">+</span>
-                </div>
-              </div>
-            </Link>
-
-            <p className="text-gray-500 mt-8">
-              There are currently no pinned events. Pin an event to display it
-              on the home page.
-            </p>
           </div>
         ) : (
           <p className="text-gray-500 mb-12">
@@ -137,7 +122,7 @@ export default async function EventsPage() {
                   key={event.id}
                   image="/event1.jpg"
                   title={event.name}
-                  time={event.startTime}
+                  startTime={event.startTime}
                   location={event.addressLine1}
                   date={firstDate}
                   id={event.id}
@@ -152,3 +137,4 @@ export default async function EventsPage() {
     </div>
   );
 }
+

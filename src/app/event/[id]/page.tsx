@@ -58,7 +58,7 @@ export default async function EventDetailsPage(props: {
             <h1 className="text-bcp-blue text-[40px] leading-[44px]">
               {event.name ? event.name : "Event Name"}
             </h1>
-            {/* Time / Date */}
+            {/* Date */}
             <p className="mt-[8px] text-bcp-blue text-[28px] leading-[40px]">
               {(() => {
                 const dates = event.date ?? [];
@@ -82,7 +82,20 @@ export default async function EventDetailsPage(props: {
                 return `${month} ${start.getDate()}-${end.getDate()}, ${year}`;
               })()}
             </p>
-
+            {/* Time */}
+            <p className="mt-[4px] text-bcp-blue text-[28px] leading-[40px]">
+              {event.startTime && event.endTime
+                ? `${new Date(event.startTime).toLocaleTimeString("en-US", {
+                    timeZone: "America/New_York",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })} – ${new Date(event.endTime).toLocaleTimeString("en-US", {
+                    timeZone: "America/New_York",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}`
+                : "Time unavailable"}
+            </p>
             {/* Address */}
             <p className="mt-[4px] text-bcp-blue text-[20px] leading-[32px]">
               {[

@@ -181,19 +181,46 @@ function OnboardingPage() {
             />
           </div>
 
-          {/* Languages (Optional) */}
-          <div className="flex flex-col items-start">
+          {/* Languages */}
+          <div className="flex flex-row items-start justify-between">
             <label
-              htmlFor="languages"
+              htmlFor="speakSpanish"
               className="text-base font-normal text-medium-gray mb-1"
             >
-              Languages Spoken
+              Do you speak Spanish?
             </label>
-            <input
-              name="languages"
-              id="languages"
-              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            />
+            <div className="flex flex-row items-center justify-between gap-[48px]">
+              <div className="flex flex-row items-center gap-[14px]">
+                <input
+                  // type="checkbox"
+                  type="radio"
+                  name="speaksSpanish"
+                  value="true"
+                  className="accent-bcp-blue rounded-md"
+                />
+                <label
+                  htmlFor="speaksSpanish"
+                  className="flex flex-row text-base font-normal text-medium-gray mb-1"
+                >
+                  Yes
+                </label>
+              </div>
+              <div className="flex flex-row items-center gap-[14px]">
+                <input
+                  type="radio"
+                  // type="checkbox"
+                  className="accent-bcp-blue rounded-md"
+                  name="speaksSpanish"
+                  value="false"
+                />
+                <label
+                  htmlFor="speaksSpanish"
+                  className="text-base font-normal text-medium-gray mb-1 gap-14"
+                >
+                  No
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* City/State/Zip (Optional) */}
