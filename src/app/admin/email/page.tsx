@@ -4,34 +4,32 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
-import AdminNavBar from "@/components/AdminNavBar";
-import { getPublicURL } from "@/lib/r2";
 
 interface UserProps {
   id: string;
   firstName: string;
   lastName: string;
   emailAddress: string;
-  // role: string; no idea what this means considering can't see this in the frontend
 }
 
 export default function EmailPage() {
   const [showModal, setShowModal] = useState(false);
-  const [emailData, setEmailData] = useState({
-    to: "",
-    from: "",
-    subject: "",
-    message: "",
-  });
 
   // Email stuff
-  const [to, setTo] = useState("");
   const [from, setFrom] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
-  // We need both all users and any prefilled from clicking 'Send Email' from
-  // EventAdminTable
+  // Handles any errors when trying to send an email
+  const [emailError, setEmailError] = useState<Record<string, string>>({});
+  const clearFormError = (key: string) =>
+    setEmailError((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+
+  // We need both all users and any prefilled from EventAdminTable
   const [users, setUsers] = useState<UserProps[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // Any emails from EventAdminDetails are called prefilled IDs
@@ -41,14 +39,12 @@ export default function EmailPage() {
   const [sending, setSending] = useState(false);
   const [successModal, setSuccessModal] = useState<string | null>(null);
   const [errorModal, setErrorModal] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Dropdown states
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
 
   // Anyone already selected or prefilled is excluded from search
   const selectedUsers = users.filter((u) => selectedIds.has(u.id));
@@ -63,24 +59,26 @@ export default function EmailPage() {
     return full.includes(searchQuery.toLowerCase());
   });
 
-  function addUser(id: string){
-      setSelectedIds((prev) => new Set(prev).add(id));
-      setSearchQuery("");
-      searchInputRef.current?.focus();
+  function addUser(id: string) {
+    setSelectedIds((prev) => new Set(prev).add(id));
+    setSearchQuery("");
+    searchInputRef.current?.focus();
   }
 
   // Removes any users and handles if from EventAdminTable
-  function removeUser(id: string){
-      setSelectedIds((prev) => {const Next = new Set(prev);
-        Next.delete(id);
-        return Next;
-      });
-    
-      setPrefilledIds((prev) => {const Next = new Set(prev);
-        Next.delete(id);
-        return Next;
-      });
-    }
+  function removeUser(id: string) {
+    setSelectedIds((prev) => {
+      const Next = new Set(prev);
+      Next.delete(id);
+      return Next;
+    });
+
+    setPrefilledIds((prev) => {
+      const Next = new Set(prev);
+      Next.delete(id);
+      return Next;
+    });
+  }
 
   // Admin check
   const { user, isSignedIn, isLoaded } = useUser();
@@ -121,12 +119,6 @@ export default function EmailPage() {
         setSelectedIds(new Set(ids));
         setPrefilledIds(new Set(ids));
 
-        const emails = data
-          .filter((u) => ids.includes(u.id))
-          .map((u) => u.emailAddress);
-
-        setTo(emails.join(", "));
-
         // prevent stale reuse
         sessionStorage.removeItem("adminEmailRecipientUserIds");
         sessionStorage.removeItem("adminEmailSource");
@@ -138,7 +130,7 @@ export default function EmailPage() {
     fetchUsersAndPrefill();
   }, [isAdmin]);
 
-  // Dropdown close on click outside ;  stole from kebab
+  // Dropdown close on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -160,7 +152,6 @@ export default function EmailPage() {
     }
   }, [dropdownOpen]);
 
-
   if (isAdmin === null) return null;
   if (isAdmin === false) {
     return (
@@ -173,14 +164,23 @@ export default function EmailPage() {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(copyEmailString);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleSend = async () => {
+    const errs: Record<string, string> = {};
+    if (selectedUsers.length === 0)
+      errs.to = "Please select at least one recipient";
+    if (!subject.trim()) errs.subject = "Subject is required.";
+    if (!message.trim()) errs.message = "Message is required.";
+    if (Object.keys(errs).length > 0) {
+      setEmailError(errs);
+      return;
+    }
+    setEmailError({});
+
     const recipients = copyEmailString
       .split(",")
       .map((s) => s.trim())
@@ -226,7 +226,7 @@ export default function EmailPage() {
   };
 
   const handleScheduleSend = () => {
-    // TODO: schedule send
+    // TODO: Not our ticket
   };
 
   return (
@@ -237,86 +237,105 @@ export default function EmailPage() {
             <label className="text-base font-normal text-medium-black">
               Send to
             </label>
-            <div className="relative w-[588px]" ref={containerRef}>
-              {/* Chip box */}
-              <div
-                className="min-h-[44px] w-full rounded-lg border border-medium-gray px-3 py-2 flex flex-wrap gap-2 cursor-text focus-within:ring-2 focus-within:ring-bcp-blue/30 focus-within:border-bcp-blue"
-                onClick={() => setDropdownOpen(true)}
-              >
-                {selectedUsers.map((u) => (
-                  <span
-                    key={u.id}
-                    className="flex items-center gap-1 border border-gray-400 rounded-full px-3 py-0.5 text-sm text-medium-black bg-white whitespace-nowrap"
-                  >
-                    {u.lastName}, {u.firstName}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeUser(u.id);
-                      }}
-                      className="ml-1 text-gray-500 hover:text-red-500 leading-none"
-                      aria-label={`Remove ${u.firstName}`}
+            <div className="flex flex-col w-[588px]">
+              <div ref={containerRef} className="relative w-full">
+                <div
+                  className={`min-h-[44px] w-full rounded-lg border px-3 py-2
+                  flex flex-wrap gap-2 cursor-text focus-within:ring-2
+                  ${
+                    emailError.to
+                      ? "border-red-500 focus-within:ring-red-500/30"
+                      : "border-medium-gray focus-within:ring-bcp-blue/30 focus-within:border-bcp-blue"
+                  }`}
+                  onClick={() => setDropdownOpen(true)}
+                >
+                  {selectedUsers.map((u) => (
+                    <span
+                      key={u.id}
+                      className="flex items-center gap-1 border border-gray-400 
+                    rounded-full px-3 py-0.5 text-sm text-medium-black bg-white 
+                    whitespace-nowrap"
                     >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-                <span className="flex-1 min-w-[4px]" />
-              </div>
-
-              {/* Dropdown Search */}
-              {dropdownOpen && (
-                <div className="absolute z-50 left-0 right-0 bg-white border border-medium-gray rounded-lg shadow-lg mt-1">
-                  <div className="p-2 border-b border-gray-100">
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      placeholder="Search by name or email..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        if(e.key === "Enter"){
-                          e.preventDefault();
-                          setDropdownOpen(false);
-                          setSearchQuery("");
-                        }
-                      }}
-                      className="w-full h-[36px] rounded-md border border-medium-gray px-3 text-sm text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-                    />
-                  </div>
-
-                  {/* Results */}
-                  <div className="max-h-[200px] overflow-y-auto">
-                    {seenUsers.length === 0 ? (
-                      <p className="px-4 py-3 text-sm text-gray-400">
-                        {searchQuery
-                          ? `No users matching "${searchQuery}"`
-                          : "All users selected."}
-                      </p>
-                    ) : (
-                      seenUsers.map((u) => (
-                        <button
-                          type="button"
-                          key={u.id}
-                          onClick={() => addUser(u.id)}
-                          className="w-full text-left px-4 py-2.5 text-base text-medium-black hover:bg-gray-50 transition-colors flex items-center justify-between group"
-                        >
-                          <span>
-                            {u.lastName}, {u.firstName}
-                          </span>
-                          <span className="text-xs text-gray-400 group-hover:text-gray-500">
-                            {u.emailAddress}
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
+                      {u.lastName}, {u.firstName}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeUser(u.id);
+                        }}
+                        className="ml-1 text-gray-500 hover:text-red-500 
+                      leading-none"
+                        aria-label={`Remove ${u.firstName}`}
+                      >
+                        x
+                      </button>
+                    </span>
+                  ))}
+                  <span className="flex-1 min-w-[4px]" />
                 </div>
-              )}
+
+                {/* Dropdown Search */}
+                {dropdownOpen && (
+                  <div
+                    className="absolute z-50 left-0 right-0 bg-white border 
+                border-medium-gray rounded-lg shadow-lg mt-1"
+                  >
+                    <div className="p-2 border-b border-gray-100">
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Search by name or email..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            setDropdownOpen(false);
+                            setSearchQuery("");
+                          }
+                        }}
+                        className="w-full h-[36px] rounded-md border 
+                      border-medium-gray px-3 text-sm text-medium-gray 
+                      placeholder:text-medium-gray focus:outline-none 
+                      focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+                      />
+                    </div>
+
+                    {/* Search Results */}
+                    <div className="max-h-[200px] overflow-y-auto">
+                      {seenUsers.length === 0 ? (
+                        <p className="px-4 py-3 text-sm text-gray-400">
+                          {searchQuery
+                            ? `No users matching "${searchQuery}"`
+                            : "All users selected."}
+                        </p>
+                      ) : (
+                        seenUsers.map((u) => (
+                          <button
+                            type="button"
+                            key={u.id}
+                            onClick={() => addUser(u.id)}
+                            className="w-full text-left px-4 py-2.5 text-base 
+                          text-medium-black hover:bg-gray-50 transition-colors 
+                          flex items-center justify-between group"
+                          >
+                            <span>
+                              {u.lastName}, {u.firstName}
+                            </span>
+                            <span className="text-xs text-gray-400 group-hover:text-gray-500">
+                              {u.emailAddress}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
           <div className="flex flex-row items-center justify-between w-[714px]">
             <label className="text-base font-normal text-medium-black ">
               From
@@ -333,6 +352,7 @@ export default function EmailPage() {
               focus:border-bcp-blue"
             />
           </div>
+
           <div className="flex flex-row items-center justify-between w-[714px]">
             <label className="text-base font-normal text-medium-black ">
               Subject
@@ -342,13 +362,20 @@ export default function EmailPage() {
               id="subject"
               required
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-[588px] h-[44px] rounded-lg border border-medium-gray
+              onChange={(e) => {
+                setSubject(e.target.value);
+                clearFormError("subject");
+              }}
+              className={`w-[588px] h-[44px] rounded-lg border border-medium-gray
               p-3 text-base text-medium-gray placeholder:text-medium-gray 
-              focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 
-              focus:border-bcp-blue"
+              ${
+                emailError.subject
+                  ? "border-red-500 focus:ring-red-500/30"
+                  : "border-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              }`}
             />
           </div>
+
           <div className="flex flex-row items-start justify-between w-[714px]">
             <label className="text-base font-normal text-medium-black ">
               Message
@@ -358,15 +385,25 @@ export default function EmailPage() {
               id="message"
               required
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-[588px] h-[204px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue resize-none"
+              onChange={(e) => {
+                setMessage(e.target.value);
+                clearFormError("message");
+              }}
+              className={`w-[588px] h-[204px] rounded-lg border 
+              border-medium-gray p-3 text-base text-medium-gray 
+              placeholder:text-medium-gray 
+              ${
+                emailError.subject
+                  ? "border-red-500 focus:ring-red-500/30"
+                  : "border-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue resize-none"
+              }`}
             />
           </div>
         </div>
         <div className="flex flex-row justify-between pt-[20px] w-[714px]">
           <div className="ml-[126px] mt-6">
             <Button
-              label={copied ? "Copied!" : "Copy Email Addresses"}
+              label={"Copy Email Addresses"}
               altStyle="w-[183px] h-[44px] text-black bg-light-gray rounded-lg 
               font-large flex items-center justify-center hover:bg-gray-400"
               onClick={handleCopy}
@@ -411,7 +448,7 @@ export default function EmailPage() {
 
       {/* Failure */}
       <Modal
-        open={showModal && errorModal === "ok"}
+        open={showModal && errorModal === "err"}
         title="Email Failed to Send"
         onClose={() => setShowModal(false)}
         buttons={[
