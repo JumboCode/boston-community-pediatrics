@@ -206,7 +206,11 @@ export default function EmailPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Email failed to send");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("Email API error:", body);
+        throw new Error(body?.error ?? "Email failed to send");
+}
 
       // Shows pop up on success and erases details
       setSelectedIds(new Set());
@@ -336,7 +340,7 @@ export default function EmailPage() {
             </div>
           </div>
 
-          <div className="flex flex-row items-center justify-between w-[714px]">
+          {/* <div className="flex flex-row items-center justify-between w-[714px]">
             <label className="text-base font-normal text-medium-black ">
               From
             </label>
@@ -351,7 +355,7 @@ export default function EmailPage() {
               focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 
               focus:border-bcp-blue"
             />
-          </div>
+          </div> */}
 
           <div className="flex flex-row items-center justify-between w-[714px]">
             <label className="text-base font-normal text-medium-black ">

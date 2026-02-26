@@ -105,9 +105,9 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
   for (const email of emails) {
     try {
       // TODO: hardcoded until we verify domain in resend
-      const to = "bcpjumbocode@gmail.com";
-      // const to = email.user.emailAddress;
-      // if (!to) continue;
+      // const to = "bcpjumbocode@gmail.com";
+      const to = email.user.emailAddress;
+      if (!to) continue;
 
       if (email.kind === "registered") {
         await sendSignupConfirmed({
