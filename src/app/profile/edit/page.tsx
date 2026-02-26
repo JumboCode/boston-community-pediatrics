@@ -245,33 +245,33 @@ export default function EditProfilePage() {
 
             {/* Spanish */}
             <div className="flex justify-between items-center">
-  <label className="text-sm">Do you speak Spanish?</label>
-  <div className="flex gap-6 text-sm">
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="radio"
-        name="spanish"
-        value="yes"
-        checked={form.spanish === "yes"}
-        onChange={handleChange}
-        className="accent-[#234254]"
-      />
-      Yes
-    </label>
+              <label className="text-sm">Do you speak Spanish?</label>
+              <div className="flex gap-6 text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="spanish"
+                    value="yes"
+                    checked={form.spanish === "yes"}
+                    onChange={handleChange}
+                    className="accent-[#234254]"
+                  />
+                  Yes
+                </label>
 
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="radio"
-        name="spanish"
-        value="no"
-        checked={form.spanish === "no"}
-        onChange={handleChange}
-        className="accent-[#234254]"
-      />
-      No
-    </label>
-  </div>
-</div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="spanish"
+                    value="no"
+                    checked={form.spanish === "no"}
+                    onChange={handleChange}
+                    className="accent-[#234254]"
+                  />
+                  No
+                </label>
+              </div>
+            </div>
 
             {/* Address */}
             <div>

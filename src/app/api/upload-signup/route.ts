@@ -13,7 +13,7 @@ const s3 = new S3Client({
 });
 
 // Hardcoded for now based on your previous snippet, but better to move to ENV
-const R2_PUBLIC_DOMAIN = "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev";
+const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN!;
 
 export async function POST(req: NextRequest) {
   try {
