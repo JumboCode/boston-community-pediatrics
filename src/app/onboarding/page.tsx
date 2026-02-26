@@ -61,7 +61,7 @@ function OnboardingPage() {
             // User inputs these now
             phoneNumber: formData.get("phone"),
             dateOfBirth: formData.get("dob"), // "YYYY-MM-DD"
-            languages: formData.get("languages"),
+            speaksSpanish: formData.get("speaksSpanish"),
             streetAddress: formData.get("street"),
             city: formData.get("city"),
             state: formData.get("state"),
@@ -181,7 +181,7 @@ function OnboardingPage() {
             />
           </div>
 
-          {/* Languages */}
+          {/* Languages (Optional) */}
           <div className="flex flex-row items-start justify-between">
             <label
               htmlFor="speakSpanish"
@@ -207,12 +207,12 @@ function OnboardingPage() {
               </div>
               <div className="flex flex-row items-center gap-[14px]">
                 <input
-                  type="radio"
-                  // type="checkbox"
-                  className="accent-bcp-blue rounded-md"
-                  name="speaksSpanish"
-                  value="false"
-                />
+                    type="radio"
+                    // type="checkbox"
+                    className="accent-bcp-blue rounded-md"
+                    name="speaksSpanish"
+                    value="false"
+                  />
                 <label
                   htmlFor="speaksSpanish"
                   className="text-base font-normal text-medium-gray mb-1 gap-14"
