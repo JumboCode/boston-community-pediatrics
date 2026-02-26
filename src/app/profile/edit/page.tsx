@@ -67,7 +67,9 @@ export default function EditProfilePage() {
           if (data.profileImage.startsWith("http")) {
             setPreviewUrl(data.profileImage);
           } else {
-            const imgRes = await fetch(`/api/images?filename=${data.profileImage}`);
+            const imgRes = await fetch(
+              `/api/images?filename=${data.profileImage}`
+            );
             const imgData = await imgRes.json();
             setPreviewUrl(imgData.url);
           }
@@ -152,7 +154,7 @@ export default function EditProfilePage() {
             state: form.state,
             zipCode: form.zip,
             profileImage: previewUrl ? finalImageUrl : null,
-          }
+          },
         }),
       });
 
@@ -168,13 +170,17 @@ export default function EditProfilePage() {
     }
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <main className="flex-grow flex justify-center items-start py-16 px-4">
         <div className="bg-white w-full max-w-[700px] border rounded-md shadow-sm p-10">
-
           <Link href="/profile">
             <div className="mb-6 text-3xl text-gray-500 hover:text-gray-700 cursor-pointer">
               ←
@@ -275,7 +281,9 @@ export default function EditProfilePage() {
 
             {/* Address */}
             <div>
-              <label className="block text-sm mb-1">Street Address (optional)</label>
+              <label className="block text-sm mb-1">
+                Street Address (optional)
+              </label>
               <input
                 name="address"
                 value={form.address}
@@ -306,7 +314,9 @@ export default function EditProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm mb-1">Zip code (optional)</label>
+                <label className="block text-sm mb-1">
+                  Zip code (optional)
+                </label>
                 <input
                   name="zip"
                   value={form.zip}

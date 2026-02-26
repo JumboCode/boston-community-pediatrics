@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     // Generate a unique filename for the new user
     const uniqueId = crypto.randomUUID();
     const extension = fileType.split("/")[1];
-    const key = `profiles/signup-${uniqueId}.${extension}`;
+    const key = `profilePictures/signup-${uniqueId}.${extension}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET,
