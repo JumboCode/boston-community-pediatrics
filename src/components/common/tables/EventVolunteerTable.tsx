@@ -44,13 +44,13 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   return (
     <div className="max-w-[1000px] flex ">
       <div className="w-[750px] relative p-[20px] border-b border-r border-gray-300">
-        <div className="text-[#234254] text-[22px] font-medium font-avenir leading-[1.25]">
+        <div className="text-bcp-blue text-[22px] font-medium font-avenir leading-[1.25]">
           {positionTitle}
         </div>
-        <div className="text-[#234254] text-[14px] font-bold font-avenir mt-[8px]">
+        <div className="text-bcp-blue text-[14px] font-bold font-avenir mt-[8px]">
           {streetAddress}
         </div>
-        <div className="text-[#234254] text-[14px] font-normal font-avenir">
+        <div className="text-bcp-blue text-[14px] font-normal font-avenir">
           <p className="text-[14px]">
             {new Date(startTime).toLocaleDateString(undefined, {
               month: "long",
@@ -71,7 +71,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
           </p>
         </div>
 
-        <div className="mt-[12px] break-words text-[#234254] text-[14px] font-normal font-avenir leading-[1.4]">
+        <div className="mt-[12px] break-words text-bcp-blue text-[14px] font-normal font-avenir leading-[1.4]">
           {description}
         </div>
 
@@ -81,7 +81,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
       <div
         className={`border-b border-gray-300 w-[250px] transition-all duration-300 p-[20px]`}
       >
-        <div className="text-[#234254] text-[22px] font-medium font-avenir text-right">
+        <div className="text-bcp-blue text-[22px] font-medium font-avenir text-right">
           {filledSpots}/{totalSpots} Spots Filled
         </div>
 
@@ -94,7 +94,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
         <div className="mt-[20px] space-y-[12px] overflow-y-auto pr-1">
           {volunteerNames.map((name, i) => (
             <div key={i} className="flex items-center gap-2 justify-end">
-              <span className="text-[#234254] text-[15px] font-normal font-avenir">
+              <span className="text-bcp-blue text-[15px] font-normal font-avenir">
                 {name}
               </span>
 

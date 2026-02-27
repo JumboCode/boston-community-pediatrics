@@ -253,7 +253,7 @@ export default function ProfilePage() {
       </div>
 
       {/* PROFILE CARD */}
-      <div className="absolute top-[248px] right-[121px] h-[420px] w-[305px] rounded-lg bg-[#426982]">
+      <div className="absolute top-[248px] right-[121px] h-[420px] w-[305px] rounded-lg bg-light-bcp-blue">
         <div className="absolute top-[30px] left-1/2 h-[105px] w-[105px] -translate-x-1/2 transform rounded-full bg-[#D9D9D9]" />
 
         <div className="mt-40 flex flex-col items-center space-y-[1px]">

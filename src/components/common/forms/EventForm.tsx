@@ -8,9 +8,7 @@ import Button from "@/components/common/buttons/Button";
 import Carousel from "../Carousel";
 import { mutate } from "swr";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from 'next/navigation';
-
-
+import { useSearchParams } from "next/navigation";
 
 // API shapes used by this component
 type APIPosition = Partial<{
@@ -67,13 +65,13 @@ export async function fetchEventById(id: string): Promise<ApiEvent | null> {
   try {
     const response = await fetch(`/api/events?id=${id}`);
     if (!response.ok) {
-      console.error('Failed to fetch event', response.statusText);
+      console.error("Failed to fetch event", response.statusText);
       return null;
     }
     const data = (await response.json()) as ApiEvent;
     return data;
   } catch (error) {
-    console.error('Error fetching event:', error);
+    console.error("Error fetching event:", error);
     return null;
   }
 }
@@ -93,28 +91,26 @@ const EventForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const searchParams = useSearchParams();
-  const eventIdParam = searchParams.get('id');
-
-  
+  const eventIdParam = searchParams.get("id");
 
   const inputBase =
-    "rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
+    "rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
 
   const inputClass = (key: string, extra = "") =>
     `${inputBase} ${
       errors[key]
         ? "border-red-500 focus:ring-red-500/30"
-        : "border-[#6B6B6B] focus:ring-[#234254]/30 focus:border-[#234254]"
+        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
     } ${extra}`;
 
   const textareaBase =
-    "resize-none rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2";
+    "resize-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
 
   const textareaClass = (key: string, extra = "") =>
     `${textareaBase} ${
       errors[key]
         ? "border-red-500 focus:ring-red-500/30"
-        : "border-[#6B6B6B] focus:ring-[#234254]/30 focus:border-[#234254]"
+        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
     } ${extra}`;
 
   const ErrorText = ({ k }: { k: string }) =>
@@ -441,8 +437,14 @@ const EventForm = () => {
         payload = {
           name: parseResult.data.title,
           description: parseResult.data.description || "",
-          startTime: combineDateTime(parseResult.data.date, parseResult.data.startTime),
-          endTime: combineDateTime(parseResult.data.date, parseResult.data.endTime),
+          startTime: combineDateTime(
+            parseResult.data.date,
+            parseResult.data.startTime
+          ),
+          endTime: combineDateTime(
+            parseResult.data.date,
+            parseResult.data.endTime
+          ),
           addressLine1: parseResult.data.address,
           addressLine2: parseResult.data.apt || null,
           city: parseResult.data.city,
@@ -463,7 +465,7 @@ const EventForm = () => {
 
       if (!res.ok) {
         const text = await res.text();
-        alert(`Failed to ${isEdit ? "update":"create"} event: ${text}`);
+        alert(`Failed to ${isEdit ? "update" : "create"} event: ${text}`);
         return;
       }
 
@@ -471,11 +473,15 @@ const EventForm = () => {
 
       const eventId: string = isEdit
         ? (eventIdParam as string)
-        : createdEvent.id ?? createdEvent.event?.id;
+        : (createdEvent.id ?? createdEvent.event?.id);
 
       if (!eventId) {
         console.error("Event response:", createdEvent);
-        alert(isEdit ? "Event updated but no id available" : "Event created but no eventId returned from /api/events");
+        alert(
+          isEdit
+            ? "Event updated but no id available"
+            : "Event created but no eventId returned from /api/events"
+        );
         return;
       }
 
@@ -491,15 +497,21 @@ const EventForm = () => {
           new Date(`${date}T${time}:00`);
         const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
 
-        const currentIds = normalizedPositions.map((p) => p.id).filter(Boolean) as string[];
-        const toDelete = originalPositionIds.filter((id) => !currentIds.includes(id));
+        const currentIds = normalizedPositions
+          .map((p) => p.id)
+          .filter(Boolean) as string[];
+        const toDelete = originalPositionIds.filter(
+          (id) => !currentIds.includes(id)
+        );
 
         // delete removed positions
         await Promise.all(
           toDelete.map((id) =>
-            fetch(`/api/eventPosition?id=${id}`, { method: "DELETE" }).catch((e) => {
-              console.error("Failed to delete position", id, e);
-            })
+            fetch(`/api/eventPosition?id=${id}`, { method: "DELETE" }).catch(
+              (e) => {
+                console.error("Failed to delete position", id, e);
+              }
+            )
           )
         );
 
@@ -527,7 +539,9 @@ const EventForm = () => {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(posPayload),
-              }).catch((e) => console.error("Failed to update position", p.id, e));
+              }).catch((e) =>
+                console.error("Failed to update position", p.id, e)
+              );
             } else {
               await fetch(`/api/eventPosition`, {
                 method: "POST",
@@ -581,21 +595,21 @@ const EventForm = () => {
       <div className="mt-10 flex items-center justify-between">
         <label
           htmlFor={id}
-          className="mb-1 text-base font-normal text-[#6B6B6B]"
+          className="mb-1 text-base font-normal text-medium-gray"
         >
           {label}
         </label>
         <div className="mb-1 flex items-center gap-[11px]">
           <Button
             label="Same as event"
-            altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+            altStyle="bg-transparent text-medium-gray font-medium px-0 hover:bg-transparent focus:outline-none"
             onClick={onToggle}
           />
           <input
             type="checkbox"
             checked={disabled}
             onChange={onToggle}
-            className="h-[16px] w-[16px] cursor-pointer accent-[#234254]"
+            className="h-[16px] w-[16px] cursor-pointer accent-bcp-blue"
           />
         </div>
       </div>
@@ -610,13 +624,13 @@ const EventForm = () => {
         }}
         className={
           className ||
-          `w-[588px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:border-[#234254]
+          `w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
            ${
              error
                ? "border-red-500 focus:ring-red-500/30"
-               : "border-[#6B6B6B] focus:ring-[#234254]/30"
+               : "border-medium-gray focus:ring-bcp-blue/30"
            }
-           disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed`
+           disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
         }
       />
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
@@ -629,8 +643,12 @@ const EventForm = () => {
         id: p.id ?? undefined,
         name: p.position ?? "",
         date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
-        startTime: p.startTime ? new Date(p.startTime).toISOString().slice(11, 16) : "",
-        endTime: p.endTime ? new Date(p.endTime).toISOString().slice(11, 16) : "",
+        startTime: p.startTime
+          ? new Date(p.startTime).toISOString().slice(11, 16)
+          : "",
+        endTime: p.endTime
+          ? new Date(p.endTime).toISOString().slice(11, 16)
+          : "",
         description: p.description ?? "",
         address: p.addressLine1 ?? "",
         apt: p.addressLine2 ?? undefined,
@@ -679,12 +697,16 @@ const EventForm = () => {
           if (Array.isArray(posData) && posData.length) {
             const mapped = mapPositionsArray(posData as APIPosition[]);
             setPositions(mapped);
-            setOriginalPositionIds(mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]);
+            setOriginalPositionIds(
+              mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]
+            );
           }
         } else if (Array.isArray(result.positions) && result.positions.length) {
           const mapped = mapPositionsArray(result.positions as APIPosition[]);
           setPositions(mapped);
-          setOriginalPositionIds(mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]);
+          setOriginalPositionIds(
+            mapped.map((p: PositionState) => p.id).filter(Boolean) as string[]
+          );
         }
       } catch (err) {
         console.error("Failed to fetch positions:", err);
@@ -696,7 +718,9 @@ const EventForm = () => {
 
       // Map images (best-effort)
       if (Array.isArray(result.images) && result.images.length) {
-        setCarouselImages(result.images.map((url) => createStaticImageData(url)));
+        setCarouselImages(
+          result.images.map((url) => createStaticImageData(url))
+        );
       }
     };
 
@@ -704,7 +728,7 @@ const EventForm = () => {
   }, [eventIdParam]);
 
   return (
-    <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-[#6B6B6B] bg-white">
+    <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
         <Link href="/event" className="cursor-pointer">
@@ -716,7 +740,7 @@ const EventForm = () => {
         </Link>
       </div>
       {/* title */}
-      <h1 className="mt-[22px] text-center text-[36px] font-medium leading-tight text-[#234254]">
+      <h1 className="mt-[22px] text-center text-[36px] font-medium leading-tight text-bcp-blue">
         {eventIdParam ? "Edit event" : "Create a new event"}
       </h1>
       {/* carousel and add photos */}
@@ -735,7 +759,7 @@ const EventForm = () => {
         <div className="mt-[61px] mb-[24px]">
           <Button
             label="Add photos"
-            altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[118px] h-[44px] rounded-lg hover:bg-[#386a80]"
+            altStyle="bg-bcp-blue text-white text-[16px] w-[118px] h-[44px] rounded-lg hover:bg-[#386a80]"
             onClick={handleAddPhotosClick}
           />
         </div>
@@ -747,7 +771,7 @@ const EventForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-title"
-            className="mt-[24px] mb-1 text-base font-normal text-[#6B6B6B]"
+            className="mt-[24px] mb-1 text-base font-normal text-medium-gray"
           >
             Event title
           </label>
@@ -767,7 +791,7 @@ const EventForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-date"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
           >
             Event date
           </label>
@@ -784,7 +808,7 @@ const EventForm = () => {
             ${
               errors["date"]
                 ? "border-red-500 focus:ring-red-500"
-                : "border-[#6B6B6B] focus:ring-[#234254]/30 focus:border-[#234254]"
+                : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
             }`}
           />
           {errors["date"] && (
@@ -793,7 +817,7 @@ const EventForm = () => {
         </div>
         {/* event time */}
         <div className="flex flex-col items-start">
-          <label className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]">
+          <label className="mb-1 mt-[40px] text-base font-normal text-medium-gray">
             Event time
           </label>
 
@@ -807,11 +831,11 @@ const EventForm = () => {
                 setEvent((prev) => ({ ...prev, startTime: v }));
                 clearError("startTime");
               }}
-              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none
+              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
               ${
                 errors["startTime"]
                   ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
-                  : "border-[#6B6B6B] focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                  : "border-medium-gray focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               }`}
             />
 
@@ -824,11 +848,11 @@ const EventForm = () => {
                 setEvent((prev) => ({ ...prev, endTime: v }));
                 clearError("endTime");
               }}
-              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none
+              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
               ${
                 errors["endTime"]
                   ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
-                  : "border-[#6B6B6B] focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                  : "border-medium-gray focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               }`}
             />
           </div>
@@ -843,7 +867,7 @@ const EventForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-description"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
           >
             Event description
           </label>
@@ -862,7 +886,7 @@ const EventForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-resources"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
           >
             Link to resources (optional)
           </label>
@@ -873,14 +897,14 @@ const EventForm = () => {
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }))
             }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
         {/* event street */}
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-street"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
           >
             Street address
           </label>
@@ -899,7 +923,7 @@ const EventForm = () => {
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-apt"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
           >
             Apt, suite, etc (optional)
           </label>
@@ -909,14 +933,14 @@ const EventForm = () => {
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, apt: e.target.value }))
             }
-            className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
         {/* event city */}
         <div className="flex flex-col items-start">
           <label
             htmlFor="event-city"
-            className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
           >
             City
           </label>
@@ -936,7 +960,7 @@ const EventForm = () => {
           <div className="flex flex-col items-start">
             <label
               htmlFor="event-state"
-              className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+              className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
             >
               State
             </label>
@@ -954,7 +978,7 @@ const EventForm = () => {
           <div className="flex flex-col items-start">
             <label
               htmlFor="event-zip"
-              className="mb-1 mt-[40px] text-base font-normal text-[#6B6B6B]"
+              className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
             >
               Zip code
             </label>
@@ -981,7 +1005,7 @@ const EventForm = () => {
             <div className="flex flex-col items-start">
               <label
                 htmlFor={`position-name-${index}`}
-                className="mb-1 text-[16px] text-base font-normal text-[#6B6B6B]"
+                className="mb-1 text-[16px] text-base font-normal text-medium-gray"
               >
                 Position name
               </label>
@@ -993,7 +1017,7 @@ const EventForm = () => {
                   handlePositionChange(index, "name", e.target.value);
                   clearError(`positions.${index}.name`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed")}`}
+                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
               />
               <ErrorText k={`positions.${index}.name`} />
             </div>
@@ -1013,21 +1037,21 @@ const EventForm = () => {
             {/* position time */}
             <div className="flex flex-col">
               <div className="mt-10 flex items-center justify-between">
-                <label className="mb-1 text-base font-normal text-[#6B6B6B]">
+                <label className="mb-1 text-base font-normal text-medium-gray">
                   Position time
                 </label>
 
                 <div className="mb-1 flex items-center gap-[11px]">
                   <Button
                     label="Same as event"
-                    altStyle="bg-transparent text-[#6B6B6B] font-medium px-0 hover:bg-transparent focus:outline-none"
+                    altStyle="bg-transparent text-medium-gray font-medium px-0 hover:bg-transparent focus:outline-none"
                     onClick={() => toggleSameAsTime(index)}
                   />
                   <input
                     type="checkbox"
                     checked={position.sameAsTime}
                     onChange={() => toggleSameAsTime(index)}
-                    className="h-[16px] w-[16px] cursor-pointer accent-[#234254]"
+                    className="h-[16px] w-[16px] cursor-pointer accent-bcp-blue"
                   />
                 </div>
               </div>
@@ -1044,13 +1068,13 @@ const EventForm = () => {
                     handlePositionChange(index, "startTime", e.target.value);
                     clearError(`positions.${index}.startTime`);
                   }}
-                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:border-[#234254]
+                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
                   ${
                     errors[`positions.${index}.startTime`]
                       ? "border-red-500 focus:ring-red-500/30"
-                      : "border-[#6B6B6B] focus:ring-[#234254]/30"
+                      : "border-medium-gray focus:ring-bcp-blue/30"
                   }
-                  disabled:bg-[#E5E5E5] disabled:cursor-not-allowed`}
+                  disabled:bg-light-gray disabled:cursor-not-allowed`}
                 />
 
                 <input
@@ -1062,13 +1086,13 @@ const EventForm = () => {
                     handlePositionChange(index, "endTime", e.target.value);
                     clearError(`positions.${index}.endTime`);
                   }}
-                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:border-[#234254]
+                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
                   ${
                     errors[`positions.${index}.endTime`]
                       ? "border-red-500 focus:ring-red-500/30"
-                      : "border-[#6B6B6B] focus:ring-[#234254]/30"
+                      : "border-medium-gray focus:ring-bcp-blue/30"
                   }
-                  disabled:bg-[#E5E5E5] disabled:cursor-not-allowed`}
+                  disabled:bg-light-gray disabled:cursor-not-allowed`}
                 />
               </div>
               {(errors[`positions.${index}.startTime`] ||
@@ -1083,7 +1107,7 @@ const EventForm = () => {
             <div className="flex flex-col">
               <label
                 htmlFor={`position-description-${index}`}
-                className="mb-1 mt-10 text-base font-normal text-[#6B6B6B]"
+                className="mb-1 mt-10 text-base font-normal text-medium-gray"
               >
                 Position description
               </label>
@@ -1115,7 +1139,7 @@ const EventForm = () => {
             <div className="flex flex-col">
               <label
                 htmlFor={`position-apt-${index}`}
-                className="mb-1 mt-10 text-base font-normal text-[#6B6B6B]"
+                className="mb-1 mt-10 text-base font-normal text-medium-gray"
               >
                 Apt, suite, etc (optional)
               </label>
@@ -1127,14 +1151,14 @@ const EventForm = () => {
                 onChange={(e) =>
                   handlePositionChange(index, "apt", e.target.value)
                 }
-                className="w-[588px] h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254] disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
               />
             </div>
             {/* position city */}
             <div className="flex flex-col">
               <label
                 htmlFor={`position-city-${index}`}
-                className="mb-1 mt-10 text-base font-normal text-[#6B6B6B]"
+                className="mb-1 mt-10 text-base font-normal text-medium-gray"
               >
                 City
               </label>
@@ -1149,7 +1173,7 @@ const EventForm = () => {
                 }}
                 className={`w-[588px] h-[43px] ${inputClass(
                   `positions.${index}.city`,
-                  "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                  "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                 )}`}
               />
               <ErrorText k={`positions.${index}.city`} />
@@ -1159,7 +1183,7 @@ const EventForm = () => {
               <div className="flex flex-col items-start">
                 <label
                   htmlFor={`position-state-${index}`}
-                  className="mb-1 mt-10 text-base font-normal text-[#6B6B6B]"
+                  className="mb-1 mt-10 text-base font-normal text-medium-gray"
                 >
                   State
                 </label>
@@ -1174,7 +1198,7 @@ const EventForm = () => {
                   }}
                   className={`w-[264px] h-[43px] ${inputClass(
                     `positions.${index}.state`,
-                    "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                    "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
                 <ErrorText k={`positions.${index}.state`} />
@@ -1182,7 +1206,7 @@ const EventForm = () => {
               <div className="flex flex-col items-start">
                 <label
                   htmlFor={`position-zip-${index}`}
-                  className="mb-1 mt-10 text-base font-normal text-[#6B6B6B]"
+                  className="mb-1 mt-10 text-base font-normal text-medium-gray"
                 >
                   Zip code
                 </label>
@@ -1197,7 +1221,7 @@ const EventForm = () => {
                   }}
                   className={`w-[264px] h-[43px] ${inputClass(
                     `positions.${index}.zip`,
-                    "disabled:bg-[#E5E5E5] disabled:text-[#6B6B6B] disabled:placeholder:text-[#6B6B6B] disabled:cursor-not-allowed"
+                    "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
                 <ErrorText k={`positions.${index}.zip`} />
@@ -1207,7 +1231,7 @@ const EventForm = () => {
             <div className="flex flex-col">
               <label
                 htmlFor={`position-participants-${index}`}
-                className="mb-1 mt-10 text-base font-normal text-[#6B6B6B]"
+                className="mb-1 mt-10 text-base font-normal text-medium-gray"
               >
                 Maximum number of participants
               </label>
@@ -1232,12 +1256,12 @@ const EventForm = () => {
         <div className="flex flex-row items-center">
           <Button
             label="Remove position"
-            altStyle="bg-[#FFFFFF] text-[#234254] text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2] mr-[11px]"
+            altStyle="bg-white text-bcp-blue text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2] mr-[11px]"
             onClick={removePosition}
           />
           <Button
             label="+ Add another position"
-            altStyle="bg-[#CAD1D4] text-[#000000] text-[16px] w-[201px] h-[44px] font-medium rounded-lg hover:bg-[#b9c0c3] ml-[11px]"
+            altStyle="bg-[#CAD1D4] text-black text-[16px] w-[201px] h-[44px] font-medium rounded-lg hover:bg-[#b9c0c3] ml-[11px]"
             onClick={addPosition}
           />
         </div>
@@ -1251,12 +1275,12 @@ const EventForm = () => {
         <div className="flex flex-row items-center">
           <Button
             label="Save as draft"
-            altStyle="bg-[#FFFFFF] text-[#000000] text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-[#000000] hover:bg-[#f2f2f2] mr-[15px]"
+            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2] mr-[15px]"
           />
           <Button
             onClick={handleCreateEvent}
             label="Submit"
-            altStyle="bg-[#234254] text-[#FFFFFF] text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
+            altStyle="bg-bcp-blue text-white text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
           />
         </div>
       </div>

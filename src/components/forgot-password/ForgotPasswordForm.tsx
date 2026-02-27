@@ -16,7 +16,7 @@ export default function ForgotPasswordForm() {
   };
 
   return !sentEmail ? (
-    <div className="flex flex-col items-center gap-8 border border-[#6B6B6B] rounded-lg w-[792px] pt-[50px] px-[48px] pb-[60px] box-border">
+    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-[792px] pt-[50px] px-[48px] pb-[60px] box-border">
       <div className="flex flex-col items-center w-full gap-6">
         <div className="relative flex items-center w-full justify-center">
           <Link href="/login">
@@ -27,7 +27,7 @@ export default function ForgotPasswordForm() {
             />
           </Link>
 
-          <h1 className="text-[#234254] text-[36px] font-medium m-0 text-center">
+          <h1 className="text-bcp-blue text-[36px] font-medium m-0 text-center">
             Forgot your password?
           </h1>
         </div>
@@ -43,8 +43,8 @@ export default function ForgotPasswordForm() {
           required
           className={
             isError
-              ? "w-full h-[43px] rounded-lg border border-[#E10000] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
-              : "w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] placeholder:text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              ? "w-full h-[43px] rounded-lg border border-[#E10000] p-3 text-base text-[] placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              : "w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           }
         />
         {isError ? (
@@ -61,9 +61,9 @@ export default function ForgotPasswordForm() {
     </div>
   ) : (
     // After email sent
-    <div className="flex flex-col items-center gap-8 border border-[#6B6B6B] rounded-lg w-[792px] pt-[50px] px-[102px] pb-[60px] box-border">
+    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-[792px] pt-[50px] px-[102px] pb-[60px] box-border">
       <div className="relative flex items-center w-full justify-center">
-        <h1 className="text-[#234254] text-[36px] font-medium m-0 text-center">
+        <h1 className="text-bcp-blue text-[36px] font-medium m-0 text-center">
           Password reset email sent!
         </h1>
       </div>

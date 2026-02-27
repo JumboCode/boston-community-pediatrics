@@ -293,7 +293,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
             {/* Left Section */}
             <div
-              className="text-[#234254] flex-shrink-0"
+              className="text-bcp-blue flex-shrink-0"
               style={{ width: "280px" }}
             >
               <h1 className="text-[24px] font-semibold">{position}</h1>
@@ -316,7 +316,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             </div>
 
             {/* Right Section */}
-            <div className="text-[#234254] flex-1 flex flex-col justify-between mb-2">
+            <div className="text-bcp-blue flex-1 flex flex-col justify-between mb-2">
               <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
             </div>
           </div>
@@ -328,7 +328,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             </div>
             <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
-                className="bg-[#426982] h-4 rounded-full"
+                className="bg-light-bcp-blue h-4 rounded-full"
                 style={{
                   width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
                 }}
@@ -338,7 +338,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         </div>
 
         {/* Volunteer Table */}
-        <table className="w-full border-white-700 text-[#234254]">
+        <table className="w-full border-white-700 text-bcp-blue">
           <thead className="bg-white sticky top-0 z-10">
             <tr className="text-left">
               <th className="py-3 px-5 font-normal"></th>
@@ -426,7 +426,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.signUpId)}
-                        className="w-5 h-5 accent-[#234254] cursor-pointer"
+                        className="w-5 h-5 accent-bcp-blue cursor-pointer"
                       />
                     )}
                   </td>
@@ -442,7 +442,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             <div className="flex justify-between px-6 py-4">
               <Button
                 label="Send Email"
-                altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
               />
               <Button
                 label="Remove from Event"

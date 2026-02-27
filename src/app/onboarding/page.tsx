@@ -86,7 +86,7 @@ function OnboardingPage() {
   if (!isLoaded || checkingDb) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-xl text-[#234254]">Checking profile...</p>
+        <p className="text-xl text-bcp-blue">Checking profile...</p>
       </div>
     );
   }
@@ -95,9 +95,9 @@ function OnboardingPage() {
     <div className="flex justify-center py-20">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col items-center border border-[#6B6B6B] rounded-lg w-[792px] p-10"
+        className="flex flex-col items-center border border-medium-gray rounded-lg w-[792px] p-10"
       >
-        <h1 className="text-[#234254] text-[36px] font-medium mb-2 text-center">
+        <h1 className="text-bcp-blue text-[36px] font-medium mb-2 text-center">
           Complete Your Profile
         </h1>
         <p className="text-black text-xl mb-10 text-center">
@@ -118,7 +118,7 @@ function OnboardingPage() {
             <div className="flex flex-col items-start flex-1">
               <label
                 htmlFor="first-name"
-                className="text-base font-normal text-[#6B6B6B] mb-1"
+                className="text-base font-normal text-medium-gray mb-1"
               >
                 First Name
               </label>
@@ -127,13 +127,13 @@ function OnboardingPage() {
                 id="first-name"
                 required
                 defaultValue={user?.firstName || ""} // Pre-fill if Google provided it
-                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
             <div className="flex flex-col items-start flex-1">
               <label
                 htmlFor="last-name"
-                className="text-base font-normal text-[#6B6B6B] mb-1"
+                className="text-base font-normal text-medium-gray mb-1"
               >
                 Last Name
               </label>
@@ -142,7 +142,7 @@ function OnboardingPage() {
                 id="last-name"
                 required
                 defaultValue={user?.lastName || ""} // Pre-fill if Google provided it
-                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
           </div>
@@ -151,7 +151,7 @@ function OnboardingPage() {
           <div className="flex flex-col items-start">
             <label
               htmlFor="phone"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Phone Number
             </label>
@@ -160,7 +160,7 @@ function OnboardingPage() {
               id="phone"
               type="tel"
               required
-              className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
@@ -168,7 +168,7 @@ function OnboardingPage() {
           <div className="flex flex-col items-start">
             <label
               htmlFor="dob"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Date of Birth
             </label>
@@ -177,7 +177,7 @@ function OnboardingPage() {
               id="dob"
               type="date"
               required
-              className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
@@ -185,14 +185,14 @@ function OnboardingPage() {
           <div className="flex flex-col items-start">
             <label
               htmlFor="languages"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Languages Spoken
             </label>
             <input
               name="languages"
               id="languages"
-              className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
@@ -201,40 +201,40 @@ function OnboardingPage() {
             <div className="flex flex-col items-start flex-1">
               <label
                 htmlFor="city"
-                className="text-base font-normal text-[#6B6B6B] mb-1"
+                className="text-base font-normal text-medium-gray mb-1"
               >
                 City (optional)
               </label>
               <input
                 name="city"
                 id="city"
-                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
             <div className="flex flex-col items-start w-[120px]">
               <label
                 htmlFor="state"
-                className="text-base font-normal text-[#6B6B6B] mb-1"
+                className="text-base font-normal text-medium-gray mb-1"
               >
                 State (optional)
               </label>
               <input
                 name="state"
                 id="state"
-                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
             <div className="flex flex-col items-start w-[140px]">
               <label
                 htmlFor="zip"
-                className="text-base font-normal text-[#6B6B6B] mb-1"
+                className="text-base font-normal text-medium-gray mb-1"
               >
                 Zip (optional)
               </label>
               <input
                 name="zip"
                 id="zip"
-                className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+                className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
           </div>
@@ -243,14 +243,14 @@ function OnboardingPage() {
           <div className="flex flex-col items-start">
             <label
               htmlFor="street"
-              className="text-base font-normal text-[#6B6B6B] mb-1"
+              className="text-base font-normal text-medium-gray mb-1"
             >
               Street Address (optional)
             </label>
             <input
               name="street"
               id="street"
-              className="w-full h-[43px] rounded-lg border border-[#6B6B6B] p-3 text-base text-[#6B6B6B] focus:outline-none focus:ring-2 focus:ring-[#234254]/30 focus:border-[#234254]"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
@@ -259,7 +259,7 @@ function OnboardingPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-3 bg-[#234254] text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors mt-4"
+            className="w-full py-3 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors mt-4"
           >
             {submitting ? "Creating Profile..." : "Finish Registration"}
           </button>
