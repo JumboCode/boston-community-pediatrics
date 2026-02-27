@@ -107,7 +107,7 @@ const ManageRolesPage = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id:vol.userId }),
+          body: JSON.stringify({ id: vol.userId }),
         });
 
         if (!res.ok) {
@@ -155,7 +155,7 @@ const ManageRolesPage = () => {
     try {
       const editPromises = volunteersToEdit.map(async (vol) => {
         const res = await fetch(
-          `/api/admin/users/${vol.userId}/role?id=${vol.userId}`,
+          `/api/admin/users/${vol.userId}/role`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -189,7 +189,7 @@ const ManageRolesPage = () => {
       // Show success modal
       setShowEditConfirm(false);
       setModalTitle("Roles Updated!");
-      setModalMessage("role successfully assigned!");
+      setModalMessage("Role successfully assigned!");
     } catch {
       setShowEditConfirm(false);
       setModalTitle("Error");
@@ -210,14 +210,14 @@ const ManageRolesPage = () => {
           Manage Roles
         </Link>
       </h1>
-      <div className="min-w-[1100px] flex items-center justify-center p-6">
-        <div className="w-full max-w-[996px] bg-white border border-black font-sans">
+      <div className="items-center justify-center p-6 ml-60 mr-60">
+        <div className="bg-white border border-black font-sans">
           {/* Volunteer Table (populated by `/api/users`) */}
           <table className="w-full border-white-700 text-[#234254]">
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
                 <th className="py-3 px-5 font-normal"></th>
-                <th className="py-3 pl-29 px-4 font-normal">Name</th>
+                <th className="py-3 pl-5 px-4 font-normal">Name</th>
                 <th className="py-3 px-4 font-normal">Role</th>
                 <th className="py-3 px-4 font-normal">Email</th>
                 <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
@@ -262,36 +262,38 @@ const ManageRolesPage = () => {
               })}
             </tbody>
           </table>
+        </div>
 
-          {/* Selection Buttons */}
-          {anySelected && (
-            <div className="border-t border-gray-200 bg-gray-50 w-full">
-              <div className="flex justify-between px-6 py-4">
-                <div>
-                  <Button
-                    label="Message"
-                    altStyle="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <div className="mr-[5px]">
-                    <Button
-                      label="Change Role"
-                      altStyle="bg-gray-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
-                      onClick={handleEditConfirm}
-                    />
-                  </div>
-                  <div>
-                    <Button
-                      label="Remove"
-                      altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
-                      onClick={handleDeleteConfirm}
-                    />
-                  </div>
-                </div>
-              </div>
+        <div className="border-t w-full">
+          <div className="flex justify-between py-6">
+            <div className="flex justify-between gap-4">
+              <Button
+                label="Message"
+                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+              />
+              <Button
+                label="Copy to Clipboard"
+                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+              />
+              <Button
+                label="Save as CSV"
+                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+              />
             </div>
-          )}
+            <div className="flex justify-between gap-4">
+              <Button
+                label="Change Role"
+                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                onClick={handleEditConfirm}
+              />
+
+              <Button
+                label="Remove"
+                altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                onClick={handleDeleteConfirm}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

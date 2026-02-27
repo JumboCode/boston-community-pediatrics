@@ -1,10 +1,7 @@
 // src/app/api/admin/users/[id]/role/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import {
-  adminUpdateUserRole,
-  updateUserProfile,
-  getUserById
-} from "./controller";
+import { adminUpdateUserRole } from "./controller";
+import { getUserById } from "../../../../users/controller"
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
@@ -21,6 +18,10 @@ export async function PATCH(req: NextRequest) {
     if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (currentUser.id == id) {
+      return NextResponse.json({ error: "Cannot change own role" }, { status: 403 });
+    }
+
     const updatedUser = await adminUpdateUserRole(id, role);
     if (!updatedUser) {
       return NextResponse.json({ error: "User not updated" }, { status: 404 });
