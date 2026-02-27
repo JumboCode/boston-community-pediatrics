@@ -154,17 +154,14 @@ const ManageRolesPage = () => {
 
     try {
       const editPromises = volunteersToEdit.map(async (vol) => {
-        const res = await fetch(
-          `/api/admin/users/${vol.userId}/role`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: vol.userId,
-              role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN",
-            }),
-          }
-        );
+        const res = await fetch(`/api/admin/users/${vol.userId}/role`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: vol.userId,
+            role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN",
+          }),
+        });
 
         if (!res.ok) {
           throw new Error(`Failed to update role`);
@@ -201,19 +198,19 @@ const ManageRolesPage = () => {
 
   return (
     <>
-      <h1 className="text-[16px] font-semibold mb-6 text-[#234254]">
-        <Link href="/" className="hover:underline">
-          Home
-        </Link>
-        {" / "}
-        <Link href="/admin/manage" className="hover:underline">
-          Manage Roles
-        </Link>
-      </h1>
       <div className="items-center justify-center p-6 ml-60 mr-60">
+        <h1 className="text-[16px] font-semibold mb-6 text-bcp-blue">
+          <Link href="/" className="hover:underline">
+            Home
+          </Link>
+          {" / "}
+          <Link href="/admin/manage" className="hover:underline">
+            Manage Roles
+          </Link>
+        </h1>
         <div className="bg-white border border-black font-sans">
           {/* Volunteer Table (populated by `/api/users`) */}
-          <table className="w-full border-white-700 text-[#234254]">
+          <table className="w-full border-white-700 text-bcp-blue">
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
                 <th className="py-3 px-5 font-normal"></th>
@@ -254,7 +251,7 @@ const ManageRolesPage = () => {
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.userId)}
-                        className="w-5 h-5 accent-[#234254] cursor-pointer"
+                        className="w-5 h-5 accent-bcp-blue cursor-pointer"
                       />
                     </td>
                   </tr>
@@ -269,27 +266,27 @@ const ManageRolesPage = () => {
             <div className="flex justify-between gap-4">
               <Button
                 label="Message"
-                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-purple-400"
               />
               <Button
                 label="Copy to Clipboard"
-                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
               />
               <Button
                 label="Save as CSV"
-                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
               />
             </div>
             <div className="flex justify-between gap-4">
               <Button
                 label="Change Role"
-                altStyle="bg-F4F4F4-300 text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
                 onClick={handleEditConfirm}
               />
 
               <Button
                 label="Remove"
-                altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
                 onClick={handleDeleteConfirm}
               />
             </div>
