@@ -208,7 +208,7 @@ const ManageRolesPage = () => {
             Manage Roles
           </Link>
         </h1>
-        <div className="bg-white border border-black font-sans">
+        <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
           {/* Volunteer Table (populated by `/api/users`) */}
           <table className="w-full border-white-700 text-bcp-blue">
             <thead className="bg-white sticky top-0 z-10">
@@ -266,7 +266,7 @@ const ManageRolesPage = () => {
             <div className="flex justify-between gap-4">
               <Button
                 label="Message"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-purple-400"
+                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
               />
               <Button
                 label="Copy to Clipboard"
