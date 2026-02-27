@@ -12,9 +12,17 @@ interface ModalProps {
   message?: string;
   onClose: () => void;
   buttons?: ModalButton[];
+  description?: string;
 }
 
-const Modal = ({ open, title, message, onClose, buttons = [] }: ModalProps) => {
+const Modal = ({
+  open,
+  title,
+  message,
+  onClose,
+  description,
+  buttons = [],
+}: ModalProps) => {
   if (!open) return null;
 
   const variantStyles = {
@@ -34,13 +42,21 @@ const Modal = ({ open, title, message, onClose, buttons = [] }: ModalProps) => {
       >
         {title && <h2 className="text-4xl mb-4">{title}</h2>}
 
+        {description && (
+          <p className="text-xl text-gray-700 mb-2 mt-1 whitespace-pre-line">
+            {description}
+          </p>
+        )}
+
         {message && (
           <p className="text-xl text-gray-700 mb-6 mt-4">{message}</p>
         )}
 
         {/* BUTTONS */}
         {buttons.length > 0 && (
-          <div className={`flex gap-4 ${message ? "mt-5" : "mt-13"}`}>
+          <div
+            className={`flex gap-4 ${message || description ? "mt-5" : "mt-13"}`}
+          >
             {buttons.map((btn, i) => (
               <button
                 key={i}

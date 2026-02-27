@@ -1,6 +1,3 @@
-// TODO: are we supposed to delete this or add auth
-// cuz we just use sendEmail directly in the email functionsw
-
 import { sendEmail } from "@/lib/email/resend";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
@@ -46,9 +43,19 @@ export async function POST(req: Request) {
     return Response.json({ ok: true, ...result });
   } catch (err) {
     console.error(err);
-    return Response.json(
-      { error: (err as Error)?.message ?? "Invalid request or email failed" },
-      { status: 500 }
-    );
+
+    if (err instanceof z.ZodError) {
+      return Response.json(
+        { error: "Invalid request", issues: err.issues },
+        { status: 400 }
+      );
+    }
+
+    const message =
+      (err as Error)?.message ?? "Invalid request or email failed";
+
+    const status = /daily email sending quota/i.test(message) ? 429 : 500;
+
+    return Response.json({ error: message }, { status });
   }
 }

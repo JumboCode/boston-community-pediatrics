@@ -22,6 +22,7 @@ export default function EmailPage() {
 
   // Handles any errors when trying to send an email
   const [emailError, setEmailError] = useState<Record<string, string>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const clearFormError = (key: string) =>
     setEmailError((prev) => {
       const next = { ...prev };
@@ -191,6 +192,7 @@ export default function EmailPage() {
     setSending(true);
     setSuccessModal(null);
     setErrorModal(null);
+    setErrorMessage(null);
 
     try {
       const res = await fetch("/api/email", {
@@ -209,8 +211,8 @@ export default function EmailPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         console.error("Email API error:", body);
-        throw new Error(body?.error ?? "Email failed to send");
-}
+        throw new Error(body?.error ?? `Email failed to send (${res.status})`);
+      }
 
       // Shows pop up on success and erases details
       setSelectedIds(new Set());
@@ -222,6 +224,8 @@ export default function EmailPage() {
       setShowModal(true);
     } catch (err) {
       console.error(err);
+      const msg = err instanceof Error ? err.message : "Email failed to send";
+      setErrorMessage(msg);
       setErrorModal("err");
       setShowModal(true);
     } finally {
@@ -435,7 +439,6 @@ export default function EmailPage() {
           </div>
         </div>{" "}
       </form>
-
       {/* Success */}
       <Modal
         open={showModal && successModal === "ok"}
@@ -449,11 +452,11 @@ export default function EmailPage() {
           },
         ]}
       />
-
       {/* Failure */}
       <Modal
         open={showModal && errorModal === "err"}
         title="Email Failed to Send"
+        description={errorMessage ?? undefined}
         onClose={() => setShowModal(false)}
         buttons={[
           {
