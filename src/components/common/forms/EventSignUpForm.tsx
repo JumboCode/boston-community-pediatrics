@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import blankProfile from "@/assets/icons/Group 1.svg";
 
 // --- Types ---
 interface Guest {
@@ -23,6 +25,7 @@ interface EventSignUpFormProps {
     emailAddress: string;
     phoneNumber: string;
     dateOfBirth?: string;
+    profileImage?: string | null;
   };
   positionData: {
     id: string;
@@ -48,23 +51,21 @@ export default function EventSignUpForm({
   const router = useRouter();
 
   const [guests, setGuests] = useState<Guest[]>(initialGuests);
-  const [registrationId, setRegistrationId] = useState<string | null>(
-    initialRegistrationId
-  );
-
+  const [registrationId, setRegistrationId] = useState<string | null>(initialRegistrationId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isWaitlisted, setIsWaitlisted] = useState(false);
-  const [waitlistMessage, setWaitlistMessage] = useState(
-    "We’ll keep you updated!"
-  );
+  const [waitlistMessage, setWaitlistMessage] = useState("We'll keep you updated!");
+
+  // Use the URL directly — no getPublicURL needed
+  const profileImageSrc = userData.profileImage ?? blankProfile;
 
   useEffect(() => {
     if (initialGuests.length > 0) {
       const sanitizedGuests = initialGuests.map((g) => ({
         ...g,
-        email: g.email ?? "", // Convert null to empty string
+        email: g.email ?? "",
         phoneNumber: g.phoneNumber ?? "",
         relationship: g.relationship ?? "",
         comments: g.comments ?? "",
@@ -77,7 +78,6 @@ export default function EventSignUpForm({
     if (initialRegistrationId) setRegistrationId(initialRegistrationId);
   }, [initialGuests, initialRegistrationId]);
 
-  // --- Guest Handlers ---
   const addGuest = () => {
     const newGuest: Guest = {
       id: crypto.randomUUID(),
@@ -90,7 +90,6 @@ export default function EventSignUpForm({
       comments: "",
     };
     setGuests([...guests, newGuest]);
-    // Clear error if they add a guest (assuming they might be fixing a "too few guests" issue, though not applicable here)
     setErrorMessage(null);
   };
 
@@ -103,18 +102,14 @@ export default function EventSignUpForm({
     setGuests(guests.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   };
 
-  // --- API Submission ---
   const handleSignUp = async () => {
-    setErrorMessage(null); // Reset errors on new submit
+    setErrorMessage(null);
 
-    // Simple validation check
     const isValid = guests.every(
       (g) => g.firstName && g.lastName && g.dateOfBirth && g.relationship
     );
     if (!isValid) {
-      setErrorMessage(
-        "Please fill in all required fields for guests (Name, DOB, Relationship)."
-      );
+      setErrorMessage("Please fill in all required fields for guests (Name, DOB, Relationship).");
       window.scrollTo(0, 0);
       return;
     }
@@ -141,7 +136,6 @@ export default function EventSignUpForm({
 
       const responseData = await res.json();
 
-      // 1. Handle Errors (400, 409, 500)
       if (!res.ok) {
         setErrorMessage(responseData.error || "An unexpected error occurred.");
         window.scrollTo(0, 0);
@@ -149,10 +143,7 @@ export default function EventSignUpForm({
         return;
       }
 
-      // 2. Handle Success Scenarios
       const record = responseData.data;
-      // --- NEW CODE (FIX) ---
-      // Always update the ID because switching tables (Waitlist <-> Signup) changes the ID
       if (record?.id) {
         setRegistrationId(record.id);
       }
@@ -160,19 +151,12 @@ export default function EventSignUpForm({
       if (responseData.status === "waitlisted") {
         setIsWaitlisted(true);
         setIsSuccess(false);
-        setWaitlistMessage(
-          "You are on the waitlist. We will notify you if a spot opens up."
-        );
+        setWaitlistMessage("You are on the waitlist. We will notify you if a spot opens up.");
       } else if (responseData.status === "moved_to_waitlist") {
-        // This is the specific PUT scenario
         setIsWaitlisted(true);
         setIsSuccess(false);
-        setWaitlistMessage(
-          responseData.message ||
-            "Your update exceeded capacity, so you have been moved to the waitlist."
-        );
+        setWaitlistMessage(responseData.message || "Your update exceeded capacity, so you have been moved to the waitlist.");
       } else {
-        // Registered
         setIsSuccess(true);
         setIsWaitlisted(false);
       }
@@ -187,145 +171,66 @@ export default function EventSignUpForm({
     }
   };
 
-  // --- WAITLIST VIEW COMPONENT ---
   if (isWaitlisted) {
     return (
       <div className="bg-[#5a718c] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
         <h2 className="text-3xl font-bold mb-2">Waitlist Confirmed</h2>
         <p className="text-blue-100 mb-8 text-lg">{waitlistMessage}</p>
-
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
-          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
-            EVENT
-          </div>
+          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">EVENT</div>
           <div className="space-y-1 text-sm flex-1">
-            <p>
-              <span className="font-bold text-gray-900">Event:</span>{" "}
-              {eventName}
-            </p>
-            <p>
-              <span className="font-bold text-gray-900">Date:</span> {eventDate}
-            </p>
-            <p>
-              <span className="font-bold text-gray-900">Time:</span> {eventTime}
-            </p>
-            <p>
-              <span className="font-bold text-gray-900">Total Group:</span>{" "}
-              {1 + guests.length} (You + {guests.length} guests)
-            </p>
+            <p><span className="font-bold text-gray-900">Event:</span> {eventName}</p>
+            <p><span className="font-bold text-gray-900">Date:</span> {eventDate}</p>
+            <p><span className="font-bold text-gray-900">Time:</span> {eventTime}</p>
+            <p><span className="font-bold text-gray-900">Total Group:</span> {1 + guests.length} (You + {guests.length} guests)</p>
           </div>
         </div>
-
         <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setIsWaitlisted(false)}
-            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
-          >
-            Edit details
-          </button>
-          <button
-            onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
-          >
-            Return to Home
-          </button>
+          <button onClick={() => setIsWaitlisted(false)} className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm">Edit details</button>
+          <button onClick={() => router.push("/")} className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm">Return to Home</button>
         </div>
       </div>
     );
   }
 
-  // --- SUCCESS VIEW COMPONENT ---
   if (isSuccess) {
     return (
       <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
         <h2 className="text-3xl font-bold mb-2">Registration Confirmed!</h2>
-        <p className="text-blue-100 mb-8">
-          A confirmation has been sent to your email.
-        </p>
-
+        <p className="text-blue-100 mb-8">A confirmation has been sent to your email.</p>
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
-          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
-            EVENT
-          </div>
+          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">EVENT</div>
           <div className="space-y-1 text-sm flex-1">
-            <p>
-              <span className="font-bold text-gray-900">Event:</span>{" "}
-              {eventName}
-            </p>
-            <p>
-              <span className="font-bold text-gray-900">Date:</span> {eventDate}
-            </p>
-            <p>
-              <span className="font-bold text-gray-900">Time:</span> {eventTime}
-            </p>
-            <p>
-              <span className="font-bold text-gray-900">Total Group:</span>{" "}
-              {1 + guests.length} (You + {guests.length} guests)
-            </p>
+            <p><span className="font-bold text-gray-900">Event:</span> {eventName}</p>
+            <p><span className="font-bold text-gray-900">Date:</span> {eventDate}</p>
+            <p><span className="font-bold text-gray-900">Time:</span> {eventTime}</p>
+            <p><span className="font-bold text-gray-900">Total Group:</span> {1 + guests.length} (You + {guests.length} guests)</p>
           </div>
         </div>
-
         <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setIsSuccess(false)}
-            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm"
-          >
-            Edit details
-          </button>
-          <button
-            onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
-          >
-            Return to Home
-          </button>
+          <button onClick={() => setIsSuccess(false)} className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm">Edit details</button>
+          <button onClick={() => router.push("/")} className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm">Return to Home</button>
         </div>
       </div>
     );
   }
 
-  // --- FORM VIEW (Standard) ---
   return (
     <div className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 w-full max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-center text-[#1e293b] mb-8">
-        {eventName}
-      </h1>
+      <h1 className="text-3xl font-bold text-center text-[#1e293b] mb-8">{eventName}</h1>
 
-      {/* ERROR ALERT BANNER */}
       {errorMessage && (
         <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-red-600 shrink-0 mt-0.5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-red-800">
-              There was a problem
-            </h3>
+            <h3 className="text-sm font-medium text-red-800">There was a problem</h3>
             <p className="text-sm text-red-700 mt-1">{errorMessage}</p>
           </div>
-          <button
-            onClick={() => setErrorMessage(null)}
-            className="text-red-500 hover:text-red-700"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
+          <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </button>
         </div>
@@ -335,177 +240,78 @@ export default function EventSignUpForm({
 
       <div className="border border-gray-300 rounded-lg p-6 mb-8">
         <div className="flex flex-col sm:flex-row gap-6 mb-6">
-          <div className="w-24 h-24 bg-gray-200 rounded-sm shrink-0" />
+          <Image
+            src={profileImageSrc}
+            alt="Profile"
+            width={96}
+            height={96}
+            className="w-24 h-24 rounded-sm object-cover shrink-0"
+            unoptimized={typeof profileImageSrc === "string" && profileImageSrc.startsWith("http")}
+          />
           <div className="space-y-1.5 text-sm text-gray-800 pt-1">
-            <p>
-              <span className="font-semibold text-gray-900">Name:</span>{" "}
-              {userData.firstName} {userData.lastName}
-            </p>
-            <p>
-              <span className="font-semibold text-gray-900">Email:</span>{" "}
-              {userData.emailAddress}
-            </p>
-            <p>
-              <span className="font-semibold text-gray-900">Phone:</span>{" "}
-              {userData.phoneNumber}
-            </p>
+            <p><span className="font-semibold text-gray-900">Name:</span> {userData.firstName} {userData.lastName}</p>
+            <p><span className="font-semibold text-gray-900">Email:</span> {userData.emailAddress}</p>
+            <p><span className="font-semibold text-gray-900">Phone:</span> {userData.phoneNumber}</p>
           </div>
         </div>
       </div>
 
       <div className="mb-10 text-sm">
-        <p className="mb-1">
-          You are currently signing up for{" "}
-          <span className="font-bold">{positionData?.position}</span>.
-        </p>
-        <p className="text-gray-600">
-          <span className="font-bold text-gray-900">Description:</span>{" "}
-          {positionData?.description}
-        </p>
+        <p className="mb-1">You are currently signing up for <span className="font-bold">{positionData?.position}</span>.</p>
+        <p className="text-gray-600"><span className="font-bold text-gray-900">Description:</span> {positionData?.description}</p>
       </div>
 
       <div className="space-y-10 mb-10">
         {guests.map((guest, index) => (
-          <div
-            key={guest.id}
-            className="animate-in fade-in slide-in-from-bottom-4 duration-300"
-          >
+          <div key={guest.id} className="animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="flex items-center gap-4 mb-6">
               <div className="h-px bg-gray-300 flex-1"></div>
-              <span className="font-bold text-lg text-gray-900">
-                Guest {index + 1}
-              </span>
+              <span className="font-bold text-lg text-gray-900">Guest {index + 1}</span>
               <div className="h-px bg-gray-300 flex-1"></div>
             </div>
 
             <div className="space-y-4">
-              {/* SPLIT FIRST/LAST NAME */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                    value={guest.firstName}
-                    onChange={(e) =>
-                      updateGuest(guest.id, "firstName", e.target.value)
-                    }
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
+                  <input type="text" required className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none" value={guest.firstName} onChange={(e) => updateGuest(guest.id, "firstName", e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                    value={guest.lastName}
-                    onChange={(e) =>
-                      updateGuest(guest.id, "lastName", e.target.value)
-                    }
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name <span className="text-red-500">*</span></label>
+                  <input type="text" required className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none" value={guest.lastName} onChange={(e) => updateGuest(guest.id, "lastName", e.target.value)} />
                 </div>
               </div>
 
-              {/* REQUIRED DOB and RELATIONSHIP */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Participant DOB <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none text-gray-700"
-                    value={guest.dateOfBirth}
-                    onChange={(e) =>
-                      updateGuest(guest.id, "dateOfBirth", e.target.value)
-                    }
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Participant DOB <span className="text-red-500">*</span></label>
+                  <input type="date" required className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none text-gray-700" value={guest.dateOfBirth} onChange={(e) => updateGuest(guest.id, "dateOfBirth", e.target.value)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Relationship <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Spouse, Child"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                    value={guest.relationship}
-                    onChange={(e) =>
-                      updateGuest(guest.id, "relationship", e.target.value)
-                    }
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Relationship <span className="text-red-500">*</span></label>
+                  <input type="text" required placeholder="e.g. Spouse, Child" className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none" value={guest.relationship} onChange={(e) => updateGuest(guest.id, "relationship", e.target.value)} />
                 </div>
               </div>
 
-              {/* OPTIONAL FIELDS */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email (optional)
-                </label>
-                <input
-                  type="email"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                  value={guest.email || ""}
-                  onChange={(e) =>
-                    updateGuest(guest.id, "email", e.target.value)
-                  }
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                <input type="email" className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none" value={guest.email || ""} onChange={(e) => updateGuest(guest.id, "email", e.target.value)} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number (optional)
-                </label>
-                <input
-                  type="tel"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                  value={guest.phoneNumber || ""}
-                  onChange={(e) =>
-                    updateGuest(guest.id, "phoneNumber", e.target.value)
-                  }
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (optional)</label>
+                <input type="tel" className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none" value={guest.phoneNumber || ""} onChange={(e) => updateGuest(guest.id, "phoneNumber", e.target.value)} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Additional comments
-                </label>
-                <textarea
-                  rows={4}
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none resize-none"
-                  value={guest.comments || ""}
-                  onChange={(e) =>
-                    updateGuest(guest.id, "comments", e.target.value)
-                  }
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional comments</label>
+                <textarea rows={4} className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none resize-none" value={guest.comments || ""} onChange={(e) => updateGuest(guest.id, "comments", e.target.value)} />
               </div>
 
               <div className="flex justify-end pt-2">
-                <button
-                  onClick={() => removeGuest(guest.id)}
-                  className="text-gray-500 text-sm hover:text-red-600 flex items-center gap-1 border border-gray-200 px-3 py-1 rounded hover:border-red-200 transition"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <button onClick={() => removeGuest(guest.id)} className="text-gray-500 text-sm hover:text-red-600 flex items-center gap-1 border border-gray-200 px-3 py-1 rounded hover:border-red-200 transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                   </svg>
                   Remove participant
                 </button>
@@ -515,33 +321,14 @@ export default function EventSignUpForm({
         ))}
       </div>
 
-      <button
-        onClick={addGuest}
-        className="w-full py-3 mb-8 border border-gray-400 rounded text-gray-800 font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-      >
+      <button onClick={addGuest} className="w-full py-3 mb-8 border border-gray-400 rounded text-gray-800 font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
         + Add a guest
       </button>
 
       <div className="flex items-center justify-between gap-4">
-        <button
-          onClick={() => router.back()}
-          className="w-full py-3 border border-gray-800 rounded text-gray-900 font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
-
-        <button
-          onClick={handleSignUp}
-          disabled={isSubmitting}
-          className="w-full py-3 bg-light-bcp-blue text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#35566b] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {isSubmitting
-            ? registrationId
-              ? "Updating..."
-              : "Signing up..."
-            : registrationId
-              ? "Update Registration"
-              : "Sign Up"}
+        <button onClick={() => router.back()} className="w-full py-3 border border-gray-800 rounded text-gray-900 font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition-colors">Cancel</button>
+        <button onClick={handleSignUp} disabled={isSubmitting} className="w-full py-3 bg-light-bcp-blue text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#35566b] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
+          {isSubmitting ? (registrationId ? "Updating..." : "Signing up...") : (registrationId ? "Update Registration" : "Sign Up")}
         </button>
       </div>
     </div>

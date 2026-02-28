@@ -76,11 +76,13 @@ function AdminNavBar() {
               <span className="text-white text-sm relative top-[1.5px]">
                 Admin
               </span>
-              <Image
-                src={blankProfile}
-                alt="Placeholder User"
-                className="w-8 h-8 rounded-full"
-              />
+              <Link href="/profile">
+                <Image
+                  src={blankProfile}
+                  alt="Placeholder User"
+                  className="w-8 h-8 rounded-full"
+                />
+              </Link>
             </li>
           </ul>
         </li>
