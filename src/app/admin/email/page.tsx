@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
+import { BaseLayoutTemplate } from "@/lib/email/templates/BaseLayout";
 
 interface UserProps {
   id: string;
@@ -350,7 +351,7 @@ export default function EmailPage() {
             </label>
             <input
               name="from"
-              id="from"
+              id="from" 
               required
               value={from}
               onChange={(e) => setFrom(e.target.value)}
@@ -383,7 +384,7 @@ export default function EmailPage() {
               }`}
             />
           </div>
-
+              
           <div className="flex flex-row items-start justify-between w-[714px]">
             <label className="text-base font-normal text-medium-black ">
               Message
@@ -461,6 +462,20 @@ export default function EmailPage() {
         buttons={[
           {
             label: "Return",
+            onClick: () => setShowModal(false),
+            variant: "danger",
+          },
+        ]}
+      />
+
+      {/* Email Limit */}
+      <Modal
+        open={showModal && errorModal === "err"}
+        title="Daily Email Limit Reached"
+        onClose={() => setShowModal(false)}
+        buttons={[
+          {
+            label: "Copy Email Addresses",
             onClick: () => setShowModal(false),
             variant: "danger",
           },

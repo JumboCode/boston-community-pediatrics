@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
 import { sendWaitlisted } from "@/lib/email/sendWaitlisted";
+import { sendRemoved } from "@/lib/email/sendRemoved";
 
 // --- Configuration ---
 const MAX_GUESTS = 20;
@@ -105,7 +106,6 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
   for (const email of emails) {
     try {
       // TODO: hardcoded until we verify domain in resend
-      // const to = "bcpjumbocode@gmail.com";
       const to = email.user.emailAddress;
       if (!to) continue;
 
@@ -135,10 +135,25 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           waitlistPosition: email.waitlistPosition,
         });
       } else if (email.kind === "removed") {
-        // TODO: implement helper later for cancellation/removal emails
+          await sendRemoved({
+          to,
+          firstName: email.user.firstName,
+          eventName: email.position.event.name,
+          position: email.position.position,
+          date: fmtDate(email.position.date),
+          startTime: fmtTime(email.position.startTime),
+          endTime: fmtTime(email.position.endTime),
+          location: formatLocation(email.position),
+        });
       }
     } catch (e) {
+      console.log("REMOVED EMAIL DEBUG:", {
+      kind: email.kind,
+      firstName: email.user.firstName,
+      email: email.user.emailAddress,
+    });
       console.error("Email failed (continuing anyway):", e);
+      
     }
   }
 }
@@ -799,6 +814,8 @@ export async function DELETE(req: NextRequest) {
 
         if (!positionDetails) throw new Error("Position data missing");
 
+
+        // 2/27 might be some logic issue here template created but no email sent
         // Optional: queue removal/cancellation email (will no-op until helper exists)
         emails.push({
           kind: "removed",
@@ -922,6 +939,7 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (waitlistEntry) {
+        // 2/27 might be some logic issue here template created but no email sent
         // Optional: queue removal email (will no-op until helper exists)
         emails.push({
           kind: "removed",
