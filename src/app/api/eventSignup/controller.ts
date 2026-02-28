@@ -86,6 +86,7 @@ export interface PublicUser {
   signupId: string;
   firstName: string;
   lastName: string;
+  profileImage: string | null;
   guests: PublicGuest[];
 }
 
@@ -101,6 +102,7 @@ function publicUser(s: { id: string; user: User; guests: Guest[] }): PublicUser 
     signupId: s.id,
     firstName: s.user.firstName,
     lastName: s.user.lastName,
+    profileImage: s.user.profileImage ?? null,
     guests: s.guests.map((g) => ({
       id: g.id,
       firstName: g.firstName,
