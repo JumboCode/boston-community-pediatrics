@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import blankProfile from "@/assets/icons/empty-profile-picture.svg";
+import blankProfile from "@/assets/icons/Group 1.svg";
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();

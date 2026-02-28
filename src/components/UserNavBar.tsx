@@ -1,6 +1,6 @@
 "use client";
 import bcp_logo from "@/assets/icons/BCP.svg";
-import blankProfile from "@/assets/icons/empty-profile-picture.svg";
+import blankProfile from "@/assets/icons/Group 1.svg";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";

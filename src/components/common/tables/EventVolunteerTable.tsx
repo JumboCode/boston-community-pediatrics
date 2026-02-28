@@ -1,5 +1,5 @@
 import Image from "next/image";
-import defaultPfp from "@/assets/icons/empty-profile-picture.svg";
+import defaultPfp from "@/assets/icons/Group 1.svg";
 import { getUsersByPositionId } from "@/app/api/eventSignup/controller";
 import type { PublicUser } from "@/app/api/eventSignup/controller";
 import RegisterButton from "../buttons/RegisterButton";
