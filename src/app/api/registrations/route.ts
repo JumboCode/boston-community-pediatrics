@@ -50,6 +50,7 @@ const formatLocation = (p: {
 type PendingEmail =
   | {
       kind: "registered";
+      wasWaitlisted?: boolean;
       user: { firstName: string; emailAddress: string | null };
       position: {
         position: string;
@@ -85,7 +86,8 @@ type PendingEmail =
       waitlistPosition: number;
     }
   | {
-      kind: "removed"; // new template helper needed
+      kind: "removed";
+      wasWaitlisted?: boolean;
       user: { firstName: string; emailAddress: string | null };
       position: {
         position: string;
@@ -99,13 +101,11 @@ type PendingEmail =
         zipCode: string;
         event: { name: string };
       };
-      wasWaitlisted: boolean;
     };
 
 async function sendQueuedEmails(emails: PendingEmail[]) {
   for (const email of emails) {
     try {
-      // TODO: hardcoded until we verify domain in resend
       const to = email.user.emailAddress;
       if (!to) continue;
 
@@ -120,6 +120,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           endTime: fmtTime(email.position.endTime),
           filledSlots: email.filledSlotsAfter,
           location: formatLocation(email.position),
+          wasWaitlisted: email.wasWaitlisted ?? false,
         });
       } else if (email.kind === "waitlisted") {
         await sendWaitlisted({
@@ -144,14 +145,10 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           startTime: fmtTime(email.position.startTime),
           endTime: fmtTime(email.position.endTime),
           location: formatLocation(email.position),
+          wasWaitlisted: email.wasWaitlisted ?? false,
         });
       }
     } catch (e) {
-      console.log("REMOVED EMAIL DEBUG:", {
-      kind: email.kind,
-      firstName: email.user.firstName,
-      email: email.user.emailAddress,
-    });
       console.error("Email failed (continuing anyway):", e);
       
     }
@@ -221,7 +218,17 @@ export async function POST(req: NextRequest) {
       });
       if (!position) throw new Error("Position not found");
 
-      const isFull = position.filledSlots + spotsNeeded > position.totalSlots;
+      // Changed because having only filledSlots wasn't updating correctly
+      const actualFilled = await tx.eventSignup.findMany({
+        where: { positionId },
+        select: { guests: { select: { id: true } } },
+      });
+      const actualFilledCount = actualFilled.reduce(
+        (sum, s) => sum + 1 + s.guests.length,
+        0
+      );
+
+      const isFull = actualFilledCount + spotsNeeded > position.totalSlots;
 
       // 4. SCENARIO A: WAITLIST
       if (isFull) {
@@ -573,6 +580,7 @@ export async function PUT(req: NextRequest) {
 
           emails.push({
             kind: "registered",
+            wasWaitlisted: true,
             user,
             position,
             filledSlotsAfter,
@@ -814,14 +822,12 @@ export async function DELETE(req: NextRequest) {
 
         if (!positionDetails) throw new Error("Position data missing");
 
-
-        // 2/27 might be some logic issue here template created but no email sent
         // Optional: queue removal/cancellation email (will no-op until helper exists)
         emails.push({
           kind: "removed",
+          wasWaitlisted: false,
           user: signup.user,
           position: positionDetails,
-          wasWaitlisted: false,
         });
 
         const slotsFreed = 1 + signup.guests.length;
@@ -895,6 +901,7 @@ export async function DELETE(req: NextRequest) {
             // Queue promotion email
             emails.push({
               kind: "registered",
+              wasWaitlisted: true,
               user: candidate.user,
               position: {
                 ...positionDetails,
@@ -939,13 +946,12 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (waitlistEntry) {
-        // 2/27 might be some logic issue here template created but no email sent
         // Optional: queue removal email (will no-op until helper exists)
         emails.push({
           kind: "removed",
+          wasWaitlisted: true,
           user: waitlistEntry.user,
           position: waitlistEntry.position,
-          wasWaitlisted: true,
         });
 
         await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });

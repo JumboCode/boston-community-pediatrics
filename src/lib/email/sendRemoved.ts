@@ -10,12 +10,15 @@ export type RemovedFromEventArgs = {
   startTime: string;
   endTime: string;
   location: string;
+  wasWaitlisted?: boolean;
 };
 
 export async function sendRemoved(args: RemovedFromEventArgs) {
   return sendEmail({
     recipients: [args.to],
-    subject: `REMOVED: ${args.eventName}`,
+    subject: args.wasWaitlisted
+    ? `Waitlist Position Removed: ${args.eventName}`
+    : `Removed: ${args.eventName}`,
     type: "removed",
     data: { 
       firstName: args.firstName,

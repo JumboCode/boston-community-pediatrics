@@ -1,4 +1,4 @@
-export type EmailType = "signup" | "waitlist" | "removed"|"other";
+export type EmailType = "signup" | "waitlist" | "removed" | "other";
 
 export type EmailData = {
   firstName?: string;

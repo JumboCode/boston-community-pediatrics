@@ -11,12 +11,15 @@ export type SignupConfirmedArgs = {
   endTime: string;
   filledSlots: number;
   location: string;
+  wasWaitlisted?: boolean;
 };
 
 export async function sendSignupConfirmed(args: SignupConfirmedArgs) {
   return sendEmail({
     recipients: [args.to],
-    subject: `Confirmed: ${args.eventName}`,
+    subject: args.wasWaitlisted
+    ? `Waitlist Status Update: Now Confirmed For ${args.eventName}`
+    : `Confirmed: ${args.eventName}`,
     type: "signup",
     data: {
       firstName: args.firstName,

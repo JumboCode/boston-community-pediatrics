@@ -23,7 +23,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
     endTime,
     description,
     totalSpots,
-    filledSpots,
+    filledSpots, // Consider removing this since only a constant
     positionId,
   } = props;
 
@@ -82,7 +82,9 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
         className={`border-b border-gray-300 w-[250px] transition-all duration-300 p-[20px]`}
       >
         <div className="text-bcp-blue text-[22px] font-medium font-avenir text-right">
-          {filledSpots}/{totalSpots} Spots Filled
+          {/* Changed from filledSlots to volunteers.length.
+              In my defense we made this waaay before */}
+          {volunteers.length}/{totalSpots} Spots Filled
         </div>
 
         {error && (

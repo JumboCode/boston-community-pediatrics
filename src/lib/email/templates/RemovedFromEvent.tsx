@@ -73,20 +73,22 @@ export function RemovedTemplate({
               className="p-2"
               style={{ verticalAlign: "top", paddingTop: "16px" }}
             >
-              <Text className="text-sm font-semibold leading-4 m-1">
+              <Text className="text-sm font-semibold leading-4 mt-1 mb-2">
                 {eventName}
               </Text>
-              <Text className="text-sm leading-4 m-1">{position}</Text>
+              <Text className="text-sm leading-4 mt-3 mb-1">{position}</Text>
+
               {/* <Text className="text-sm leading-4 m-1">
                 Participants: {filledSlots}
               </Text> */}
+              
               <Text
-                className="text-sm leading-4 m-1"
+                className="text-sm leading-4 mt-3 mb-1"
                 style={{ whiteSpace: "nowrap" }}
               >
                 {date} at {startTime} - {endTime}
               </Text>
-              <Text className="text-sm leading-4 m-1">{location}</Text>
+              <Text className="text-sm leading-4 mt-3 mb-0">{location}</Text>
             </Column>
           </Row>
         </Container>

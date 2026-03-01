@@ -36,7 +36,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     startTime,
     endTime,
     description,
-    filledSlots,
+    filledSlots, // Consider removing this since only a constant
     totalSlots,
     location,
     positionId,
@@ -190,7 +190,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        const res = await fetch(`/api/eventSignup?id=${signUpId}`, {
+        // Changed from eventSignup/waitlist to registrations which worked for 
+        // sending emails, but just in case something breaks here is a comment :D
+        const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
         });
 
@@ -225,7 +227,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueWaitlistIds.map(async (waitlistId) => {
-        const res = await fetch(`/api/waitlist?id=${waitlistId}`, {
+        const res = await fetch(`/api/registrations?id=${waitlistId}`, {
           method: "DELETE",
         });
 
@@ -365,14 +367,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="flex flex-row items-center gap-10 mb-1 px-5">
             <div className="w-[280px] block">
               <p className="text-[24px] w-[280px] block">
-                {filledSlots}/{totalSlots} Spots Filled
+                {/* Changed from filledSlots to volunteers.length.
+                    In my defense we made this waaay before */}
+                {volunteers.length}/{totalSlots} Spots Filled 
               </p>
             </div>
             <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
                 className="bg-light-bcp-blue h-4 rounded-full"
                 style={{
-                  width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
+                  width: `${totalSlots ? (volunteers.length / totalSlots) * 100 : 0}%`,
                 }}
               ></div>
             </div>
