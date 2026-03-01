@@ -14,6 +14,37 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
 
+  // this cuz we just want ids for send email stuff
+  const list = searchParams.get("list");
+  if (list === "1") {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (currentUser.role !== UserRole.ADMIN) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const users = await getUsers();
+
+    // return minimal fields only
+    const minimal = users.map((u) => ({
+      id: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      emailAddress: u.emailAddress,
+    }));
+
+    minimal.sort((a, b) => {
+      const al = a.lastName.toLowerCase();
+      const bl = b.lastName.toLowerCase();
+      if (al !== bl) return al.localeCompare(bl);
+      return a.firstName.toLowerCase().localeCompare(b.firstName.toLowerCase());
+    });
+
+    return NextResponse.json(minimal, { status: 200 });
+  }
+
   if (id) {
     try {
       const user = await getUserById(id);
@@ -42,6 +73,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // hmm TODO should this be admin only aswell ?
   try {
     const users = await getUsers();
     if (!users) {

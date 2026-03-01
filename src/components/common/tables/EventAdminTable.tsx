@@ -11,7 +11,7 @@ interface FrontEndUser {
   waitlistId?: string;
   firstName: string;
   lastName: string;
-  emailAddress: string; 
+  emailAddress: string;
   phoneNumber: string;
   selected: boolean;
   guestOf?: string;
@@ -36,7 +36,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     startTime,
     endTime,
     description,
-    filledSlots,
+    filledSlots, // Consider removing this since only a constant
     totalSlots,
     location,
     positionId,
@@ -190,7 +190,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        const res = await fetch(`/api/eventSignup?id=${signUpId}`, {
+        // Changed from eventSignup/waitlist to registrations which worked for 
+        // sending emails, but just in case something breaks here is a comment :D
+        const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
         });
 
@@ -225,7 +227,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueWaitlistIds.map(async (waitlistId) => {
-        const res = await fetch(`/api/waitlist?id=${waitlistId}`, {
+        const res = await fetch(`/api/registrations?id=${waitlistId}`, {
           method: "DELETE",
         });
 
@@ -285,6 +287,48 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     }
   };
 
+  const handleSendVolunteerEmail = () => {
+    // TODO: Guest shi
+    const selected = volunteers.filter((v) => v.selected && !v.isGuest);
+    const userIds = Array.from(new Set(selected.map((v) => v.userId)));
+
+    if (userIds.length === 0) return;
+
+    /* 
+    basically, if we want the data to go to the other page, we have two options:
+    - we can put them all in the URL, this is bad cuz it will get hella long
+    - we can put them in the session storage
+    */
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(userIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "volunteers");
+
+    router.push("/admin/email");
+  };
+
+  const handleSendWaitlistEmail = () => {
+    // TODO: Guest shi
+    const selected = waitlist.filter((v) => v.selected && !v.isGuest);
+    const userIds = Array.from(new Set(selected.map((v) => v.userId)));
+
+    if (userIds.length === 0) return;
+
+    /* 
+    basically, if we want the data to go to the other page, we have two options:
+    - we can put them all in the URL, this is bad cuz it will get hella long
+    - we can put them in the session storage
+    */
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(userIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "waitlist");
+
+    router.push("/admin/email");
+  };
+
   return (
     <div className="min-w-[1100px] flex items-center justify-center p-6">
       <div className="w-full max-w-[996px] bg-white border border-black font-sans">
@@ -323,14 +367,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="flex flex-row items-center gap-10 mb-1 px-5">
             <div className="w-[280px] block">
               <p className="text-[24px] w-[280px] block">
-                {filledSlots}/{totalSlots} Spots Filled
+                {/* Changed from filledSlots to volunteers.length.
+                    In my defense we made this waaay before */}
+                {volunteers.length}/{totalSlots} Spots Filled 
               </p>
             </div>
             <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
                 className="bg-light-bcp-blue h-4 rounded-full"
                 style={{
-                  width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
+                  width: `${totalSlots ? (volunteers.length / totalSlots) * 100 : 0}%`,
                 }}
               ></div>
             </div>
@@ -443,6 +489,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <Button
                 label="Send Email"
                 altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                onClick={handleSendVolunteerEmail}
               />
               <Button
                 label="Remove from Event"
@@ -575,6 +622,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <Button
                       label="Send Email"
                       altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                      onClick={handleSendWaitlistEmail}
                     />
                     <Button
                       label="Add to Event"

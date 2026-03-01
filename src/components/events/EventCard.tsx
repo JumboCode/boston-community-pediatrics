@@ -44,7 +44,10 @@ const EventCard = ({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const formattedTime = new Date(time).toLocaleTimeString("en-US", {
+  // TODO: What my colleague meant to say was that currently setting it only to
+  // "date" makes all events not show up, startTime does but all the times are
+  // wrong. Please fix at your earliest convenience 
+  const formattedTime = new Date(startTime).toLocaleTimeString("en-US", {
     timeZone: "America/New_York",
     hour: "numeric",
     minute: "2-digit",

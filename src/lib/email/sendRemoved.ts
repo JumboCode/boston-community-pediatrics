@@ -1,7 +1,7 @@
 import "server-only";
 import { sendEmail } from "./resend";
 
-export type SignupConfirmedArgs = {
+export type RemovedFromEventArgs = {
   to: string;
   firstName?: string;
   eventName: string;
@@ -9,26 +9,24 @@ export type SignupConfirmedArgs = {
   date: string;
   startTime: string;
   endTime: string;
-  filledSlots: number;
   location: string;
   wasWaitlisted?: boolean;
 };
 
-export async function sendSignupConfirmed(args: SignupConfirmedArgs) {
+export async function sendRemoved(args: RemovedFromEventArgs) {
   return sendEmail({
     recipients: [args.to],
     subject: args.wasWaitlisted
-    ? `Waitlist Status Update: Now Confirmed For ${args.eventName}`
-    : `Confirmed: ${args.eventName}`,
-    type: "signup",
-    data: {
+    ? `Waitlist Position Removed: ${args.eventName}`
+    : `Removed: ${args.eventName}`,
+    type: "removed",
+    data: { 
       firstName: args.firstName,
       eventName: args.eventName,
       position: args.position,
       eventDate: args.date,
       startTime: args.startTime,
       endTime: args.endTime,
-      filledSlots: args.filledSlots,
       location: args.location,
     },
   });
