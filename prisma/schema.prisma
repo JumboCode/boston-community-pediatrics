@@ -52,6 +52,7 @@ model Event {
   pinned       Boolean         @default(false)
   positions    EventPosition[]
   signups      EventSignup[]
+  imagesDeleted Boolean        @default(false)
 }
 
 model EventSignup {
@@ -102,7 +103,7 @@ model Guest {
   dateOfBirth   String?
   comments      String?
   speaksSpanish Boolean?
-  signup        EventSignup @relation(fields: [signupId], references: [id])
+  signup        EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 model EventWaitlist {
@@ -126,7 +127,7 @@ model WaitlistGuest {
   dateOfBirth   String?
   comments      String?
   speaksSpanish Boolean?
-  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id])
+  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

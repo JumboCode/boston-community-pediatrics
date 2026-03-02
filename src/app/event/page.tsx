@@ -19,26 +19,27 @@ export default async function EventsPage() {
   }
 
   const featuredEvents = events
-    .filter((event) => event.pinned && event.date?.length > 0)
-    .sort((a, b) => {
-      const dateDiff =
-        new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
+  .filter((event) => event.pinned && event.date?.length > 0 && new Date(event.endTime) >= new Date())
+  .sort((a, b) => {
+    const dateDiff =
+      new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
 
-      if (dateDiff !== 0) return dateDiff;
+    if (dateDiff !== 0) return dateDiff;
 
-      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-    });
+    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+  });
 
-  const regularEvents = events
-    .filter((event) => !event.pinned && event.date?.length > 0)
-    .sort((a, b) => {
-      const dateDiff =
-        new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
+const regularEvents = events
+//&& new Date(event.endTime) >= new Date()
+  .filter((event) => !event.pinned && event.date?.length > 0 && new Date(event.endTime) >= new Date())
+  .sort((a, b) => {
+    const dateDiff =
+      new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
 
-      if (dateDiff !== 0) return dateDiff;
+    if (dateDiff !== 0) return dateDiff;
 
-      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-    });
+    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+  });
 
   return (
     <div className="w-full flex flex-col items-center">
