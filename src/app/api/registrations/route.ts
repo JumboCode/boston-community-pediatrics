@@ -185,43 +185,43 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    try {
-      const email = (result as any).email;
-      if (email) {
-        // TODO: FIX TS ONCE WE GET DOMAIN SHI
-        const to = "bcpjumbocode@gmail.com";
-        // const to = email.user.emailAddress;
+    // try {
+    //   const email = (result as any).email;
+    //   if (email) {
+    //     // TODO: FIX TS ONCE WE GET DOMAIN SHI
+    //     const to = "bcpjumbocode@gmail.com";
+    //     // const to = email.user.emailAddress;
 
-        if (email.kind === "registered") {
-          await sendSignupConfirmed({
-            to,
-            firstName: email.user.firstName,
-            eventName: email.position.event.name,
-            position: email.position.position,
-            date: fmtDate(email.position.date),
-            startTime: fmtTime(email.position.startTime),
-            endTime: fmtTime(email.position.endTime),
-            filledSlots: email.filledSlotsAfter,
-            location: formatLocation(email.position),
-          });
-        } else {
-          await sendWaitlisted({
-            to,
-            firstName: email.user.firstName,
-            eventName: email.position.event.name,
-            position: email.position.position,
-            date: fmtDate(email.position.date),
-            startTime: fmtTime(email.position.startTime),
-            endTime: fmtTime(email.position.endTime),
-            filledSlots: email.position.filledSlots,
-            location: formatLocation(email.position),
-            waitlistPosition: email.waitlistPosition,
-          });
-        }
-      }
-    } catch (e) {
-      console.error("Email failed (continuing anyway):", e);
-    }
+    //     if (email.kind === "registered") {
+    //       await sendSignupConfirmed({
+    //         to,
+    //         firstName: email.user.firstName,
+    //         eventName: email.position.event.name,
+    //         position: email.position.position,
+    //         date: fmtDate(email.position.date),
+    //         startTime: fmtTime(email.position.startTime),
+    //         endTime: fmtTime(email.position.endTime),
+    //         filledSlots: email.filledSlotsAfter,
+    //         location: formatLocation(email.position),
+    //       });
+    //     } else {
+    //       await sendWaitlisted({
+    //         to,
+    //         firstName: email.user.firstName,
+    //         eventName: email.position.event.name,
+    //         position: email.position.position,
+    //         date: fmtDate(email.position.date),
+    //         startTime: fmtTime(email.position.startTime),
+    //         endTime: fmtTime(email.position.endTime),
+    //         filledSlots: email.position.filledSlots,
+    //         location: formatLocation(email.position),
+    //         waitlistPosition: email.waitlistPosition,
+    //       });
+    //     }
+    //   }
+    // } catch (e) {
+    //   console.error("Email failed (continuing anyway):", e);
+    // }
     // This is just so we don't leak email to client
     const { email, ...safe } = result as any;
     return NextResponse.json(safe, { status: 201 });
@@ -493,8 +493,8 @@ export async function GET(req: NextRequest) {
           phoneNumber: g.phoneNumber,
           relationship: g.relation,
           // FIX: Ensure we read from DB
-          dateOfBirth: g.dateOfBirth || "", 
-          comments: g.comments || "", 
+          dateOfBirth: g.dateOfBirth || "",
+          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -519,8 +519,8 @@ export async function GET(req: NextRequest) {
           phoneNumber: "", // Waitlist schema usually doesn't have phone
           relationship: g.relation,
           // FIX: Ensure we read from DB (Previously this was hardcoded "")
-          dateOfBirth: g.dateOfBirth || "", 
-          comments: g.comments || "",       
+          dateOfBirth: g.dateOfBirth || "",
+          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -529,7 +529,10 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Registration not found" },
+        { status: 404 }
+      );
     }
 
     // ---------------------------------------------------------
@@ -542,9 +545,9 @@ export async function GET(req: NextRequest) {
           guests: true,
           position: {
             // This include fetches ALL fields in Position (including startTime/endTime)
-            include: { 
-                // This include fetches ALL fields in Event (including name, address, etc.)
-                event: true 
+            include: {
+              // This include fetches ALL fields in Event (including name, address, etc.)
+              event: true,
             },
           },
         },
@@ -563,7 +566,11 @@ export async function GET(req: NextRequest) {
       // Combine and return
       const combined = [
         ...signups.map((s) => ({ ...s, type: "signup", status: "registered" })),
-        ...waitlists.map((w) => ({ ...w, type: "waitlist", status: "waitlisted" })),
+        ...waitlists.map((w) => ({
+          ...w,
+          type: "waitlist",
+          status: "waitlisted",
+        })),
       ];
 
       return NextResponse.json(combined, { status: 200 });
@@ -572,7 +579,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   } catch (error) {
     console.error("Failed to fetch registrations:", error);
-    return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch data" },
+      { status: 500 }
+    );
   }
 }
 
@@ -586,7 +596,11 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    if (!id) return NextResponse.json({ error: "Missing registration ID" }, { status: 400 });
+    if (!id)
+      return NextResponse.json(
+        { error: "Missing registration ID" },
+        { status: 400 }
+      );
 
     const result = await prisma.$transaction(async (tx) => {
       // ------------------------------------------------------------
@@ -603,7 +617,7 @@ export async function DELETE(req: NextRequest) {
         // ==================================================================
         // 0. LOCK THE ROW (Prevent Race Conditions)
         // ==================================================================
-        // This locks the specific EventPosition row. No other transaction 
+        // This locks the specific EventPosition row. No other transaction
         // can read or write to this position until this transaction finishes.
         // We use "EventPosition" because that is the default table name in DB.
         await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${positionId} FOR UPDATE`;
@@ -646,7 +660,7 @@ export async function DELETE(req: NextRequest) {
               data: {
                 userId: candidate.userId,
                 positionId: candidate.positionId,
-                eventId: position.eventId, 
+                eventId: position.eventId,
                 hasGuests: candidate.guests.length > 0,
                 guests: {
                   create: candidate.guests.map((g) => ({
@@ -663,7 +677,9 @@ export async function DELETE(req: NextRequest) {
             });
 
             // B. Remove from Waitlist
-            await tx.waitlistGuest.deleteMany({ where: { waitlistId: candidate.id } });
+            await tx.waitlistGuest.deleteMany({
+              where: { waitlistId: candidate.id },
+            });
             await tx.eventWaitlist.delete({ where: { id: candidate.id } });
 
             // C. Update counters
@@ -677,7 +693,7 @@ export async function DELETE(req: NextRequest) {
             });
           } else {
             // Strict FIFO: Stop if the next person doesn't fit
-            break; 
+            break;
           }
         }
 
@@ -692,7 +708,7 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (waitlistEntry) {
-        // Just delete it. No need to lock position because removing a waitlist 
+        // Just delete it. No need to lock position because removing a waitlist
         // entry doesn't affect the filledSlots count.
         await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
         await tx.eventWaitlist.delete({ where: { id } });
@@ -703,12 +719,16 @@ export async function DELETE(req: NextRequest) {
     });
 
     return NextResponse.json(result, { status: 200 });
-
   } catch (error) {
     console.error("Delete failed:", error);
-    const is404 = error instanceof Error && error.message === "Registration not found";
+    const is404 =
+      error instanceof Error && error.message === "Registration not found";
     return NextResponse.json(
-      { error: is404 ? "Registration not found" : "Failed to remove registration" }, 
+      {
+        error: is404
+          ? "Registration not found"
+          : "Failed to remove registration",
+      },
       { status: is404 ? 404 : 500 }
     );
   }

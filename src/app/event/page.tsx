@@ -4,6 +4,7 @@ import { getEvents } from "@/app/api/events/controller";
 import { Event, UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
+import { getPublicURL } from "@/lib/r2";
 
 export default async function EventsPage() {
   const user = await getCurrentUser();
@@ -18,28 +19,48 @@ export default async function EventsPage() {
     error = "Failed to load events";
   }
 
+  const eventImages = Object.fromEntries(
+    events.map((e) => {
+      try {
+        return [e.id, e.images?.[0] ? getPublicURL(e.images[0]) : null];
+      } catch {
+        console.error("Failed to fetch image for event: ", e.id);
+        return [e.id, null];
+      }
+    })
+  );
+
   const featuredEvents = events
-  .filter((event) => event.pinned && event.date?.length > 0 && new Date(event.endTime) >= new Date())
-  .sort((a, b) => {
-    const dateDiff =
-      new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
+    .filter(
+      (event) =>
+        event.pinned &&
+        event.date?.length > 0 &&
+        new Date(event.endTime) >= new Date()
+    )
+    .sort((a, b) => {
+      const dateDiff =
+        new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
 
-    if (dateDiff !== 0) return dateDiff;
+      if (dateDiff !== 0) return dateDiff;
 
-    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-  });
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
 
-const regularEvents = events
-//&& new Date(event.endTime) >= new Date()
-  .filter((event) => !event.pinned && event.date?.length > 0 && new Date(event.endTime) >= new Date())
-  .sort((a, b) => {
-    const dateDiff =
-      new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
+  const regularEvents = events
+    .filter(
+      (event) =>
+        !event.pinned &&
+        event.date?.length > 0 &&
+        new Date(event.endTime) >= new Date()
+    )
+    .sort((a, b) => {
+      const dateDiff =
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
 
-    if (dateDiff !== 0) return dateDiff;
+      if (dateDiff !== 0) return dateDiff;
 
-    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-  });
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -85,15 +106,14 @@ const regularEvents = events
             )}
 
             {featuredEvents.map((event) => {
-              const firstDate = event.date[0];
               return (
                 <EventCard
                   key={event.id}
-                  image="/event1.jpg"
+                  image={eventImages[event.id] || "/event1.jpg"}
                   title={event.name}
-                  time={event.startTime}
+                  startTime={event.startTime}
+                  endTime={event.endTime}
                   location={event.addressLine1}
-                  date={firstDate}
                   id={event.id}
                   pinned={event.pinned}
                   isAdmin={user?.role === UserRole.ADMIN}
@@ -132,15 +152,14 @@ const regularEvents = events
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {regularEvents.map((event) => {
-              const firstDate = event.date?.[0];
               return (
                 <EventCard
                   key={event.id}
-                  image="/event1.jpg"
+                  image={eventImages[event.id] || "/event1.jpg"}
                   title={event.name}
-                  time={event.startTime}
+                  startTime={event.startTime}
+                  endTime={event.endTime}
                   location={event.addressLine1}
-                  date={firstDate}
                   id={event.id}
                   pinned={event.pinned}
                   isAdmin={user?.role === UserRole.ADMIN}

@@ -8,6 +8,7 @@ import aboutus from "@/assets/images/aboutus.jpg";
 import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import { useRouter } from "next/navigation";
+import { getPublicURL } from "@/lib/r2";
 
 interface Event {
   id: string;
@@ -126,7 +127,7 @@ const Home: React.FC = () => {
             const imageSrc = hasValidImage
               ? event.images[0].startsWith("/")
                 ? event.images[0]
-                : `/${event.images[0]}`
+                : `${getPublicURL(event.images[0])}`
               : "/event1.jpg";
 
             return (

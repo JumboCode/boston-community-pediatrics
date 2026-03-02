@@ -11,7 +11,6 @@ interface EventVolunteerTableProps {
   endTime: string;
   description: string;
   totalSpots: number;
-  filledSpots: number;
   positionId: string;
 }
 
@@ -23,7 +22,6 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
     endTime,
     description,
     totalSpots,
-    filledSpots,
     positionId,
   } = props;
 
@@ -40,6 +38,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   }
 
   const volunteerNames = volunteers.map((v) => `${v.firstName} ${v.lastName}`);
+  const isPast = new Date() > new Date(endTime);
 
   return (
     <div className="max-w-[1000px] flex ">
@@ -75,14 +74,19 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
           {description}
         </div>
 
-        <RegisterButton positionId={positionId}></RegisterButton>
+        {!isPast && (
+          <RegisterButton
+            disabled={isPast}
+            positionId={positionId}
+          ></RegisterButton>
+        )}
       </div>
 
       <div
         className={`border-b border-gray-300 w-[250px] transition-all duration-300 p-[20px]`}
       >
         <div className="text-bcp-blue text-[22px] font-medium font-avenir text-right">
-          {filledSpots}/{totalSpots} Spots Filled
+          {volunteerNames.length}/{totalSpots} Spots Filled
         </div>
 
         {error && (
@@ -92,21 +96,42 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
         )}
 
         <div className="mt-[20px] space-y-[12px] overflow-y-auto pr-1">
-          {volunteerNames.map((name, i) => (
-            <div key={i} className="flex items-center gap-2 justify-end">
-              <span className="text-bcp-blue text-[15px] font-normal font-avenir">
-                {name}
-              </span>
-
-              <Image
-                width={28}
-                height={28}
-                src={defaultPfp.src}
-                alt="Profile"
-                className="rounded-full"
-              />
+          {volunteerNames.length === 0 ? (
+            <div className="text-center text-bcp-blue mt-4">
+              {isPast ? (
+                <>
+                  <p className="text-[15px] font-medium">Crickets... 🦗</p>
+                  <p className="text-[13px] text-gray-400 mt-1">
+                    Nobody showed up for this one. Awkward.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] font-medium">
+                    Be the first to sign up!
+                  </p>
+                  <p className="text-[13px] text-gray-400 mt-1">
+                    No volunteers yet — join and make a difference.
+                  </p>
+                </>
+              )}
             </div>
-          ))}
+          ) : (
+            volunteerNames.map((name, i) => (
+              <div key={i} className="flex items-center gap-2 justify-end">
+                <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                  {name}
+                </span>
+                <Image
+                  width={28}
+                  height={28}
+                  src={defaultPfp.src}
+                  alt="Profile"
+                  className="rounded-full"
+                />
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 "use client";
-import EventCard from "@/components/events/EventCard";
+import ProfileEventCard from "@/components/events/ProfileEventCard";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -54,15 +55,20 @@ export default function ProfilePage() {
                 try {
                   const filename = images[0];
                   // Call your image API
-                  const imgRes = await fetch(`/api/images?filename=${filename}`);
+                  const imgRes = await fetch(
+                    `/api/images?filename=${filename}`
+                  );
                   if (imgRes.ok) {
                     const imgData = await imgRes.json();
                     if (imgData.url) {
                       resolvedUrl = imgData.url;
                     }
                   }
-                } catch (err) {
-                  console.error("Failed to fetch image for event", reg.position.event.id);
+                } catch {
+                  console.error(
+                    "Failed to fetch image for event",
+                    reg.position.event.id
+                  );
                 }
               }
 
@@ -87,7 +93,9 @@ export default function ProfilePage() {
 
   // 1. ADD THIS FUNCTION
   const handleRemove = async (registrationId: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to remove yourself from this event?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to remove yourself from this event?"
+    );
     if (!confirmDelete) return;
 
     try {
@@ -112,13 +120,18 @@ export default function ProfilePage() {
   // -------------------------------------------------------------
   // ADMIN ACTION: Delete Entire Event
   // -------------------------------------------------------------
-  const handleDeleteEvent = async (eventId: string, registrationId?: string) => {
-    const confirmDelete = window.confirm("ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?");
+  const handleDeleteEvent = async (
+    eventId: string,
+    registrationId?: string
+  ) => {
+    const confirmDelete = window.confirm(
+      "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
+    );
     if (!confirmDelete) return;
 
     if (eventId.startsWith("evt-") || eventId === "demo-event") {
-       alert("Demo event deleted.");
-       return;
+      alert("Demo event deleted.");
+      return;
     }
 
     try {
@@ -130,10 +143,12 @@ export default function ProfilePage() {
         // If successful, remove the card from the UI
         // We use the registrationId to filter it out of the local state array
         if (registrationId) {
-            setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
+          setMyEvents((prev) =>
+            prev.filter((evt) => evt.id !== registrationId)
+          );
         } else {
-            // Fallback: reload page if we can't find the specific card ID
-            window.location.reload();
+          // Fallback: reload page if we can't find the specific card ID
+          window.location.reload();
         }
         alert("Event successfully deleted.");
       } else {
@@ -144,7 +159,7 @@ export default function ProfilePage() {
       console.error("Error deleting event:", error);
       alert("An error occurred while deleting the event.");
     }
-  }
+  };
 
   if (!isLoaded || loading) {
     return <main className="min-h-screen p-8" />;
@@ -169,7 +184,8 @@ export default function ProfilePage() {
 
   // Separate events into Upcoming and Past
   myEvents.forEach((reg) => {
-    if (!reg.position?.event?.date || reg.position.event.date.length === 0) return;
+    if (!reg.position?.event?.date || reg.position.event.date.length === 0)
+      return;
 
     const eventDate = new Date(reg.position.event.date[0]);
 
@@ -207,10 +223,13 @@ export default function ProfilePage() {
         ) : (
           upcoming.map((reg) => {
             const event = reg.position.event;
-            const firstDate = event.date && event.date.length > 0 ? new Date(event.date[0]) : new Date();
+            const firstDate =
+              event.date && event.date.length > 0
+                ? new Date(event.date[0])
+                : new Date();
 
             return (
-              <EventCard
+              <ProfileEventCard
                 key={reg.id}
                 id={event.id} // Link to the general event page
                 image={reg.imageUrl || "/event1.jpg"}
@@ -221,32 +240,27 @@ export default function ProfilePage() {
                 date={firstDate}
                 filledSlots={reg.position.filledSlots}
                 totalSlots={reg.position.totalSlots}
-
                 userRole={userRole}
-
-                // 👇 THIS IS THE FIX: Pass the positionId to the register page
-                // CONDITIONAL ACTIONS
                 onEdit={() => {
-                   if (isAdmin) {
-                      // Admin -> Go to Event Details Page
-                      router.push(`/event/${event.id}`);
-                   } else {
-                      // User -> Go to Registration Page
-                      router.push(`/register/${reg.positionId}`);
-                   }
+                  if (isAdmin) {
+                    // Admin -> Go to Event Details Page
+                    router.push(`/event/${event.id}`);
+                  } else {
+                    // User -> Go to Registration Page
+                    router.push(`/register/${reg.positionId}`);
+                  }
                 }}
-                
                 onRemove={() => {
-                    if (isAdmin) {
-                        // Admin -> Delete Event API
-                        handleDeleteEvent(event.id, reg.id);
-                    } else {
-                        // User -> Cancel Signup API
-                        handleRemove(reg.id);
-                    }
+                  if (isAdmin) {
+                    // Admin -> Delete Event API
+                    handleDeleteEvent(event.id, reg.id);
+                  } else {
+                    // User -> Cancel Signup API
+                    handleRemove(reg.id);
+                  }
                 }}
                 onVolunteer={() => router.push(`/event/${event.id}`)}
-                />
+              />
             );
           })
         )}
@@ -338,7 +352,7 @@ export default function ProfilePage() {
                 No past events found.
               </div>
             ) : (
-              past.map((reg, idx) => {
+              past.map((reg) => {
                 const dateObj = new Date(reg.position.event.date[0]);
                 const month = dateObj
                   .toLocaleString("default", { month: "short" })
@@ -354,38 +368,39 @@ export default function ProfilePage() {
 
                 // Format: if whole number show "5", if decimal show "5.5"
                 const hoursDisplay =
-                  hoursVal % 1 === 0 ? hoursVal.toString() : hoursVal.toFixed(1);
+                  hoursVal % 1 === 0
+                    ? hoursVal.toString()
+                    : hoursVal.toFixed(1);
 
                 return (
-                  <div
-                    key={reg.id}
-                    className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors"
-                  >
-                    {/* Date Column */}
-                    <div className="flex flex-col items-center justify-center leading-none">
-                      <span className="text-[11px] font-bold uppercase text-gray-500">
-                        {month}
-                      </span>
-                      <span className="text-[22px] font-bold text-black">
-                        {day}
-                      </span>
-                    </div>
+                  <Link href={`/event/${reg.position.event.id}`} key={reg.id}>
+                    <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors">
+                      {/* Date Column */}
+                      <div className="flex flex-col items-center justify-center leading-none">
+                        <span className="text-[11px] font-bold uppercase text-gray-500">
+                          {month}
+                        </span>
+                        <span className="text-[22px] font-bold text-black">
+                          {day}
+                        </span>
+                      </div>
 
-                    {/* Event Name */}
-                    <div className="text-[16px] font-medium text-black truncate pr-2">
-                      {reg.position.event.name}
-                    </div>
+                      {/* Event Name */}
+                      <div className="text-[16px] font-medium text-black truncate pr-2">
+                        {reg.position.event.name}
+                      </div>
 
-                    {/* Position */}
-                    <div className="text-[14px] text-gray-600 truncate pr-2">
-                      {reg.position.position}
-                    </div>
+                      {/* Position */}
+                      <div className="text-[14px] text-gray-600 truncate pr-2">
+                        {reg.position.position}
+                      </div>
 
-                    {/* Hours */}
-                    <div className="text-[14px] font-medium text-black text-center">
-                      {hoursDisplay}
+                      {/* Hours */}
+                      <div className="text-[14px] font-medium text-black text-center">
+                        {hoursDisplay}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}
