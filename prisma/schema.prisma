@@ -15,7 +15,6 @@ model User {
   emailAddress  String          @unique
   phoneNumber   String
   dateOfBirth   DateTime?
-  speaksSpanish  Boolean?
   streetAddress String?
   city          String?
   state         String?
@@ -26,6 +25,7 @@ model User {
   updatedAt     DateTime        @updatedAt @map("updated_at")
   role          UserRole
   profileImage  String?
+  speaksSpanish Boolean?
   signups       EventSignup[]
   waitlists     EventWaitlist[]
 
@@ -34,24 +34,25 @@ model User {
 }
 
 model Event {
-  id           String          @id @default(cuid())
-  name         String
-  description  String
-  date         DateTime[]
-  startTime    DateTime
-  endTime      DateTime
-  city         String          @default("")
-  state        String          @default("")
-  country      String          @default("")
-  zipCode      String          @default("")
-  lat          Float?
-  lng          Float?
-  addressLine1 String          @default("")
-  addressLine2 String?
-  images       String[]
-  pinned       Boolean         @default(false)
-  positions    EventPosition[]
-  signups      EventSignup[]
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  date          DateTime[]
+  startTime     DateTime
+  endTime       DateTime
+  city          String          @default("")
+  state         String          @default("")
+  country       String          @default("")
+  zipCode       String          @default("")
+  lat           Float?
+  lng           Float?
+  addressLine1  String          @default("")
+  addressLine2  String?
+  images        String[]
+  pinned        Boolean         @default(false)
+  imagesDeleted Boolean         @default(false)
+  positions     EventPosition[]
+  signups       EventSignup[]
 }
 
 model EventSignup {
@@ -91,18 +92,18 @@ model EventPosition {
 }
 
 model Guest {
-  id           String      @id @default(cuid())
-  positionId   String
-  firstName    String
-  lastName     String
-  emailAddress String?
-  relation     String?
-  phoneNumber  String?
-
-  dateOfBirth  String?     
-  comments     String?
-  signupId  String
-  signup    EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  positionId    String
+  firstName     String
+  lastName      String
+  emailAddress  String?
+  relation      String?
+  phoneNumber   String?
+  signupId      String
+  dateOfBirth   String?
+  comments      String?
+  speaksSpanish Boolean?
+  signup        EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 model EventWaitlist {
@@ -117,15 +118,16 @@ model EventWaitlist {
 }
 
 model WaitlistGuest {
-  id          String        @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String?
-  relation    String?
-  waitlistId  String
-  comments    String?
-  dateOfBirth String?
-  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String?
+  relation      String?
+  waitlistId    String
+  dateOfBirth   String?
+  comments      String?
+  speaksSpanish Boolean?
+  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {
