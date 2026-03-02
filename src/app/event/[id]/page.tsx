@@ -52,8 +52,6 @@ export default async function EventDetailsPage(props: {
                 const start = new Date(event.startTime);
                 const end = new Date(event.endTime);
 
-                console.log(start, " and ", end);
-
                 if (isNaN(start.getTime())) return "Date unavailable";
 
                 const month = start.toLocaleString(undefined, {

@@ -37,7 +37,6 @@ const EventCard = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const formatTime = (d: Date) => {
-    console.log(d);
     if (!d || isNaN(d.getTime())) return "undefined";
     return d.toLocaleTimeString("en-US", {
       timeZone: "America/New_York",
