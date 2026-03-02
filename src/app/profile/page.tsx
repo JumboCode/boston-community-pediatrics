@@ -57,7 +57,9 @@ export default function ProfilePage() {
               if (images && images.length > 0) {
                 try {
                   const filename = images[0];
-                  const imgRes = await fetch(`/api/images?filename=${filename}`);
+                  const imgRes = await fetch(
+                    `/api/images?filename=${filename}`
+                  );
                   if (imgRes.ok) {
                     const imgData = await imgRes.json();
                     if (imgData.url) {
@@ -65,7 +67,10 @@ export default function ProfilePage() {
                     }
                   }
                 } catch (err) {
-                  console.error("Failed to fetch image for event", reg.position.event.id);
+                  console.error(
+                    "Failed to fetch image for event",
+                    reg.position.event.id
+                  );
                 }
               }
 
@@ -88,7 +93,9 @@ export default function ProfilePage() {
   }, [user?.id, isLoaded, isSignedIn]);
 
   const handleRemove = async (registrationId: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to remove yourself from this event?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to remove yourself from this event?"
+    );
     if (!confirmDelete) return;
 
     try {
@@ -109,8 +116,13 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDeleteEvent = async (eventId: string, registrationId?: string) => {
-    const confirmDelete = window.confirm("ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?");
+  const handleDeleteEvent = async (
+    eventId: string,
+    registrationId?: string
+  ) => {
+    const confirmDelete = window.confirm(
+      "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
+    );
     if (!confirmDelete) return;
 
     if (eventId.startsWith("evt-") || eventId === "demo-event") {
@@ -125,7 +137,9 @@ export default function ProfilePage() {
 
       if (res.ok) {
         if (registrationId) {
-          setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
+          setMyEvents((prev) =>
+            prev.filter((evt) => evt.id !== registrationId)
+          );
         } else {
           window.location.reload();
         }
@@ -161,7 +175,8 @@ export default function ProfilePage() {
   const past: MyRegistration[] = [];
 
   myEvents.forEach((reg) => {
-    if (!reg.position?.event?.date || reg.position.event.date.length === 0) return;
+    if (!reg.position?.event?.date || reg.position.event.date.length === 0)
+      return;
     const eventDate = new Date(reg.position.event.date[0]);
     if (eventDate >= now) {
       upcoming.push(reg);
@@ -193,7 +208,10 @@ export default function ProfilePage() {
         ) : (
           upcoming.map((reg) => {
             const event = reg.position.event;
-            const firstDate = event.date && event.date.length > 0 ? new Date(event.date[0]) : new Date();
+            const firstDate =
+              event.date && event.date.length > 0
+                ? new Date(event.date[0])
+                : new Date();
 
             return (
               <EventCard
@@ -274,7 +292,14 @@ export default function ProfilePage() {
                   className="text-white/70 hover:text-white transition"
                   aria-label="Copy email"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                   </svg>
@@ -296,34 +321,62 @@ export default function ProfilePage() {
         <div className="w-[690px] rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] border-b border-gray-200 bg-white py-4 px-4">
             <div className=""></div>
-            <div className="text-left text-[14px] font-medium text-gray-900">Event</div>
-            <div className="text-left text-[14px] font-medium text-gray-900">Position</div>
-            <div className="text-center text-[14px] font-medium text-gray-900">Hours</div>
+            <div className="text-left text-[14px] font-medium text-gray-900">
+              Event
+            </div>
+            <div className="text-left text-[14px] font-medium text-gray-900">
+              Position
+            </div>
+            <div className="text-center text-[14px] font-medium text-gray-900">
+              Hours
+            </div>
           </div>
 
           <div className="max-h-[320px] overflow-y-auto">
             {past.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">No past events found.</div>
+              <div className="p-8 text-center text-gray-500">
+                No past events found.
+              </div>
             ) : (
               past.map((reg) => {
                 const dateObj = new Date(reg.position.event.date[0]);
-                const month = dateObj.toLocaleString("default", { month: "short" }).toUpperCase();
+                const month = dateObj
+                  .toLocaleString("default", { month: "short" })
+                  .toUpperCase();
                 const day = dateObj.getDate().toString().padStart(2, "0");
 
                 const start = new Date(reg.position.event.startTime).getTime();
                 const end = new Date(reg.position.endTime).getTime();
-                const hoursVal = !isNaN(end - start) ? (end - start) / (1000 * 60 * 60) : 0;
-                const hoursDisplay = hoursVal % 1 === 0 ? hoursVal.toString() : hoursVal.toFixed(1);
+                const hoursVal = !isNaN(end - start)
+                  ? (end - start) / (1000 * 60 * 60)
+                  : 0;
+                const hoursDisplay =
+                  hoursVal % 1 === 0
+                    ? hoursVal.toString()
+                    : hoursVal.toFixed(1);
 
                 return (
-                  <div key={reg.id} className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors">
+                  <div
+                    key={reg.id}
+                    className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex flex-col items-center justify-center leading-none">
-                      <span className="text-[11px] font-bold uppercase text-gray-500">{month}</span>
-                      <span className="text-[22px] font-bold text-black">{day}</span>
+                      <span className="text-[11px] font-bold uppercase text-gray-500">
+                        {month}
+                      </span>
+                      <span className="text-[22px] font-bold text-black">
+                        {day}
+                      </span>
                     </div>
-                    <div className="text-[16px] font-medium text-black truncate pr-2">{reg.position.event.name}</div>
-                    <div className="text-[14px] text-gray-600 truncate pr-2">{reg.position.position}</div>
-                    <div className="text-[14px] font-medium text-black text-center">{hoursDisplay}</div>
+                    <div className="text-[16px] font-medium text-black truncate pr-2">
+                      {reg.position.event.name}
+                    </div>
+                    <div className="text-[14px] text-gray-600 truncate pr-2">
+                      {reg.position.position}
+                    </div>
+                    <div className="text-[14px] font-medium text-black text-center">
+                      {hoursDisplay}
+                    </div>
                   </div>
                 );
               })
