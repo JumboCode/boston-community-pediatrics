@@ -379,16 +379,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <div className="flex items-center gap-3">
                       {p.isGuest ? (
                         <div className="flex items-start relative">
-                          {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                          <div
-                            className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          {/* Guest circle - #D9D9D9 */}
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
+                          {/* Vertical connector line - 30px tall, 5px wide*/}
+                          <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                          {/* Guest circle */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                           <div className="ml-3">
                             <div>
                               {p.firstName} {p.lastName}
@@ -397,16 +391,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 relative">
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                          {/* Vertical line extending down - 30px tall, 5px wide*/}
                           {hasGuestBelow && (
-                            <div
-                              className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                              style={{ backgroundColor: "#D9D9D9" }}
-                            ></div>
+                            <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
                           <div>
                             {p.firstName} {p.lastName}
@@ -447,7 +435,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             <div className="flex justify-between px-6 py-4">
               <Button
                 label="Send Email"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-gray-border text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
               />
               <Button
                 label="Remove from Event"
@@ -512,16 +500,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         <div className="flex items-center gap-3">
                           {p.isGuest ? (
                             <div className="flex items-start relative">
-                              {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                              <div
-                                className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              {/* Guest circle - #D9D9D9 */}
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
+                              {/* Vertical connector line - 30px tall, 5px wide,*/}
+                              <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                              {/* Guest circle */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                               <div className="ml-3">
                                 <div>
                                   {p.firstName} {p.lastName}
@@ -535,16 +517,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative">
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                              {/* Vertical line extending down - 30px tall, 5px wide */}
                               {hasGuestBelow && (
-                                <div
-                                  className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                                  style={{ backgroundColor: "#D9D9D9" }}
-                                ></div>
+                                <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
                               <div>
                                 {p.firstName} {p.lastName}

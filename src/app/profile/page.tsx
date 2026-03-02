@@ -3,6 +3,8 @@ import ProfileEventCard from "@/components/events/ProfileEventCard";
 import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import blankProfile from "@/assets/icons/Group 1.svg";
 import Link from "next/link";
 import Modal from "@/components/common/Modal";
 
@@ -14,7 +16,8 @@ export default function ProfilePage() {
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
-  const [userRole, setUserRole] = useState<string>(""); // <--- NEW STATE
+  const [userRole, setUserRole] = useState<string>("");
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState<string | undefined>();
@@ -24,7 +27,7 @@ export default function ProfilePage() {
 
   // 1. Fetch User Phone Number
   useEffect(() => {
-    async function fetchPhoneNumber() {
+    async function fetchUserData() {
       if (!user?.id) return;
       try {
         const response = await fetch(`/api/users?id=${user.id}`);
@@ -32,14 +35,17 @@ export default function ProfilePage() {
           const userData = await response.json();
           setPhoneNumber(userData.phoneNumber ?? "—");
           setUserRole(userData.role ?? "VOLUNTEER");
+          if (userData.profileImage) {
+            setProfileImageUrl(userData.profileImage); // use URL directly
+          }
         }
       } catch (err) {
-        console.error("Failed to load phone number:", err);
+        console.error("Failed to load user data:", err);
       }
     }
 
     if (isLoaded && isSignedIn) {
-      fetchPhoneNumber();
+      fetchUserData();
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
@@ -52,13 +58,11 @@ export default function ProfilePage() {
         if (response.ok) {
           const rawData: MyRegistration[] = await response.json();
 
-          // Process images in parallel
           const enrichedData = await Promise.all(
             rawData.map(async (reg) => {
               const images = reg.position.event.images;
-              let resolvedUrl = "/event1.jpg"; // Default fallback
+              let resolvedUrl = "/event1.jpg";
 
-              // If we have an image filename, fetch the public URL
               if (images && images.length > 0) {
                 try {
                   const filename = images[0];
@@ -80,7 +84,6 @@ export default function ProfilePage() {
                 }
               }
 
-              // Return the registration object with the new URL attached
               return { ...reg, imageUrl: resolvedUrl };
             })
           );
@@ -249,21 +252,16 @@ export default function ProfilePage() {
       ? new Date(user.createdAt).getFullYear()
       : "0000";
 
-  // --- FILTERING LOGIC ---
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
   const upcoming: MyRegistration[] = [];
   const past: MyRegistration[] = [];
 
-  // Separate events into Upcoming and Past
   myEvents.forEach((reg) => {
     if (!reg.position?.event?.date || reg.position.event.date.length === 0)
       return;
-
     const eventDate = new Date(reg.position.event.date[0]);
-
-    // Sort into buckets
     if (eventDate >= now) {
       upcoming.push(reg);
     } else {
@@ -271,9 +269,6 @@ export default function ProfilePage() {
     }
   });
 
-  // upcoming = DEMO_UPCOMING_EVENTS; // remove this after testing
-
-  // Sort Past events: Most recent first (Descending)
   past.sort((a, b) => {
     const dateA = new Date(a.position.event.date[0]).getTime();
     const dateB = new Date(b.position.event.date[0]).getTime();
@@ -313,7 +308,7 @@ export default function ProfilePage() {
             return (
               <ProfileEventCard
                 key={reg.id}
-                id={event.id} // Link to the general event page
+                id={event.id}
                 image={reg.imageUrl || "/event1.jpg"}
                 title={event.name}
                 startTime={new Date(event.startTime)}
@@ -350,7 +345,16 @@ export default function ProfilePage() {
 
       {/* PROFILE CARD */}
       <div className="absolute top-[248px] right-[121px] h-[420px] w-[305px] rounded-lg bg-light-bcp-blue">
-        <div className="absolute top-[30px] left-1/2 h-[105px] w-[105px] -translate-x-1/2 transform rounded-full bg-[#D9D9D9]" />
+        <div className="absolute top-[30px] left-1/2 -translate-x-1/2">
+          <Image
+            src={profileImageUrl ?? blankProfile}
+            alt="Profile"
+            width={105}
+            height={105}
+            className="h-[105px] w-[105px] rounded-full object-cover"
+            unoptimized={!!profileImageUrl}
+          />
+        </div>
 
         <div className="mt-40 flex flex-col items-center space-y-[1px]">
           <div className="text-[24px] font-bold text-white">
@@ -412,11 +416,8 @@ export default function ProfilePage() {
       <div className="mt-[41px] ml-[120px] mb-20">
         <h2 className="text-[28px] font-bold mb-6">Your Past Events</h2>
 
-        {/* Card Container */}
         <div className="w-[690px] rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          {/* Table Header */}
           <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] border-b border-gray-200 bg-white py-4 px-4">
-            {/* Empty space above Date */}
             <div className=""></div>
             <div className="text-left text-[14px] font-medium text-gray-900">
               Event
@@ -429,7 +430,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Table Body - Scrollable to match screenshot scrollbar */}
           <div className="max-h-[320px] overflow-y-auto">
             {past.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
@@ -443,14 +443,11 @@ export default function ProfilePage() {
                   .toUpperCase();
                 const day = dateObj.getDate().toString().padStart(2, "0");
 
-                // Calculate duration in hours
                 const start = new Date(reg.position.event.startTime).getTime();
                 const end = new Date(reg.position.endTime).getTime();
                 const hoursVal = !isNaN(end - start)
                   ? (end - start) / (1000 * 60 * 60)
                   : 0;
-
-                // Format: if whole number show "5", if decimal show "5.5"
                 const hoursDisplay =
                   hoursVal % 1 === 0
                     ? hoursVal.toString()
