@@ -34,25 +34,25 @@ model User {
 }
 
 model Event {
-  id            String          @id @default(cuid())
-  name          String
-  description   String
-  date          DateTime[]
-  startTime     DateTime
-  endTime       DateTime
-  city          String          @default("")
-  state         String          @default("")
-  country       String          @default("")
-  zipCode       String          @default("")
-  lat           Float?
-  lng           Float?
-  addressLine1  String          @default("")
-  addressLine2  String?
-  images        String[]
-  pinned        Boolean         @default(false)
-  imagesDeleted Boolean         @default(false)
-  positions     EventPosition[]
-  signups       EventSignup[]
+  id           String          @id @default(cuid())
+  name         String
+  description  String
+  date         DateTime[]
+  startTime    DateTime
+  endTime      DateTime
+  city         String          @default("")
+  state        String          @default("")
+  country      String          @default("")
+  zipCode      String          @default("")
+  lat          Float?
+  lng          Float?
+  addressLine1 String          @default("")
+  addressLine2 String?
+  images       String[]
+  pinned       Boolean         @default(false)
+  positions    EventPosition[]
+  signups      EventSignup[]
+  imagesDeleted Boolean        @default(false)
 }
 
 model EventSignup {

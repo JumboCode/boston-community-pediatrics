@@ -18,6 +18,7 @@
   --color-black: #000000; 
   --color-light-gray: #E5E5E5;
   --color-white: #FFFFFF;
+  --color-really-light-gray: #FAFAFA;
 }
 
 /* @media (prefers-color-scheme: dark) {

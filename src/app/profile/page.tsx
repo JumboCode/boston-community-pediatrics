@@ -1,5 +1,5 @@
 "use client";
-import EventCard from "@/components/events/EventCard";
+import ProfileEventCard from "@/components/events/ProfileEventCard";
 import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -72,7 +72,7 @@ export default function ProfilePage() {
                       resolvedUrl = imgData.url;
                     }
                   }
-                } catch (err) {
+                } catch {
                   console.error(
                     "Failed to fetch image for event",
                     reg.position.event.id
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                 { label: "Close", onClick: () => setModalOpen(false) },
               ]);
             }
-          } catch (error) {
+          } catch {
             setModalTitle("Error");
             setModalMessage("An error occurred while deleting the event.");
             setModalButtons([
@@ -311,7 +311,7 @@ export default function ProfilePage() {
                 : new Date();
 
             return (
-              <EventCard
+              <ProfileEventCard
                 key={reg.id}
                 id={event.id} // Link to the general event page
                 image={reg.imageUrl || "/event1.jpg"}
@@ -323,8 +323,6 @@ export default function ProfilePage() {
                 filledSlots={reg.position.filledSlots}
                 totalSlots={reg.position.totalSlots}
                 userRole={userRole}
-                // 👇 THIS IS THE FIX: Pass the positionId to the register page
-                // CONDITIONAL ACTIONS
                 onEdit={() => {
                   if (isAdmin) {
                     // Admin -> Go to Event Details Page
@@ -438,7 +436,7 @@ export default function ProfilePage() {
                 No past events found.
               </div>
             ) : (
-              past.map((reg, idx) => {
+              past.map((reg) => {
                 const dateObj = new Date(reg.position.event.date[0]);
                 const month = dateObj
                   .toLocaleString("default", { month: "short" })
@@ -459,35 +457,34 @@ export default function ProfilePage() {
                     : hoursVal.toFixed(1);
 
                 return (
-                  <div
-                    key={reg.id}
-                    className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors"
-                  >
-                    {/* Date Column */}
-                    <div className="flex flex-col items-center justify-center leading-none">
-                      <span className="text-[11px] font-bold uppercase text-gray-500">
-                        {month}
-                      </span>
-                      <span className="text-[22px] font-bold text-black">
-                        {day}
-                      </span>
-                    </div>
+                  <Link href={`/event/${reg.position.event.id}`} key={reg.id}>
+                    <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors">
+                      {/* Date Column */}
+                      <div className="flex flex-col items-center justify-center leading-none">
+                        <span className="text-[11px] font-bold uppercase text-gray-500">
+                          {month}
+                        </span>
+                        <span className="text-[22px] font-bold text-black">
+                          {day}
+                        </span>
+                      </div>
 
-                    {/* Event Name */}
-                    <div className="text-[16px] font-medium text-black truncate pr-2">
-                      {reg.position.event.name}
-                    </div>
+                      {/* Event Name */}
+                      <div className="text-[16px] font-medium text-black truncate pr-2">
+                        {reg.position.event.name}
+                      </div>
 
-                    {/* Position */}
-                    <div className="text-[14px] text-gray-600 truncate pr-2">
-                      {reg.position.position}
-                    </div>
+                      {/* Position */}
+                      <div className="text-[14px] text-gray-600 truncate pr-2">
+                        {reg.position.position}
+                      </div>
 
-                    {/* Hours */}
-                    <div className="text-[14px] font-medium text-black text-center">
-                      {hoursDisplay}
+                      {/* Hours */}
+                      <div className="text-[14px] font-medium text-black text-center">
+                        {hoursDisplay}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPublicURL, getPresignedURL, deleteObject } from "@/lib/r2";
+import { getPresignedURL, deleteObject } from "@/lib/r2";
 import { getCurrentUser } from "@/lib/auth";
 import { updateUserProfileImage } from "../users/controller";
 import { UserRole } from "@prisma/client";
@@ -24,8 +24,10 @@ export async function GET(req: NextRequest) {
 
   try {
     // FIX: Handle leading slashes to avoid double slash (e.g., .dev//events)
-    const cleanFilename = filename.startsWith("/") ? filename.slice(1) : filename;
-    
+    const cleanFilename = filename.startsWith("/")
+      ? filename.slice(1)
+      : filename;
+
     // Construct the URL directly
     const url = `${R2_PUBLIC_DOMAIN}/${cleanFilename}`;
 
