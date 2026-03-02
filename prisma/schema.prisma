@@ -34,24 +34,25 @@ model User {
 }
 
 model Event {
-  id           String          @id @default(cuid())
-  name         String
-  description  String
-  date         DateTime[]
-  startTime    DateTime
-  endTime      DateTime
-  city         String          @default("")
-  state        String          @default("")
-  country      String          @default("")
-  zipCode      String          @default("")
-  lat          Float?
-  lng          Float?
-  addressLine1 String          @default("")
-  addressLine2 String?
-  images       String[]
-  pinned       Boolean         @default(false)
-  positions    EventPosition[]
-  signups      EventSignup[]
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  date          DateTime[]
+  startTime     DateTime
+  endTime       DateTime
+  city          String          @default("")
+  state         String          @default("")
+  country       String          @default("")
+  zipCode       String          @default("")
+  lat           Float?
+  lng           Float?
+  addressLine1  String          @default("")
+  addressLine2  String?
+  images        String[]
+  pinned        Boolean         @default(false)
+  imagesDeleted Boolean         @default(false)
+  positions     EventPosition[]
+  signups       EventSignup[]
 }
 
 model EventSignup {
@@ -102,7 +103,7 @@ model Guest {
   dateOfBirth   String?
   comments      String?
   speaksSpanish Boolean?
-  signup        EventSignup @relation(fields: [signupId], references: [id])
+  signup        EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 model EventWaitlist {
@@ -126,7 +127,7 @@ model WaitlistGuest {
   dateOfBirth   String?
   comments      String?
   speaksSpanish Boolean?
-  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id])
+  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

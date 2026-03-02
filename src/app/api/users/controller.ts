@@ -40,6 +40,7 @@ export async function createUser(data: User) {
       state: data.state,
       zipCode: data.zipCode,
       role: (data.role as UserRole) || "VOLUNTEER",
+      profileImage: data.profileImage,
     },
   });
   return newUser;
@@ -79,13 +80,4 @@ export async function adminUpdateUserRole(userId: string, role: UserRole) {
     where: { id: userId },
     data: { role },
   });
-}
-
-export async function deleteUser(id: string) {
-  const deletedUser = await prisma.user.delete({
-    where: {
-      id: id,
-    },
-  });
-  return deletedUser;
 }

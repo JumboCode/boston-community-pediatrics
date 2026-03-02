@@ -1,17 +1,26 @@
 "use client";
 import EventCard from "@/components/events/EventCard";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Modal from "@/components/common/Modal";
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const { signOut } = useClerk();
 
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
   const [userRole, setUserRole] = useState<string>(""); // <--- NEW STATE
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState<string | undefined>();
+  const [modalMessage, setModalMessage] = useState<string | undefined>();
+  const [modalButtons, setModalButtons] = useState<any[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
   // 1. Fetch User Phone Number
   useEffect(() => {
@@ -54,7 +63,9 @@ export default function ProfilePage() {
                 try {
                   const filename = images[0];
                   // Call your image API
-                  const imgRes = await fetch(`/api/images?filename=${filename}`);
+                  const imgRes = await fetch(
+                    `/api/images?filename=${filename}`
+                  );
                   if (imgRes.ok) {
                     const imgData = await imgRes.json();
                     if (imgData.url) {
@@ -62,7 +73,10 @@ export default function ProfilePage() {
                     }
                   }
                 } catch (err) {
-                  console.error("Failed to fetch image for event", reg.position.event.id);
+                  console.error(
+                    "Failed to fetch image for event",
+                    reg.position.event.id
+                  );
                 }
               }
 
@@ -85,66 +99,141 @@ export default function ProfilePage() {
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
-  // 1. ADD THIS FUNCTION
-  const handleRemove = async (registrationId: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to remove yourself from this event?");
-    if (!confirmDelete) return;
+  const handleRemove = (registrationId: string) => {
+    setModalTitle("Remove From Event?");
+    setModalMessage(
+      "Are you sure you want to remove yourself from this event?"
+    );
 
-    try {
-      const res = await fetch(`/api/registrations?id=${registrationId}`, {
-        method: "DELETE",
-      });
+    setModalButtons([
+      {
+        label: "Cancel",
+        variant: "secondary",
+        onClick: () => setModalOpen(false),
+      },
+      {
+        label: "Remove",
+        variant: "danger",
+        loading: modalLoading,
+        onClick: async () => {
+          try {
+            setModalLoading(true);
 
-      if (res.ok) {
-        // Remove from local state immediately to update UI
-        setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
-        alert("You have been removed from the event.");
-      } else {
-        const err = await res.json();
-        alert(err.error || "Failed to remove registration.");
-      }
-    } catch (error) {
-      console.error("Error removing registration:", error);
-      alert("An error occurred. Please try again.");
-    }
+            const res = await fetch(`/api/registrations?id=${registrationId}`, {
+              method: "DELETE",
+            });
+
+            if (res.ok) {
+              setMyEvents((prev) =>
+                prev.filter((evt) => evt.id !== registrationId)
+              );
+
+              setModalTitle("Success");
+              setModalMessage("You have been removed from the event.");
+              setModalButtons([
+                {
+                  label: "Close",
+                  onClick: () => setModalOpen(false),
+                },
+              ]);
+            } else {
+              const err = await res.json();
+              setModalTitle("Error");
+              setModalMessage(err.error || "Failed to remove registration.");
+              setModalButtons([
+                {
+                  label: "Close",
+                  onClick: () => setModalOpen(false),
+                },
+              ]);
+            }
+          } catch (error) {
+            setModalTitle("Error");
+            setModalMessage("An error occurred. Please try again.");
+            setModalButtons([
+              {
+                label: "Close",
+                onClick: () => setModalOpen(false),
+              },
+            ]);
+          } finally {
+            setModalLoading(false);
+          }
+        },
+      },
+    ]);
+
+    setModalOpen(true);
   };
 
-  // -------------------------------------------------------------
-  // ADMIN ACTION: Delete Entire Event
-  // -------------------------------------------------------------
-  const handleDeleteEvent = async (eventId: string, registrationId?: string) => {
-    const confirmDelete = window.confirm("ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?");
-    if (!confirmDelete) return;
+  const handleDeleteEvent = (eventId: string, registrationId?: string) => {
+    setModalTitle("Delete Event?");
+    setModalMessage(
+      "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
+    );
 
-    if (eventId.startsWith("evt-") || eventId === "demo-event") {
-       alert("Demo event deleted.");
-       return;
-    }
+    setModalButtons([
+      {
+        label: "Cancel",
+        variant: "secondary",
+        onClick: () => setModalOpen(false),
+      },
+      {
+        label: "Delete",
+        variant: "danger",
+        loading: modalLoading,
+        onClick: async () => {
+          try {
+            setModalLoading(true);
 
-    try {
-      const res = await fetch(`/api/events?id=${eventId}`, {
-        method: "DELETE",
-      });
+            if (eventId.startsWith("evt-") || eventId === "demo-event") {
+              setModalTitle("Demo Event Deleted");
+              setModalMessage("This was a demo event.");
+              setModalButtons([
+                { label: "Close", onClick: () => setModalOpen(false) },
+              ]);
+              return;
+            }
 
-      if (res.ok) {
-        // If successful, remove the card from the UI
-        // We use the registrationId to filter it out of the local state array
-        if (registrationId) {
-            setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
-        } else {
-            // Fallback: reload page if we can't find the specific card ID
-            window.location.reload();
-        }
-        alert("Event successfully deleted.");
-      } else {
-        const err = await res.json();
-        alert(err.error || "Failed to delete event.");
-      }
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      alert("An error occurred while deleting the event.");
-    }
-  }
+            const res = await fetch(`/api/events?id=${eventId}`, {
+              method: "DELETE",
+            });
+
+            if (res.ok) {
+              if (registrationId) {
+                setMyEvents((prev) =>
+                  prev.filter((evt) => evt.id !== registrationId)
+                );
+              }
+
+              setModalTitle("Event Deleted");
+              setModalMessage("Event successfully deleted.");
+              setModalButtons([
+                { label: "Close", onClick: () => setModalOpen(false) },
+              ]);
+            } else {
+              const err = await res.json();
+              setModalTitle("Error");
+              setModalMessage(err.error || "Failed to delete event.");
+              setModalButtons([
+                { label: "Close", onClick: () => setModalOpen(false) },
+              ]);
+            }
+          } catch (error) {
+            setModalTitle("Error");
+            setModalMessage("An error occurred while deleting the event.");
+            setModalButtons([
+              { label: "Close", onClick: () => setModalOpen(false) },
+            ]);
+          } finally {
+            setModalLoading(false);
+          }
+        },
+      },
+    ]);
+
+    setModalOpen(true);
+  };
 
   if (!isLoaded || loading) {
     return <main className="min-h-screen p-8" />;
@@ -169,7 +258,8 @@ export default function ProfilePage() {
 
   // Separate events into Upcoming and Past
   myEvents.forEach((reg) => {
-    if (!reg.position?.event?.date || reg.position.event.date.length === 0) return;
+    if (!reg.position?.event?.date || reg.position.event.date.length === 0)
+      return;
 
     const eventDate = new Date(reg.position.event.date[0]);
 
@@ -194,6 +284,14 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen p-8">
+      <div className="w-full flex justify-center mt-3">
+        <button
+          onClick={() => signOut(() => router.push("/"))}
+          className="text-black text-sm hover:text-red-200 transition-colors font-medium underline decoration-transparent hover:decoration-red-200"
+        >
+          Sign Out
+        </button>
+      </div>
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
@@ -207,7 +305,10 @@ export default function ProfilePage() {
         ) : (
           upcoming.map((reg) => {
             const event = reg.position.event;
-            const firstDate = event.date && event.date.length > 0 ? new Date(event.date[0]) : new Date();
+            const firstDate =
+              event.date && event.date.length > 0
+                ? new Date(event.date[0])
+                : new Date();
 
             return (
               <EventCard
@@ -221,32 +322,29 @@ export default function ProfilePage() {
                 date={firstDate}
                 filledSlots={reg.position.filledSlots}
                 totalSlots={reg.position.totalSlots}
-
                 userRole={userRole}
-
                 // 👇 THIS IS THE FIX: Pass the positionId to the register page
                 // CONDITIONAL ACTIONS
                 onEdit={() => {
-                   if (isAdmin) {
-                      // Admin -> Go to Event Details Page
-                      router.push(`/event/${event.id}`);
-                   } else {
-                      // User -> Go to Registration Page
-                      router.push(`/register/${reg.positionId}`);
-                   }
+                  if (isAdmin) {
+                    // Admin -> Go to Event Details Page
+                    router.push(`/event/${event.id}`);
+                  } else {
+                    // User -> Go to Registration Page
+                    router.push(`/register/${reg.positionId}`);
+                  }
                 }}
-                
                 onRemove={() => {
-                    if (isAdmin) {
-                        // Admin -> Delete Event API
-                        handleDeleteEvent(event.id, reg.id);
-                    } else {
-                        // User -> Cancel Signup API
-                        handleRemove(reg.id);
-                    }
+                  if (isAdmin) {
+                    // Admin -> Delete Event API
+                    handleDeleteEvent(event.id, reg.id);
+                  } else {
+                    // User -> Cancel Signup API
+                    handleRemove(reg.id);
+                  }
                 }}
                 onVolunteer={() => router.push(`/event/${event.id}`)}
-                />
+              />
             );
           })
         )}
@@ -306,7 +404,9 @@ export default function ProfilePage() {
         </div>
 
         <button className="ml-[99.62px] mt-[30.82px] h-[44px] w-[113px] rounded-lg border-[1px] bg-white text-black hover:bg-gray-300">
-          <div className="text-[16px]">Edit details</div>
+          <div className="text-[16px]">
+            <Link href="/profile/edit">Edit details</Link>
+          </div>
         </button>
       </div>
 
@@ -354,7 +454,9 @@ export default function ProfilePage() {
 
                 // Format: if whole number show "5", if decimal show "5.5"
                 const hoursDisplay =
-                  hoursVal % 1 === 0 ? hoursVal.toString() : hoursVal.toFixed(1);
+                  hoursVal % 1 === 0
+                    ? hoursVal.toString()
+                    : hoursVal.toFixed(1);
 
                 return (
                   <div
@@ -392,6 +494,13 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      <Modal
+        open={modalOpen}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        buttons={modalButtons}
+      />
     </main>
   );
 }
