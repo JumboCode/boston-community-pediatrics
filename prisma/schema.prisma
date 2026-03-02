@@ -15,6 +15,7 @@ model User {
   emailAddress  String          @unique
   phoneNumber   String
   dateOfBirth   DateTime?
+  speaksSpanish  Boolean?
   streetAddress String?
   city          String?
   state         String?
@@ -25,7 +26,6 @@ model User {
   updatedAt     DateTime        @updatedAt @map("updated_at")
   role          UserRole
   profileImage  String?
-  speaksSpanish Boolean?
   signups       EventSignup[]
   waitlists     EventWaitlist[]
 
@@ -91,18 +91,18 @@ model EventPosition {
 }
 
 model Guest {
-  id            String      @id @default(cuid())
-  positionId    String
-  firstName     String
-  lastName      String
-  emailAddress  String?
-  relation      String?
-  phoneNumber   String?
-  signupId      String
-  dateOfBirth   String?
-  comments      String?
-  speaksSpanish Boolean?
-  signup        EventSignup @relation(fields: [signupId], references: [id])
+  id           String      @id @default(cuid())
+  positionId   String
+  firstName    String
+  lastName     String
+  emailAddress String?
+  relation     String?
+  phoneNumber  String?
+
+  dateOfBirth  String?     
+  comments     String?
+  signupId  String
+  signup    EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
 
 model EventWaitlist {
@@ -117,16 +117,15 @@ model EventWaitlist {
 }
 
 model WaitlistGuest {
-  id            String        @id @default(cuid())
-  firstName     String
-  lastName      String
-  email         String?
-  relation      String?
-  waitlistId    String
-  dateOfBirth   String?
-  comments      String?
-  speaksSpanish Boolean?
-  waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id])
+  id          String        @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  relation    String?
+  waitlistId  String
+  comments    String?
+  dateOfBirth String?
+  waitlist   EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }
 
 enum UserRole {

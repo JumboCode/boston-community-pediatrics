@@ -102,6 +102,7 @@ export async function PUT(req: NextRequest) {
         "country",
         "zipCode",
         "profileImage",
+        "speaksSpanish",
       ];
       filteredBody = Object.fromEntries(
         Object.entries(body).filter(([key]) => allowedFields.includes(key))
