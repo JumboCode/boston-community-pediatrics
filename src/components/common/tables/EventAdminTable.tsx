@@ -23,7 +23,6 @@ interface EventAdminTableProps {
   startTime: string;
   endTime: string;
   description: string;
-  filledSlots: number;
   totalSlots: number;
   location: string;
   positionId: string;
@@ -36,7 +35,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     startTime,
     endTime,
     description,
-    filledSlots,
     totalSlots,
     location,
     positionId,
@@ -323,14 +321,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="flex flex-row items-center gap-10 mb-1 px-5">
             <div className="w-[280px] block">
               <p className="text-[24px] w-[280px] block">
-                {filledSlots}/{totalSlots} Spots Filled
+                {volunteers.length}/{totalSlots} Spots Filled
               </p>
             </div>
             <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
                 className="bg-light-bcp-blue h-4 rounded-full"
                 style={{
-                  width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
+                  width: `${totalSlots ? (volunteers.length / totalSlots) * 100 : 0}%`,
                 }}
               ></div>
             </div>
@@ -421,6 +419,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 </tr>
               );
             })}
+            {volunteers.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-gray-400">
+                  No one has signed up yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 
@@ -540,6 +545,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     </tr>
                   );
                 })}
+                {waitlist.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-400">
+                      No one is on the waitlist.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
 

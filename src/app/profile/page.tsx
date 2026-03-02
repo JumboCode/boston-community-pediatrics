@@ -1,14 +1,17 @@
 "use client";
-import EventCard from "@/components/events/EventCard";
-import { useUser } from "@clerk/nextjs";
+import ProfileEventCard from "@/components/events/ProfileEventCard";
+import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
+import Link from "next/link";
+import Modal from "@/components/common/Modal";
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const { signOut } = useClerk();
 
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +19,13 @@ export default function ProfilePage() {
   const [userRole, setUserRole] = useState<string>("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
-  // 1. Fetch User Phone Number + Profile Image
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState<string | undefined>();
+  const [modalMessage, setModalMessage] = useState<string | undefined>();
+  const [modalButtons, setModalButtons] = useState<any[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  // 1. Fetch User Phone Number
   useEffect(() => {
     async function fetchUserData() {
       if (!user?.id) return;
@@ -57,6 +66,7 @@ export default function ProfilePage() {
               if (images && images.length > 0) {
                 try {
                   const filename = images[0];
+                  // Call your image API
                   const imgRes = await fetch(
                     `/api/images?filename=${filename}`
                   );
@@ -66,7 +76,7 @@ export default function ProfilePage() {
                       resolvedUrl = imgData.url;
                     }
                   }
-                } catch (err) {
+                } catch {
                   console.error(
                     "Failed to fetch image for event",
                     reg.position.event.id
@@ -92,66 +102,140 @@ export default function ProfilePage() {
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
-  const handleRemove = async (registrationId: string) => {
-    const confirmDelete = window.confirm(
+  const handleRemove = (registrationId: string) => {
+    setModalTitle("Remove From Event?");
+    setModalMessage(
       "Are you sure you want to remove yourself from this event?"
     );
-    if (!confirmDelete) return;
 
-    try {
-      const res = await fetch(`/api/registrations?id=${registrationId}`, {
-        method: "DELETE",
-      });
+    setModalButtons([
+      {
+        label: "Cancel",
+        variant: "secondary",
+        onClick: () => setModalOpen(false),
+      },
+      {
+        label: "Remove",
+        variant: "danger",
+        loading: modalLoading,
+        onClick: async () => {
+          try {
+            setModalLoading(true);
 
-      if (res.ok) {
-        setMyEvents((prev) => prev.filter((evt) => evt.id !== registrationId));
-        alert("You have been removed from the event.");
-      } else {
-        const err = await res.json();
-        alert(err.error || "Failed to remove registration.");
-      }
-    } catch (error) {
-      console.error("Error removing registration:", error);
-      alert("An error occurred. Please try again.");
-    }
+            const res = await fetch(`/api/registrations?id=${registrationId}`, {
+              method: "DELETE",
+            });
+
+            if (res.ok) {
+              setMyEvents((prev) =>
+                prev.filter((evt) => evt.id !== registrationId)
+              );
+
+              setModalTitle("Success");
+              setModalMessage("You have been removed from the event.");
+              setModalButtons([
+                {
+                  label: "Close",
+                  onClick: () => setModalOpen(false),
+                },
+              ]);
+            } else {
+              const err = await res.json();
+              setModalTitle("Error");
+              setModalMessage(err.error || "Failed to remove registration.");
+              setModalButtons([
+                {
+                  label: "Close",
+                  onClick: () => setModalOpen(false),
+                },
+              ]);
+            }
+          } catch (error) {
+            setModalTitle("Error");
+            setModalMessage("An error occurred. Please try again.");
+            setModalButtons([
+              {
+                label: "Close",
+                onClick: () => setModalOpen(false),
+              },
+            ]);
+          } finally {
+            setModalLoading(false);
+          }
+        },
+      },
+    ]);
+
+    setModalOpen(true);
   };
 
-  const handleDeleteEvent = async (
-    eventId: string,
-    registrationId?: string
-  ) => {
-    const confirmDelete = window.confirm(
+  const handleDeleteEvent = (eventId: string, registrationId?: string) => {
+    setModalTitle("Delete Event?");
+    setModalMessage(
       "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
     );
-    if (!confirmDelete) return;
 
-    if (eventId.startsWith("evt-") || eventId === "demo-event") {
-      alert("Demo event deleted.");
-      return;
-    }
+    setModalButtons([
+      {
+        label: "Cancel",
+        variant: "secondary",
+        onClick: () => setModalOpen(false),
+      },
+      {
+        label: "Delete",
+        variant: "danger",
+        loading: modalLoading,
+        onClick: async () => {
+          try {
+            setModalLoading(true);
 
-    try {
-      const res = await fetch(`/api/events?id=${eventId}`, {
-        method: "DELETE",
-      });
+            if (eventId.startsWith("evt-") || eventId === "demo-event") {
+              setModalTitle("Demo Event Deleted");
+              setModalMessage("This was a demo event.");
+              setModalButtons([
+                { label: "Close", onClick: () => setModalOpen(false) },
+              ]);
+              return;
+            }
 
-      if (res.ok) {
-        if (registrationId) {
-          setMyEvents((prev) =>
-            prev.filter((evt) => evt.id !== registrationId)
-          );
-        } else {
-          window.location.reload();
-        }
-        alert("Event successfully deleted.");
-      } else {
-        const err = await res.json();
-        alert(err.error || "Failed to delete event.");
-      }
-    } catch (error) {
-      console.error("Error deleting event:", error);
-      alert("An error occurred while deleting the event.");
-    }
+            const res = await fetch(`/api/events?id=${eventId}`, {
+              method: "DELETE",
+            });
+
+            if (res.ok) {
+              if (registrationId) {
+                setMyEvents((prev) =>
+                  prev.filter((evt) => evt.id !== registrationId)
+                );
+              }
+
+              setModalTitle("Event Deleted");
+              setModalMessage("Event successfully deleted.");
+              setModalButtons([
+                { label: "Close", onClick: () => setModalOpen(false) },
+              ]);
+            } else {
+              const err = await res.json();
+              setModalTitle("Error");
+              setModalMessage(err.error || "Failed to delete event.");
+              setModalButtons([
+                { label: "Close", onClick: () => setModalOpen(false) },
+              ]);
+            }
+          } catch {
+            setModalTitle("Error");
+            setModalMessage("An error occurred while deleting the event.");
+            setModalButtons([
+              { label: "Close", onClick: () => setModalOpen(false) },
+            ]);
+          } finally {
+            setModalLoading(false);
+          }
+        },
+      },
+    ]);
+
+    setModalOpen(true);
   };
 
   if (!isLoaded || loading) {
@@ -195,6 +279,14 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen p-8">
+      <div className="w-full flex justify-center mt-3">
+        <button
+          onClick={() => signOut(() => router.push("/"))}
+          className="text-black text-sm hover:text-red-200 transition-colors font-medium underline decoration-transparent hover:decoration-red-200"
+        >
+          Sign Out
+        </button>
+      </div>
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
@@ -214,7 +306,7 @@ export default function ProfilePage() {
                 : new Date();
 
             return (
-              <EventCard
+              <ProfileEventCard
                 key={reg.id}
                 id={event.id}
                 image={reg.imageUrl || "/event1.jpg"}
@@ -228,15 +320,19 @@ export default function ProfilePage() {
                 userRole={userRole}
                 onEdit={() => {
                   if (isAdmin) {
+                    // Admin -> Go to Event Details Page
                     router.push(`/event/${event.id}`);
                   } else {
+                    // User -> Go to Registration Page
                     router.push(`/register/${reg.positionId}`);
                   }
                 }}
                 onRemove={() => {
                   if (isAdmin) {
+                    // Admin -> Delete Event API
                     handleDeleteEvent(event.id, reg.id);
                   } else {
+                    // User -> Cancel Signup API
                     handleRemove(reg.id);
                   }
                 }}
@@ -310,7 +406,9 @@ export default function ProfilePage() {
         </div>
 
         <button className="ml-[99.62px] mt-[30.82px] h-[44px] w-[113px] rounded-lg border-[1px] bg-white text-black hover:bg-gray-300">
-          <div className="text-[16px]">Edit details</div>
+          <div className="text-[16px]">
+            <Link href="/profile/edit">Edit details</Link>
+          </div>
         </button>
       </div>
 
@@ -356,34 +454,47 @@ export default function ProfilePage() {
                     : hoursVal.toFixed(1);
 
                 return (
-                  <div
-                    key={reg.id}
-                    className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex flex-col items-center justify-center leading-none">
-                      <span className="text-[11px] font-bold uppercase text-gray-500">
-                        {month}
-                      </span>
-                      <span className="text-[22px] font-bold text-black">
-                        {day}
-                      </span>
+                  <Link href={`/event/${reg.position.event.id}`} key={reg.id}>
+                    <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors">
+                      {/* Date Column */}
+                      <div className="flex flex-col items-center justify-center leading-none">
+                        <span className="text-[11px] font-bold uppercase text-gray-500">
+                          {month}
+                        </span>
+                        <span className="text-[22px] font-bold text-black">
+                          {day}
+                        </span>
+                      </div>
+
+                      {/* Event Name */}
+                      <div className="text-[16px] font-medium text-black truncate pr-2">
+                        {reg.position.event.name}
+                      </div>
+
+                      {/* Position */}
+                      <div className="text-[14px] text-gray-600 truncate pr-2">
+                        {reg.position.position}
+                      </div>
+
+                      {/* Hours */}
+                      <div className="text-[14px] font-medium text-black text-center">
+                        {hoursDisplay}
+                      </div>
                     </div>
-                    <div className="text-[16px] font-medium text-black truncate pr-2">
-                      {reg.position.event.name}
-                    </div>
-                    <div className="text-[14px] text-gray-600 truncate pr-2">
-                      {reg.position.position}
-                    </div>
-                    <div className="text-[14px] font-medium text-black text-center">
-                      {hoursDisplay}
-                    </div>
-                  </div>
+                  </Link>
                 );
               })
             )}
           </div>
         </div>
       </div>
+      <Modal
+        open={modalOpen}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalOpen(false)}
+        buttons={modalButtons}
+      />
     </main>
   );
 }

@@ -222,8 +222,8 @@ export async function POST(req: NextRequest) {
     // } catch (e) {
     //   console.error("Email failed (continuing anyway):", e);
     // }
-    // // This is just so we don't leak email to client
-    // const { email, ...safe } = result as any;
+    // This is just so we don't leak email to client
+    const { email, ...safe } = result as any;
     return NextResponse.json(safe, { status: 201 });
   } catch (error) {
     console.error("Failed to process registration:", error);

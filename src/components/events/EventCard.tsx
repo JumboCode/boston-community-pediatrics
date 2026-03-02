@@ -15,10 +15,6 @@ interface EventCardProps {
   startTime: Date;
   endTime: Date;
   location: string;
-  filledSlots: number;
-  totalSlots: number;
-  userRole: string;
-  date: Date;
   id: string;
   pinned: boolean;
   isAdmin?: boolean;
@@ -30,10 +26,6 @@ const EventCard = ({
   startTime,
   endTime,
   location,
-  filledSlots,
-  totalSlots,
-  userRole,
-  date,
   id,
   pinned,
   isAdmin,
@@ -44,15 +36,27 @@ const EventCard = ({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const formattedTime = new Date(startTime).toLocaleTimeString("en-US", {
+  const formatTime = (d: Date) => {
+    if (!d || isNaN(d.getTime())) return "undefined";
+    return d.toLocaleTimeString("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const timeRange = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+
+  const startDate = new Date(startTime).toLocaleDateString("en-US", {
     timeZone: "America/New_York",
-    hour: "numeric",
-    minute: "2-digit",
+  });
+  const endDate = new Date(endTime).toLocaleDateString("en-US", {
+    timeZone: "America/New_York",
   });
 
-  const formattedDate = new Date(date).toLocaleDateString("en-US", {
-    timeZone: "America/New_York",
-  });
+  const dateDisplay =
+    startDate === endDate ? startDate : `${startDate} - ${endDate}`;
 
   const closeModal = useCallback(() => {
     setModalTitle(null);
@@ -84,7 +88,7 @@ const EventCard = ({
         setModalTitle("Event Pinned!");
         setModalMessage("The event has been successfully pinned.");
       }
-    } catch (err) {
+    } catch {
       setModalTitle("Error");
       setModalMessage("Something went wrong. Please try again.");
     } finally {
@@ -117,7 +121,7 @@ const EventCard = ({
         router.push("/event");
         router.refresh();
       }, 1500);
-    } catch (err) {
+    } catch {
       setModalTitle("Error");
       setModalMessage("Something went wrong. Please try again.");
       setShowDeleteConfirm(false);
@@ -134,7 +138,7 @@ const EventCard = ({
         },
         {
           label: "Edit",
-          onClick: () => router.push(`/event/createEvent?id=${id}`),
+          onClick: () => router.push(`/admin/createEvent?id=${id}`),
         },
         {
           label: "Delete",
@@ -158,7 +162,7 @@ const EventCard = ({
   }, [modalMessage, closeModal]);
 
   return (
-    <div className="relative flex flex-col w-[283px] rounded-2xl shadow p-4 gap-2 bg-white">
+    <div className="relative flex flex-col w-[283px] rounded-2xl p-4 gap-2 shadow bg-really-light-gray">
       <Link href={`/event/${id}`}>
         <Image
           src={image}
@@ -171,17 +175,26 @@ const EventCard = ({
 
       {isAdmin && pinned && <PinnedIndicator />}
 
-      <div className="flex items-start justify-between">
-        <Link href={`/event/${id}`}>
-          <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
+      <div className="flex items-start justify-between min-w-0">
+        <Link href={`/event/${id}`} className="min-w-0 flex-1">
+          <h3 className="text-[20px] font-medium text-bcp-blue leading-tight truncate pr-2">
+            {title}
+          </h3>
         </Link>
 
         {isAdmin && <KebabMenu items={menuItems} />}
       </div>
 
-      <p className="text-sm text-gray-700">{formattedTime}</p>
-      <p className="text-sm text-gray-700">{location}</p>
-      <p className="text-sm text-gray-700">{formattedDate}</p>
+      {/* <p className="text-sm text-gray-700">{formattedStartTime} - {formattedEndTime}</p>
+       */}
+      <div className="flex flex-col gap-1 text-[16px] text-black">
+        <p>{timeRange}</p>
+        <p className="line-clamp-1">{location}</p>
+      </div>
+
+      <div className="flex justify-between items-end mt-auto pb-1">
+        <p className="text-[14px] text-gray-500">{dateDisplay}</p>
+      </div>
 
       {modalMessage && modalTitle && (
         <Modal
