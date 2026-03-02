@@ -81,12 +81,3 @@ export async function adminUpdateUserRole(userId: string, role: UserRole) {
     data: { role },
   });
 }
-
-export async function deleteUser(id: string) {
-  const deletedUser = await prisma.user.delete({
-    where: {
-      id: id,
-    },
-  });
-  return deletedUser;
-}

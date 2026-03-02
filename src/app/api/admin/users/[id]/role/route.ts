@@ -40,7 +40,6 @@ export async function PATCH(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
-  console.log("sigma\n");
 
   if (id) {
     try {

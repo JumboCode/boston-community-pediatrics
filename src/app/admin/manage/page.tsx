@@ -5,6 +5,7 @@ import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 
 interface FrontEndUser {
   userId: string;
@@ -18,32 +19,17 @@ interface FrontEndUser {
   selected: boolean;
 }
 
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
+  }
+  return res.json();
+};
+
 const ManageRolesPage = () => {
-  const fetcher = async (url: string) => {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
-    }
-    return res.json();
-  };
-
-  // Fetch signups for the position (volunteers)
-  const { data: allVols } = useSWR<FrontEndUser[]>(`/api/users`, fetcher);
-
-  const frontEndUsers = useMemo(() => {
-    if (!allVols) return [];
-
-    return allVols.map((v: any) => ({
-      userId: v.id || v.userId,
-      firstName: v.firstName,
-      lastName: v.lastName,
-      emailAddress: v.emailAddress,
-      phoneNumber: v.phoneNumber,
-      role: v.role,
-      selected: false,
-    }));
-  }, [allVols]);
-
+  const { user } = useUser();
+  const currentUserId = user?.id;
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const [modalTitle, setModalTitle] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
@@ -54,13 +40,37 @@ const ManageRolesPage = () => {
 
   const router = useRouter();
 
+  // Fetch signups for the position (volunteers)
+  const { data: allVols } = useSWR<FrontEndUser[]>(`/api/users`, fetcher);
+
+  const frontEndUsers = useMemo(() => {
+    if (!allVols) return [];
+    return allVols
+      .map((v: any) => ({
+        userId: v.id || v.userId,
+        firstName: v.firstName,
+        lastName: v.lastName,
+        emailAddress: v.emailAddress,
+        phoneNumber: v.phoneNumber,
+        role: v.role,
+        selected: false,
+      }))
+      .sort((a, b) => {
+        const firstNameCompare = a.firstName
+          .toLowerCase()
+          .localeCompare(b.firstName.toLowerCase());
+        if (firstNameCompare !== 0) return firstNameCompare;
+        return a.lastName.toLowerCase().localeCompare(b.lastName.toLowerCase());
+      });
+  }, [allVols]);
+
   useEffect(() => {
     setVolunteers(frontEndUsers);
   }, [frontEndUsers]);
 
   // Volunteer selection (toggle by `userId`)
   const toggleSelect = (id?: string) => {
-    if (!id) return;
+    if (!id || id === currentUserId) return;
 
     setVolunteers((prev) =>
       prev.map((v) => (v.userId === id ? { ...v, selected: !v.selected } : v))
@@ -68,13 +78,16 @@ const ManageRolesPage = () => {
   };
 
   const toggleSelectAll = () => {
-    const allSelected = volunteers.every((v) => v.selected);
+    const allSelected = volunteers
+      .filter((v) => v.userId !== currentUserId)
+      .every((v) => v.selected);
     setVolunteers((prev) =>
-      prev.map((v) => ({ ...v, selected: !allSelected }))
+      prev.map((v) =>
+        v.userId === currentUserId ? v : { ...v, selected: !allSelected }
+      )
     );
   };
 
-  const anySelected = volunteers.some((v) => v.selected);
   const selectedCount = volunteers.filter((v) => v.selected).length;
 
   const closeModal = useCallback(() => {
@@ -92,7 +105,7 @@ const ManageRolesPage = () => {
   const handleDeleteApproved = async () => {
     setIsLoading(true);
     const volunteersToDel: FrontEndUser[] = volunteers.filter(
-      (v) => v.selected === true
+      (v) => v.selected && v.userId !== currentUserId
     );
 
     if (volunteersToDel.length === 0) {
@@ -102,7 +115,7 @@ const ManageRolesPage = () => {
 
     try {
       const deletePromises = volunteersToDel.map(async (vol) => {
-        const res = await fetch("/api/users", {
+        const res = await fetch(`/api/admin/users/${vol.userId}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -144,7 +157,7 @@ const ManageRolesPage = () => {
   const handleEditApproved = async () => {
     setIsLoading(true);
     const volunteersToEdit: FrontEndUser[] = volunteers.filter(
-      (v) => v.selected === true
+      (v) => v.selected && v.userId !== currentUserId
     );
 
     if (volunteersToEdit.length === 0) {
@@ -251,6 +264,7 @@ const ManageRolesPage = () => {
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.userId)}
+                        disabled={p.userId === currentUserId}
                         className="w-5 h-5 accent-bcp-blue cursor-pointer"
                       />
                     </td>
@@ -265,26 +279,31 @@ const ManageRolesPage = () => {
           <div className="flex justify-between py-6">
             <div className="flex justify-between gap-4">
               <Button
+                disabled={selectedCount <= 0}
                 label="Message"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
               />
               <Button
+                disabled={selectedCount <= 0}
                 label="Copy to Clipboard"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
               />
               <Button
+                disabled={selectedCount <= 0}
                 label="Save as CSV"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
               />
             </div>
             <div className="flex justify-between gap-4">
               <Button
+                disabled={selectedCount <= 0}
                 label="Change Role"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
                 onClick={handleEditConfirm}
               />
 
               <Button
+                disabled={selectedCount <= 0}
                 label="Remove"
                 altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
                 onClick={handleDeleteConfirm}
