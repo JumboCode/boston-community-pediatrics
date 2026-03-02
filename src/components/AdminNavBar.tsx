@@ -60,7 +60,7 @@ function AdminNavBar() {
                   <Menu.Item>
                     {({ active }) => (
                       <Link
-                        href="/manage/volunteers"
+                        href="/admin/manage/"
                         className={`block px-4 py-2 text-sm ${
                           active ? "bg-blue-500 text-white" : "text-black"
                         }`}

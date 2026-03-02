@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createUser,
-  deleteUser,
   getUserById,
   getUsers,
   updateUserProfile,
@@ -102,6 +101,7 @@ export async function PUT(req: NextRequest) {
         "country",
         "zipCode",
         "profileImage",
+        "speaksSpanish",
       ];
       filteredBody = Object.fromEntries(
         Object.entries(body).filter(([key]) => allowedFields.includes(key))
@@ -116,23 +116,6 @@ export async function PUT(req: NextRequest) {
     console.error("Error:", error);
     return NextResponse.json(
       { error: "Failed to update user" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { id } = await req.json();
-    const deletedUser = await deleteUser(id);
-    if (!deletedUser) {
-      return NextResponse.json({ error: "User not deleted" }, { status: 404 });
-    }
-    return NextResponse.json(deletedUser, { status: 200 });
-  } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete user" },
       { status: 500 }
     );
   }
