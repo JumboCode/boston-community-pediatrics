@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useSignUp } from "@clerk/nextjs"; // Clerk Hook
+import { useState, useRef } from "react"; // Added useRef
+import { useSignUp } from "@clerk/nextjs"; 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
-
 
 type SignupFormData = {
   firstName: string;
@@ -21,6 +20,7 @@ type SignupFormData = {
   city?: string;
   state?: string;
   zip?: string;
+  profileImageUrl?: string; // <--- ADDED
 };
 
 const SignupForm = () => {
@@ -30,23 +30,31 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // State to switch between Form and Verification
+  // --- NEW: Image State ---
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
+  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
 
-  // Store form data here so we can use it AFTER verification
-  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
-    null
-  );
+  // --- NEW: Handle Image Selection ---
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file)); // Immediate local preview
+    }
+  };
 
-  // --- 1. GOOGLE SIGN UP FLOW ---
   const handleGoogleSignUp = async () => {
     if (!isLoaded) return;
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/onboarding", // Goes to onboarding to finish profile
+        redirectUrlComplete: "/onboarding", 
       });
     } catch {
       console.error("Google sign up error");
@@ -54,7 +62,6 @@ const SignupForm = () => {
     }
   };
 
-  // --- HANDLER 1: SUBMIT FORM ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLoaded) return;
@@ -75,7 +82,31 @@ const SignupForm = () => {
     }
 
     try {
-      // 1. Create the SignUp on Clerk
+      // --- 1. NEW: Upload Image to R2 (if selected) ---
+      let uploadedImageUrl = "";
+      
+      if (selectedFile) {
+        // A. Get the presigned URL
+        const uploadRes = await fetch("/api/upload-signup", {
+          method: "POST",
+          body: JSON.stringify({ fileType: selectedFile.type }),
+        });
+        
+        if (!uploadRes.ok) throw new Error("Failed to initialize upload");
+        const { uploadUrl, publicUrl } = await uploadRes.json();
+
+        // B. Upload the file directly to R2
+        const r2Res = await fetch(uploadUrl, {
+          method: "PUT",
+          body: selectedFile,
+          headers: { "Content-Type": selectedFile.type },
+        });
+
+        if (!r2Res.ok) throw new Error("Failed to upload image");
+        uploadedImageUrl = publicUrl;
+      }
+
+      // --- 2. Create Clerk Account ---
       await signUp.create({
         emailAddress: email,
         password,
@@ -83,10 +114,9 @@ const SignupForm = () => {
         lastName,
       });
 
-      // 2. Send the OTP
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // 3. Save the extra data (phone, dob, addr) to state for later
+      // --- 3. Save Data (include the new image URL) ---
       setSavedFormData({
         firstName,
         lastName,
@@ -99,33 +129,27 @@ const SignupForm = () => {
         city: formData.get("city") as string,
         state: formData.get("state") as string,
         zip: formData.get("zip") as string,
+        profileImageUrl: uploadedImageUrl, // <--- SAVED HERE
       });
 
-      // 4. Switch UI to Verification Mode
       setPendingVerification(true);
-    // } catch {
-    //   setError("Error creating account");
     } catch (err: any) {
-  console.error("RAW Clerk error:", err)
-  console.error("Clerk errors:", err?.errors)
-
+      console.error("Signup error:", err);
+      setError(err?.errors?.[0]?.message || "Error creating account");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- HANDLER 2: VERIFY OTP & SYNC DB ---
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded) return;
     setLoading(true);
 
     try {
-      // 1. Verify the code
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code,
       });
-
 
       if (completeSignUp.status !== "complete") {
         setError("Verification incomplete. Please check your code.");
@@ -133,55 +157,39 @@ const SignupForm = () => {
         return;
       }
 
-      // 2. Verification Successful - Clerk User Created!
       const clerkUserId = completeSignUp.createdUserId;
 
-      if (clerkUserId) {
-        // 3. Sync to YOUR Postgres DB via your existing API
-        // We use the clerkUserId as the Primary Key 'id'
-
-        if (!savedFormData) {
-          setError("Signup data missing. Please restart signup.");
-          return;
-        }
-
+      if (clerkUserId && savedFormData) {
+        // --- 4. Sync to DB (Send profileImage) ---
         const dbResponse = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user: {
-              id: clerkUserId, // <--- IMPORTANT: Using Clerk ID as DB ID
+              id: clerkUserId,
               firstName: savedFormData.firstName,
               lastName: savedFormData.lastName,
               emailAddress: savedFormData.email,
               phoneNumber: savedFormData.phone,
-              dateOfBirth: savedFormData.dob, // sends string "YYYY-MM-DD"
+              dateOfBirth: savedFormData.dob,
               speaksSpanish: savedFormData.speaksSpanish,
-              streetAddress: savedFormData.street, // Map 'street' to 'streetAddress'
+              streetAddress: savedFormData.street,
               city: savedFormData.city,
               state: savedFormData.state,
-              zipCode: savedFormData.zip, // Map 'zip' to 'zipCode'
+              zipCode: savedFormData.zip,
+              profileImage: savedFormData.profileImageUrl, // <--- SENT TO DB
               role: "VOLUNTEER",
-              // clerkId is optional since we used it as PK, but if your schema needs it:
               clerkId: clerkUserId,
             },
           }),
         });
-        const dbResult = await dbResponse.json();
-        if (!dbResponse.ok) {
-          console.error("Failed to sync user to database", dbResult);
-          // Optional: Handle DB error (maybe retry logic or alert admin)
-        }
+
+        if (!dbResponse.ok) console.error("Failed to sync user to DB");
       }
 
-      // 4. Set active session (Log them in)
       await setActive({ session: completeSignUp.createdSessionId });
-      // after setActive()
-
-      // 5. Redirect
-      router.push("/event"); // or wherever you want them to go
+      router.push("/event");
     } catch {
-      // console.error(JSON.stringify(err, null, 2));
       setError("Verification failed");
     } finally {
       setLoading(false);
@@ -499,17 +507,32 @@ const SignupForm = () => {
           </div>
         </div>
 
-        {/* Upload helper text */}
-        <p className="flex items-center gap-[60px] text-[20px] text-medium-gray">
-          <Image
-            src={ProfilePlaceholder}
-            alt="Profile placeholder"
-            className="w-[264px] h-[264px] left"
+        {/* --- NEW: Image Upload UI --- */}
+        <div className="flex items-center gap-[60px]">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*"
+            className="hidden" // Hide the ugly default input
           />
-          <span>
+          
+          {/* Clickable Circle Image */}
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-[264px] h-[264px] relative cursor-pointer  overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
+          >
+            {previewUrl ? (
+              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+            ) : (
+              <Image src={ProfilePlaceholder} alt="Placeholder" className="w-full h-full object-cover" />
+            )}
+          </div>
+
+          <span className="text-[20px] text-medium-gray cursor-pointer" onClick={() => fileInputRef.current?.click()}>
             Upload a profile photo <br /> (optional)
           </span>
-        </p>
+        </div>
 
         {/* Password */}
         <div className="flex flex-col items-start">

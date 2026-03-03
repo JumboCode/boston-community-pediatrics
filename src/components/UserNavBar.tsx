@@ -1,14 +1,17 @@
 "use client";
 import bcp_logo from "@/assets/icons/BCP.svg";
-import blankProfile from "@/assets/icons/empty-profile-picture.svg";
-import React from "react";
+import blankProfile from "@/assets/icons/Group 1.svg";
 import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
-function UserNavBar() {
-  const { user, isSignedIn, isLoaded } = useUser();
+interface UserNavBarProps {
+  profileImageUrl: string | null;
+}
 
+function UserNavBar(props: UserNavBarProps) {
+  const { profileImageUrl } = props;
+  const { user, isSignedIn } = useUser();
   const firstName = user?.firstName ?? "Guest";
 
   return (
@@ -45,11 +48,16 @@ function UserNavBar() {
             {isSignedIn ? (
               <li className="flex items-center gap-2">
                 <span className="text-white font-medium">{firstName}</span>
-                <Image
-                  src={blankProfile}
-                  alt="Placeholder User"
-                  className="w-8 h-8 rounded-full"
-                />
+                <Link href="/profile">
+                  <Image
+                    src={profileImageUrl ?? blankProfile}
+                    alt="Profile"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full object-cover"
+                    unoptimized={!!profileImageUrl}
+                  />
+                </Link>
               </li>
             ) : (
               <li className="flex items-center gap-2">

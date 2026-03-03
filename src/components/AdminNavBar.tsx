@@ -1,12 +1,17 @@
 "use client";
 import bcp_logo from "@/assets/icons/BCP.svg";
-import blankProfile from "@/assets/icons/empty-profile-picture.svg";
+import blankProfile from "@/assets/icons/Group 1.svg";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "@headlessui/react";
 import DropDownArrow from "@/assets/icons/drop-down-arrow.svg";
 
-function AdminNavBar() {
+interface UserNavBarProps {
+  profileImageUrl: string | null;
+}
+
+function AdminNavBar(props: UserNavBarProps) {
+  const { profileImageUrl } = props;
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
@@ -60,7 +65,7 @@ function AdminNavBar() {
                   <Menu.Item>
                     {({ active }) => (
                       <Link
-                        href="/manage/volunteers"
+                        href="/admin/manage/"
                         className={`block px-4 py-2 text-sm ${
                           active ? "bg-blue-500 text-white" : "text-black"
                         }`}
@@ -76,11 +81,15 @@ function AdminNavBar() {
               <span className="text-white text-sm relative top-[1.5px]">
                 Admin
               </span>
-              <Image
-                src={blankProfile}
-                alt="Placeholder User"
-                className="w-8 h-8 rounded-full"
-              />
+              <Link href="/profile">
+                <Image
+                  src={profileImageUrl || blankProfile}
+                  alt="Placeholder User"
+                  className="w-8 h-8 rounded-full"
+                  width={32}
+                  height={32}
+                />
+              </Link>
             </li>
           </ul>
         </li>
