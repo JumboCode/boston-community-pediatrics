@@ -15,6 +15,7 @@ interface Event {
   name: string;
   date: Date[];
   startTime: Date;
+  endTime: Date;
   addressLine1: string;
   pinned: boolean;
   images: string[];
@@ -33,7 +34,24 @@ const Home: React.FC = () => {
       try {
         const res = await fetch("/api/events/pinned");
         const data = await res.json();
-        setPinnedEvents(data);
+
+        console.log(data);
+
+        const now = new Date();
+
+        data.forEach((event: Event) => {
+          if (new Date(event.endTime) < now) {
+            fetch(`/api/events/${event.id}/unpin`, { method: "POST" }).catch(
+              (err) => console.error(`Failed to unpin event ${event.id}:`, err)
+            );
+          }
+        });
+
+        // Only show events that aren't outdated
+        const activeEvents = data.filter(
+          (event: Event) => new Date(event.endTime) >= now
+        );
+        setPinnedEvents(activeEvents);
       } catch (err) {
         console.error("Failed to load pinned events:", err);
       } finally {
@@ -58,9 +76,6 @@ const Home: React.FC = () => {
       const newScale = Math.min(widthRatio, heightRatio, MAX_SCALE);
       setScale(newScale);
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-
-      console.log("Window size:", window.innerWidth, "x", window.innerHeight);
-      console.log("Scale:", newScale);
     };
 
     handleResize();
