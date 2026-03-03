@@ -73,12 +73,18 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // hmm TODO should this be admin only aswell ?
   try {
+    const currentUser = await getCurrentUser();
+
+    if (currentUser && currentUser.role === UserRole.ADMIN) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const users = await getUsers();
     if (!users) {
       return NextResponse.json({ error: "Users not found" }, { status: 404 });
     }
+      
     return NextResponse.json(users, { status: 200 });
   } catch (error) {
     console.error("Error:", error);
