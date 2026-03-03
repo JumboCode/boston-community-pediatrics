@@ -150,7 +150,7 @@ export default function ProfilePage() {
                 },
               ]);
             }
-          } catch (error) {
+          } catch {
             setModalTitle("Error");
             setModalMessage("An error occurred. Please try again.");
             setModalButtons([
@@ -311,7 +311,7 @@ export default function ProfilePage() {
                 id={event.id}
                 image={reg.imageUrl || "/event1.jpg"}
                 title={event.name}
-                startTime={new Date(event.startTime)}
+                startTime={new Date(reg.position.startTime)}
                 endTime={new Date(reg.position.endTime)}
                 location={event.addressLine1}
                 date={firstDate}

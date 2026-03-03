@@ -49,8 +49,9 @@ export interface AdminUser {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
-  guestOf?: string;
-  isGuest?: boolean;
+  speaksSpanish: boolean;
+  guestOf?: string; // For displaying "Guest of X"
+  isGuest?: boolean; // To mark if this row is a guest
 }
 
 function adminUserWithGuests(s: {
@@ -65,6 +66,7 @@ function adminUserWithGuests(s: {
     lastName: s.user.lastName,
     emailAddress: s.user.emailAddress,
     phoneNumber: s.user.phoneNumber,
+    speaksSpanish: s.user.speaksSpanish ?? false,
   };
 
   const guestUsers: AdminUser[] = s.guests.map((guest) => ({

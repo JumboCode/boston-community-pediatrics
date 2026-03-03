@@ -13,6 +13,7 @@ interface Guest {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
+  speaksSpanish: boolean;
   relationship: string;
   comments: string;
 }
@@ -67,6 +68,7 @@ export default function EventSignUpForm({
         ...g,
         email: g.email ?? "",
         phoneNumber: g.phoneNumber ?? "",
+        speaksSpanish: g.speaksSpanish ?? false,
         relationship: g.relationship ?? "",
         comments: g.comments ?? "",
         dateOfBirth: g.dateOfBirth ?? "",
@@ -282,11 +284,60 @@ export default function EventSignUpForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* REQUIRED DOB and RELATIONSHIP and SPEAKSPANISH */}
+              <div className="flex flex-col gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Participant DOB <span className="text-red-500">*</span></label>
                   <input type="date" required className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none text-gray-700" value={guest.dateOfBirth} onChange={(e) => updateGuest(guest.id, "dateOfBirth", e.target.value)} />
                 </div>
+
+                <div className="flex flex-row items-center gap-4 flex-wrap justify-between">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Does this person speak Spanish?{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-row text-right gap-6">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id={`speaksSpanish-yes-${guest.id}`}
+                        name={`speaksSpanish-${guest.id}`}
+                        value="true"
+                        className="accent-bcp-blue"
+                        checked={guest.speaksSpanish === true}
+                        onChange={() =>
+                          updateGuest(guest.id, "speaksSpanish", true)
+                        }
+                      />
+                      <label
+                        htmlFor={`speaksSpanish-yes-${guest.id}`}
+                        className="text-base font-normal text-medium-gray"
+                      >
+                        Yes
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id={`speaksSpanish-no-${guest.id}`}
+                        name={`speaksSpanish-${guest.id}`}
+                        value="false"
+                        className="accent-bcp-blue"
+                        checked={guest.speaksSpanish === false}
+                        onChange={() =>
+                          updateGuest(guest.id, "speaksSpanish", false)
+                        }
+                      />
+                      <label
+                        htmlFor={`speaksSpanish-no-${guest.id}`}
+                        className="text-base font-normal text-medium-gray"
+                      >
+                        No
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Relationship <span className="text-red-500">*</span></label>
                   <input type="text" required placeholder="e.g. Spouse, Child" className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none" value={guest.relationship} onChange={(e) => updateGuest(guest.id, "relationship", e.target.value)} />

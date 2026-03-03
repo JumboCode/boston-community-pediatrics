@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     const { positionId, userId, guests = [] } = data;
 
     // Get position and count current signups
-    const [position, signupCount] = await Promise.all([
+    const [position] = await Promise.all([
       prisma.eventPosition.findUnique({
         where: { id: positionId },
       }),
