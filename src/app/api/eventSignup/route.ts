@@ -99,7 +99,16 @@ export async function POST(req: NextRequest) {
     const totalPeopleNeeded = 1 + guests.length;
 
     // Check if there's enough space for user + all guests
-    const availableSlots = position.totalSlots - signupCount;
+    // Changed because having only filledSlots wasn't updating correctly
+    const actualSignups = await prisma.eventSignup.findMany({
+      where: { positionId },
+      select: { guests: { select: { id: true } } },
+    });
+    const actualFilledCount = actualSignups.reduce(
+      (sum, s) => sum + 1 + s.guests.length,
+      0
+    );
+    const availableSlots = position.totalSlots - actualFilledCount;
 
     if (availableSlots >= totalPeopleNeeded) {
       // Enough space - create normal signup with guests

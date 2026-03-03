@@ -24,7 +24,6 @@ interface EventAdminTableProps {
   startTime: string;
   endTime: string;
   description: string;
-  filledSlots: number;
   totalSlots: number;
   location: string;
   positionId: string;
@@ -37,7 +36,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     startTime,
     endTime,
     description,
-    filledSlots,
     totalSlots,
     location,
     positionId,
@@ -192,7 +190,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        const res = await fetch(`/api/eventSignup?id=${signUpId}`, {
+        // Changed from eventSignup/waitlist to registrations which worked for 
+        // sending emails, but just in case something breaks here is a comment :D
+        const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
         });
 
@@ -227,7 +227,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueWaitlistIds.map(async (waitlistId) => {
-        const res = await fetch(`/api/waitlist?id=${waitlistId}`, {
+        const res = await fetch(`/api/registrations?id=${waitlistId}`, {
           method: "DELETE",
         });
 
@@ -285,6 +285,48 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       // Revert optimistic update on error
       router.refresh();
     }
+  };
+
+  const handleSendVolunteerEmail = () => {
+    // TODO: Guest shi
+    const selected = volunteers.filter((v) => v.selected && !v.isGuest);
+    const userIds = Array.from(new Set(selected.map((v) => v.userId)));
+
+    if (userIds.length === 0) return;
+
+    /* 
+    basically, if we want the data to go to the other page, we have two options:
+    - we can put them all in the URL, this is bad cuz it will get hella long
+    - we can put them in the session storage
+    */
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(userIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "volunteers");
+
+    router.push("/admin/email");
+  };
+
+  const handleSendWaitlistEmail = () => {
+    // TODO: Guest shi
+    const selected = waitlist.filter((v) => v.selected && !v.isGuest);
+    const userIds = Array.from(new Set(selected.map((v) => v.userId)));
+
+    if (userIds.length === 0) return;
+
+    /* 
+    basically, if we want the data to go to the other page, we have two options:
+    - we can put them all in the URL, this is bad cuz it will get hella long
+    - we can put them in the session storage
+    */
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(userIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "waitlist");
+
+    router.push("/admin/email");
   };
 
   return (
@@ -385,16 +427,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <div className="flex items-center gap-3">
                       {p.isGuest ? (
                         <div className="flex items-start relative">
-                          {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                          <div
-                            className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          {/* Guest circle - #D9D9D9 */}
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
+                          {/* Vertical connector line - 30px tall, 5px wide*/}
+                          <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                          {/* Guest circle */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                           <div className="ml-3">
                             <div>
                               {p.firstName} {p.lastName}
@@ -403,16 +439,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 relative">
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                          {/* Vertical line extending down - 30px tall, 5px wide*/}
                           {hasGuestBelow && (
-                            <div
-                              className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                              style={{ backgroundColor: "#D9D9D9" }}
-                            ></div>
+                            <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
                           <div>
                             {p.firstName} {p.lastName}
@@ -445,6 +475,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 </tr>
               );
             })}
+            {volunteers.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-gray-400">
+                  No one has signed up yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 
@@ -455,6 +492,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <Button
                 label="Send Email"
                 altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                onClick={handleSendVolunteerEmail}
               />
               <Button
                 label="Remove from Event"
@@ -521,16 +559,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         <div className="flex items-center gap-3">
                           {p.isGuest ? (
                             <div className="flex items-start relative">
-                              {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                              <div
-                                className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              {/* Guest circle - #D9D9D9 */}
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
+                              {/* Vertical connector line - 30px tall, 5px wide,*/}
+                              <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                              {/* Guest circle */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                               <div className="ml-3">
                                 <div>
                                   {p.firstName} {p.lastName}
@@ -544,16 +576,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative">
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                              {/* Vertical line extending down - 30px tall, 5px wide */}
                               {hasGuestBelow && (
-                                <div
-                                  className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                                  style={{ backgroundColor: "#D9D9D9" }}
-                                ></div>
+                                <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
                               <div>
                                 {p.firstName} {p.lastName}
@@ -585,6 +611,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     </tr>
                   );
                 })}
+                {waitlist.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-400">
+                      No one is on the waitlist.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
@@ -596,6 +629,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <Button
                       label="Send Email"
                       altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                      onClick={handleSendWaitlistEmail}
                     />
                     <Button
                       label="Add to Event"

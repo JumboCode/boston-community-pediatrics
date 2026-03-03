@@ -5,6 +5,7 @@ import { Event, UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import Button from "@/components/common/buttons/Button";
+import { getPublicURL } from "@/lib/r2";
 
 export default async function EventsPage() {
   const user = await getCurrentUser();
@@ -19,8 +20,24 @@ export default async function EventsPage() {
     error = "Failed to load events";
   }
 
+  const eventImages = Object.fromEntries(
+    events.map((e) => {
+      try {
+        return [e.id, e.images?.[0] ? getPublicURL(e.images[0]) : null];
+      } catch {
+        console.error("Failed to fetch image for event: ", e.id);
+        return [e.id, null];
+      }
+    })
+  );
+
   const featuredEvents = events
-    .filter((event) => event.pinned && event.date?.length > 0)
+    .filter(
+      (event) =>
+        event.pinned &&
+        event.date?.length > 0 &&
+        new Date(event.endTime) >= new Date()
+    )
     .sort((a, b) => {
       const dateDiff =
         new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
@@ -31,10 +48,15 @@ export default async function EventsPage() {
     });
 
   const regularEvents = events
-    .filter((event) => !event.pinned && event.date?.length > 0)
+    .filter(
+      (event) =>
+        !event.pinned &&
+        event.date?.length > 0 &&
+        new Date(event.endTime) >= new Date()
+    )
     .sort((a, b) => {
       const dateDiff =
-        new Date(a.date[0]).getTime() - new Date(b.date[0]).getTime();
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
 
       if (dateDiff !== 0) return dateDiff;
 
@@ -84,15 +106,14 @@ export default async function EventsPage() {
         ) : featuredEvents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
             {featuredEvents.map((event) => {
-              const firstDate = event.date[0];
               return (
                 <EventCard
                   key={event.id}
-                  image="/event1.jpg"
+                  image={eventImages[event.id] || "/event1.jpg"}
                   title={event.name}
-                  location={event.addressLine1}
-                  date={firstDate}
                   startTime={event.startTime}
+                  endTime={event.endTime}
+                  location={event.addressLine1}
                   id={event.id}
                   pinned={event.pinned}
                   isAdmin={user?.role === UserRole.ADMIN}
@@ -116,15 +137,14 @@ export default async function EventsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {regularEvents.map((event) => {
-              const firstDate = event.date?.[0];
               return (
                 <EventCard
                   key={event.id}
-                  image="/event1.jpg"
+                  image={eventImages[event.id] || "/event1.jpg"}
                   title={event.name}
                   startTime={event.startTime}
+                  endTime={event.endTime}
                   location={event.addressLine1}
-                  date={firstDate}
                   id={event.id}
                   pinned={event.pinned}
                   isAdmin={user?.role === UserRole.ADMIN}

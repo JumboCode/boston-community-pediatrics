@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
 import { sendWaitlisted } from "@/lib/email/sendWaitlisted";
+import { sendRemoved } from "@/lib/email/sendRemoved";
 
 // --- Configuration ---
 const MAX_GUESTS = 20;
@@ -46,6 +47,114 @@ const formatLocation = (p: {
   return `${p.addressLine1}${line2}, ${p.city}, ${p.state} ${p.zipCode}`;
 };
 
+type PendingEmail =
+  | {
+      kind: "registered";
+      wasWaitlisted?: boolean;
+      user: { firstName: string; emailAddress: string | null };
+      position: {
+        position: string;
+        date: Date;
+        startTime: Date;
+        endTime: Date;
+        filledSlots: number;
+        addressLine1: string;
+        addressLine2: string | null;
+        city: string;
+        state: string;
+        zipCode: string;
+        event: { name: string };
+      };
+      filledSlotsAfter: number;
+    }
+  | {
+      kind: "waitlisted";
+      user: { firstName: string; emailAddress: string | null };
+      position: {
+        position: string;
+        date: Date;
+        startTime: Date;
+        endTime: Date;
+        filledSlots: number;
+        addressLine1: string;
+        addressLine2: string | null;
+        city: string;
+        state: string;
+        zipCode: string;
+        event: { name: string };
+      };
+      waitlistPosition: number;
+    }
+  | {
+      kind: "removed";
+      wasWaitlisted?: boolean;
+      user: { firstName: string; emailAddress: string | null };
+      position: {
+        position: string;
+        date: Date;
+        startTime: Date;
+        endTime: Date;
+        addressLine1: string;
+        addressLine2: string | null;
+        city: string;
+        state: string;
+        zipCode: string;
+        event: { name: string };
+      };
+    };
+
+async function sendQueuedEmails(emails: PendingEmail[]) {
+  for (const email of emails) {
+    try {
+      const to = email.user.emailAddress;
+      if (!to) continue;
+
+      if (email.kind === "registered") {
+        await sendSignupConfirmed({
+          to,
+          firstName: email.user.firstName,
+          eventName: email.position.event.name,
+          position: email.position.position,
+          date: fmtDate(email.position.date),
+          startTime: fmtTime(email.position.startTime),
+          endTime: fmtTime(email.position.endTime),
+          filledSlots: email.filledSlotsAfter,
+          location: formatLocation(email.position),
+          wasWaitlisted: email.wasWaitlisted ?? false,
+        });
+      } else if (email.kind === "waitlisted") {
+        await sendWaitlisted({
+          to,
+          firstName: email.user.firstName,
+          eventName: email.position.event.name,
+          position: email.position.position,
+          date: fmtDate(email.position.date),
+          startTime: fmtTime(email.position.startTime),
+          endTime: fmtTime(email.position.endTime),
+          filledSlots: email.position.filledSlots,
+          location: formatLocation(email.position),
+          waitlistPosition: email.waitlistPosition,
+        });
+      } else if (email.kind === "removed") {
+          await sendRemoved({
+          to,
+          firstName: email.user.firstName,
+          eventName: email.position.event.name,
+          position: email.position.position,
+          date: fmtDate(email.position.date),
+          startTime: fmtTime(email.position.startTime),
+          endTime: fmtTime(email.position.endTime),
+          location: formatLocation(email.position),
+          wasWaitlisted: email.wasWaitlisted ?? false,
+        });
+      }
+    } catch (e) {
+      console.error("Email failed (continuing anyway):", e);
+      
+    }
+  }
+}
+
 // ==========================================
 // POST: Create New Registration
 // ==========================================
@@ -79,6 +188,9 @@ export async function POST(req: NextRequest) {
         throw new Error("ALREADY_REGISTERED");
       }
 
+      // Lock the EventPosition row before checking capacity
+      await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${positionId} FOR UPDATE`;
+
       // 3. Fetch Position Details
       const user = await tx.user.findUnique({
         where: { id: userId },
@@ -106,7 +218,17 @@ export async function POST(req: NextRequest) {
       });
       if (!position) throw new Error("Position not found");
 
-      const isFull = position.filledSlots + spotsNeeded > position.totalSlots;
+      // Changed because having only filledSlots wasn't updating correctly
+      const actualFilled = await tx.eventSignup.findMany({
+        where: { positionId },
+        select: { guests: { select: { id: true } } },
+      });
+      const actualFilledCount = actualFilled.reduce(
+        (sum, s) => sum + 1 + s.guests.length,
+        0
+      );
+
+      const isFull = actualFilledCount + spotsNeeded > position.totalSlots;
 
       // 4. SCENARIO A: WAITLIST
       if (isFull) {
@@ -185,45 +307,12 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    try {
-      const email = (result as any).email;
-      if (email) {
-        // TODO: FIX TS ONCE WE GET DOMAIN SHI
-        const to = "bcpjumbocode@gmail.com";
-        // const to = email.user.emailAddress;
-
-        if (email.kind === "registered") {
-          await sendSignupConfirmed({
-            to,
-            firstName: email.user.firstName,
-            eventName: email.position.event.name,
-            position: email.position.position,
-            date: fmtDate(email.position.date),
-            startTime: fmtTime(email.position.startTime),
-            endTime: fmtTime(email.position.endTime),
-            filledSlots: email.filledSlotsAfter,
-            location: formatLocation(email.position),
-          });
-        } else {
-          await sendWaitlisted({
-            to,
-            firstName: email.user.firstName,
-            eventName: email.position.event.name,
-            position: email.position.position,
-            date: fmtDate(email.position.date),
-            startTime: fmtTime(email.position.startTime),
-            endTime: fmtTime(email.position.endTime),
-            filledSlots: email.position.filledSlots,
-            location: formatLocation(email.position),
-            waitlistPosition: email.waitlistPosition,
-          });
-        }
-      }
-    } catch (e) {
-      console.error("Email failed (continuing anyway):", e);
-    }
     // This is just so we don't leak email to client
-    const { email, ...safe } = result as any;
+    const { email, ...safe } = result;
+    if (email) {
+      await sendQueuedEmails([email]);
+    }
+
     return NextResponse.json(safe, { status: 201 });
   } catch (error) {
     console.error("Failed to process registration:", error);
@@ -252,11 +341,12 @@ export async function PUT(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    if (!id)
+    if (!id) {
       return NextResponse.json(
         { error: "Missing registration ID" },
         { status: 400 }
       );
+    }
 
     const { guests } = await req.json();
 
@@ -271,6 +361,8 @@ export async function PUT(req: NextRequest) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      const emails: PendingEmail[] = [];
+
       // -------------------------------------------------------
       // PATH A: User is currently in SIGNUP (Main List)
       // -------------------------------------------------------
@@ -280,8 +372,26 @@ export async function PUT(req: NextRequest) {
       });
 
       if (currentSignup) {
+        // Lock the EventPosition row before checking capacity
+        await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${currentSignup.positionId} FOR UPDATE`;
+
         const position = await tx.eventPosition.findUnique({
           where: { id: currentSignup.positionId },
+          select: {
+            eventId: true,
+            position: true,
+            date: true,
+            startTime: true,
+            endTime: true,
+            filledSlots: true,
+            totalSlots: true,
+            addressLine1: true,
+            addressLine2: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            event: { select: { name: true } },
+          },
         });
 
         if (!position) throw new Error("Position data missing");
@@ -326,43 +436,65 @@ export async function PUT(req: NextRequest) {
             });
           }
 
-          return { status: "registered", data: updatedSignup };
+          return { status: "registered", data: updatedSignup, emails };
         }
 
         // SCENARIO 2: Does NOT fit -> Move to Waitlist
-        else {
-          await tx.guest.deleteMany({ where: { signupId: id } }); // Delete guests first
-          await tx.eventSignup.delete({ where: { id } }); // Delete signup
+        const user = await tx.user.findUnique({
+          where: { id: currentSignup.userId },
+          select: { firstName: true, emailAddress: true },
+        });
+        if (!user) throw new Error("User not found");
 
-          await tx.eventPosition.update({
-            where: { id: currentSignup.positionId },
-            data: { filledSlots: { decrement: oldSpotsUsed } },
-          });
+        await tx.guest.deleteMany({ where: { signupId: id } }); // Delete guests first
+        await tx.eventSignup.delete({ where: { id } }); // Delete signup
 
-          const newWaitlistEntry = await tx.eventWaitlist.create({
-            data: {
-              userId: currentSignup.userId,
-              positionId: currentSignup.positionId,
-              guests: {
-                create: (guests ?? []).map((guest: GuestInput) => ({
-                  firstName: guest.firstName,
-                  lastName: guest.lastName,
-                  email: guest.email || null,
-                  relation: guest.relationship || null,
-                  dateOfBirth: guest.dateOfBirth || null,
-                  comments: guest.comments || null,
-                })),
-              },
+        await tx.eventPosition.update({
+          where: { id: currentSignup.positionId },
+          data: { filledSlots: { decrement: oldSpotsUsed } },
+        });
+
+        const filledSlotsAfterRemoval = position.filledSlots - oldSpotsUsed;
+
+        const waitlistPosition =
+          (await tx.eventWaitlist.count({
+            where: { positionId: currentSignup.positionId },
+          })) + 1;
+
+        const newWaitlistEntry = await tx.eventWaitlist.create({
+          data: {
+            userId: currentSignup.userId,
+            positionId: currentSignup.positionId,
+            guests: {
+              create: (guests ?? []).map((guest: GuestInput) => ({
+                firstName: guest.firstName,
+                lastName: guest.lastName,
+                email: guest.email || null,
+                relation: guest.relationship || null,
+                dateOfBirth: guest.dateOfBirth || null,
+                comments: guest.comments || null,
+              })),
             },
-            include: { guests: true },
-          });
+          },
+          include: { guests: true },
+        });
 
-          return {
-            status: "moved_to_waitlist",
-            message: "Capacity exceeded. You have been moved to the waitlist.",
-            data: newWaitlistEntry,
-          };
-        }
+        emails.push({
+          kind: "waitlisted",
+          user,
+          position: {
+            ...position,
+            filledSlots: filledSlotsAfterRemoval, // important: use updated count
+          },
+          waitlistPosition,
+        });
+
+        return {
+          status: "moved_to_waitlist",
+          message: "Capacity exceeded. You have been moved to the waitlist.",
+          data: newWaitlistEntry,
+          emails,
+        };
       }
 
       // -------------------------------------------------------
@@ -374,11 +506,35 @@ export async function PUT(req: NextRequest) {
       });
 
       if (currentWaitlist) {
+        // Lock the EventPosition row before checking capacity
+        await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${currentWaitlist.positionId} FOR UPDATE`;
+
         const position = await tx.eventPosition.findUnique({
           where: { id: currentWaitlist.positionId },
+          select: {
+            eventId: true,
+            position: true,
+            date: true,
+            startTime: true,
+            endTime: true,
+            filledSlots: true,
+            totalSlots: true,
+            addressLine1: true,
+            addressLine2: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            event: { select: { name: true } },
+          },
         });
 
         if (!position) throw new Error("Position data missing");
+
+        const user = await tx.user.findUnique({
+          where: { id: currentWaitlist.userId },
+          select: { firstName: true, emailAddress: true },
+        });
+        if (!user) throw new Error("User not found");
 
         const newSpotsNeeded = 1 + (guests?.length || 0);
 
@@ -407,52 +563,67 @@ export async function PUT(req: NextRequest) {
                   emailAddress: guest.email || null,
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
+                  dateOfBirth: guest.dateOfBirth || null,
+                  comments: guest.comments || null,
                 })),
               },
             },
             include: { guests: true },
           });
 
-          // 3. Occupy the slots
           await tx.eventPosition.update({
             where: { id: currentWaitlist.positionId },
             data: { filledSlots: { increment: newSpotsNeeded } },
+          });
+
+          const filledSlotsAfter = position.filledSlots + newSpotsNeeded;
+
+          emails.push({
+            kind: "registered",
+            wasWaitlisted: true,
+            user,
+            position,
+            filledSlotsAfter,
           });
 
           return {
             status: "registered",
             message: "Space available! You have been moved to the main list.",
             data: newSignup,
+            emails,
           };
         }
 
         // SCENARIO 4: Still doesn't fit -> Stay in Waitlist
-        else {
-          await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
+        await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
 
-          const updatedWaitlist = await tx.eventWaitlist.update({
-            where: { id },
-            data: {
-              guests: {
-                create: (guests ?? []).map((guest: GuestInput) => ({
-                  firstName: guest.firstName,
-                  lastName: guest.lastName,
-                  email: guest.email || null,
-                  relation: guest.relationship || null,
-                })),
-              },
+        const updatedWaitlist = await tx.eventWaitlist.update({
+          where: { id },
+          data: {
+            guests: {
+              create: (guests ?? []).map((guest: GuestInput) => ({
+                firstName: guest.firstName,
+                lastName: guest.lastName,
+                email: guest.email || null,
+                relation: guest.relationship || null,
+                dateOfBirth: guest.dateOfBirth || null,
+                comments: guest.comments || null,
+              })),
             },
-            include: { guests: true },
-          });
+          },
+          include: { guests: true },
+        });
 
-          return { status: "waitlisted", data: updatedWaitlist };
-        }
+        return { status: "waitlisted", data: updatedWaitlist, emails };
       }
 
       throw new Error("Registration ID not found in Signup or Waitlist");
     });
 
-    return NextResponse.json(result, { status: 200 });
+    const { emails = [], ...safeResult } = result as any;
+    await sendQueuedEmails(emails);
+
+    return NextResponse.json(safeResult, { status: 200 });
   } catch (error) {
     console.error("Failed to update registration:", error);
     const status =
@@ -493,8 +664,8 @@ export async function GET(req: NextRequest) {
           phoneNumber: g.phoneNumber,
           relationship: g.relation,
           // FIX: Ensure we read from DB
-          dateOfBirth: g.dateOfBirth || "", 
-          comments: g.comments || "", 
+          dateOfBirth: g.dateOfBirth || "",
+          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -519,8 +690,8 @@ export async function GET(req: NextRequest) {
           phoneNumber: "", // Waitlist schema usually doesn't have phone
           relationship: g.relation,
           // FIX: Ensure we read from DB (Previously this was hardcoded "")
-          dateOfBirth: g.dateOfBirth || "", 
-          comments: g.comments || "",       
+          dateOfBirth: g.dateOfBirth || "",
+          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -529,7 +700,10 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Registration not found" },
+        { status: 404 }
+      );
     }
 
     // ---------------------------------------------------------
@@ -542,9 +716,9 @@ export async function GET(req: NextRequest) {
           guests: true,
           position: {
             // This include fetches ALL fields in Position (including startTime/endTime)
-            include: { 
-                // This include fetches ALL fields in Event (including name, address, etc.)
-                event: true 
+            include: {
+              // This include fetches ALL fields in Event (including name, address, etc.)
+              event: true,
             },
           },
         },
@@ -563,7 +737,11 @@ export async function GET(req: NextRequest) {
       // Combine and return
       const combined = [
         ...signups.map((s) => ({ ...s, type: "signup", status: "registered" })),
-        ...waitlists.map((w) => ({ ...w, type: "waitlist", status: "waitlisted" })),
+        ...waitlists.map((w) => ({
+          ...w,
+          type: "waitlist",
+          status: "waitlisted",
+        })),
       ];
 
       return NextResponse.json(combined, { status: 200 });
@@ -572,7 +750,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   } catch (error) {
     console.error("Failed to fetch registrations:", error);
-    return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch data" },
+      { status: 500 }
+    );
   }
 }
 
@@ -586,15 +767,25 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    if (!id) return NextResponse.json({ error: "Missing registration ID" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json(
+        { error: "Missing registration ID" },
+        { status: 400 }
+      );
+    }
 
     const result = await prisma.$transaction(async (tx) => {
+      const emails: PendingEmail[] = [];
+
       // ------------------------------------------------------------
       // CHECK 1: Is this a CONFIRMED Signup?
       // ------------------------------------------------------------
       const signup = await tx.eventSignup.findUnique({
         where: { id },
-        include: { guests: true },
+        include: {
+          guests: true,
+          user: { select: { firstName: true, emailAddress: true } },
+        },
       });
 
       if (signup) {
@@ -603,12 +794,42 @@ export async function DELETE(req: NextRequest) {
         // ==================================================================
         // 0. LOCK THE ROW (Prevent Race Conditions)
         // ==================================================================
-        // This locks the specific EventPosition row. No other transaction 
+        // This locks the specific EventPosition row. No other transaction
         // can read or write to this position until this transaction finishes.
         // We use "EventPosition" because that is the default table name in DB.
         await tx.$queryRaw`SELECT 1 FROM "EventPosition" WHERE id = ${positionId} FOR UPDATE`;
 
-        // 1. Calculate how many slots are opening up
+        // Fetch full position details for emails + capacity logic
+        const positionDetails = await tx.eventPosition.findUnique({
+          where: { id: positionId },
+          select: {
+            id: true,
+            eventId: true,
+            position: true,
+            date: true,
+            startTime: true,
+            endTime: true,
+            filledSlots: true,
+            totalSlots: true,
+            addressLine1: true,
+            addressLine2: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            event: { select: { name: true } },
+          },
+        });
+
+        if (!positionDetails) throw new Error("Position data missing");
+
+        // Optional: queue removal/cancellation email (will no-op until helper exists)
+        emails.push({
+          kind: "removed",
+          wasWaitlisted: false,
+          user: signup.user,
+          position: positionDetails,
+        });
+
         const slotsFreed = 1 + signup.guests.length;
 
         // 2. Delete the signup and its guests
@@ -617,36 +838,36 @@ export async function DELETE(req: NextRequest) {
 
         // 3. Decrement filledSlots temporarily
         // (The lock above ensures no one else sees this temporary state)
-        const position = await tx.eventPosition.update({
+        const positionAfterDecrement = await tx.eventPosition.update({
           where: { id: positionId },
           data: { filledSlots: { decrement: slotsFreed } },
+          select: { filledSlots: true, totalSlots: true },
         });
 
-        // ----------------------------------------------------------
-        // AUTO-PROMOTION LOGIC
-        // ----------------------------------------------------------
-        // Fetch waitlist candidates, ordered by creation time (FIFO)
+        // FIFO waitlist candidates, include user for emailing promoted people
         const waitlistCandidates = await tx.eventWaitlist.findMany({
           where: { positionId },
-          include: { guests: true },
-          orderBy: { createdAt: "asc" }, // Ensure you ran `db push` for this field
+          include: {
+            guests: true,
+            user: { select: { firstName: true, emailAddress: true } },
+          },
+          orderBy: { createdAt: "asc" },
         });
 
-        let currentFilled = position.filledSlots;
-        const totalSlots = position.totalSlots;
+        let currentFilled = positionAfterDecrement.filledSlots;
+        const totalSlots = positionAfterDecrement.totalSlots;
         let slotsAvailable = totalSlots - currentFilled;
 
         for (const candidate of waitlistCandidates) {
           const spotsNeeded = 1 + candidate.guests.length;
 
-          // If the candidate fits in the available slots...
           if (spotsNeeded <= slotsAvailable) {
-            // A. Move to Signup
+            // Move candidate to signup
             await tx.eventSignup.create({
               data: {
                 userId: candidate.userId,
                 positionId: candidate.positionId,
-                eventId: position.eventId, 
+                eventId: positionDetails.eventId,
                 hasGuests: candidate.guests.length > 0,
                 guests: {
                   create: candidate.guests.map((g) => ({
@@ -662,26 +883,42 @@ export async function DELETE(req: NextRequest) {
               },
             });
 
-            // B. Remove from Waitlist
-            await tx.waitlistGuest.deleteMany({ where: { waitlistId: candidate.id } });
+            // Remove from waitlist
+            await tx.waitlistGuest.deleteMany({
+              where: { waitlistId: candidate.id },
+            });
             await tx.eventWaitlist.delete({ where: { id: candidate.id } });
 
-            // C. Update counters
+            // Update counts
             slotsAvailable -= spotsNeeded;
             currentFilled += spotsNeeded;
 
-            // Update the DB count
             await tx.eventPosition.update({
               where: { id: positionId },
               data: { filledSlots: { increment: spotsNeeded } },
             });
+
+            // Queue promotion email
+            emails.push({
+              kind: "registered",
+              wasWaitlisted: true,
+              user: candidate.user,
+              position: {
+                ...positionDetails,
+                filledSlots: currentFilled,
+              },
+              filledSlotsAfter: currentFilled,
+            });
           } else {
             // Strict FIFO: Stop if the next person doesn't fit
-            break; 
+            break;
           }
         }
 
-        return { message: "Registration removed and waitlist processed." };
+        return {
+          message: "Registration removed and waitlist processed.",
+          emails,
+        };
       }
 
       // ------------------------------------------------------------
@@ -689,26 +926,57 @@ export async function DELETE(req: NextRequest) {
       // ------------------------------------------------------------
       const waitlistEntry = await tx.eventWaitlist.findUnique({
         where: { id },
+        include: {
+          user: { select: { firstName: true, emailAddress: true } },
+          position: {
+            select: {
+              position: true,
+              date: true,
+              startTime: true,
+              endTime: true,
+              addressLine1: true,
+              addressLine2: true,
+              city: true,
+              state: true,
+              zipCode: true,
+              event: { select: { name: true } },
+            },
+          },
+        },
       });
 
       if (waitlistEntry) {
-        // Just delete it. No need to lock position because removing a waitlist 
-        // entry doesn't affect the filledSlots count.
+        // Optional: queue removal email (will no-op until helper exists)
+        emails.push({
+          kind: "removed",
+          wasWaitlisted: true,
+          user: waitlistEntry.user,
+          position: waitlistEntry.position,
+        });
+
         await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
         await tx.eventWaitlist.delete({ where: { id } });
-        return { message: "Removed from waitlist." };
+
+        return { message: "Removed from waitlist.", emails };
       }
 
       throw new Error("Registration not found");
     });
 
-    return NextResponse.json(result, { status: 200 });
+    const { emails = [], ...safeResult } = result as any;
+    await sendQueuedEmails(emails);
 
+    return NextResponse.json(safeResult, { status: 200 });
   } catch (error) {
     console.error("Delete failed:", error);
-    const is404 = error instanceof Error && error.message === "Registration not found";
+    const is404 =
+      error instanceof Error && error.message === "Registration not found";
     return NextResponse.json(
-      { error: is404 ? "Registration not found" : "Failed to remove registration" }, 
+      {
+        error: is404
+          ? "Registration not found"
+          : "Failed to remove registration",
+      },
       { status: is404 ? 404 : 500 }
     );
   }
