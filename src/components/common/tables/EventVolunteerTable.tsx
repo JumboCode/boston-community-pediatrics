@@ -83,7 +83,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
 
       <div className="border-b border-gray-300 w-[250px] p-[20px]">
         <div className="text-bcp-blue text-[22px] font-medium font-avenir text-right">
-          {volunteerNames.length}/{totalSpots} Spots Filled
+          {volunteers.length}/{totalSpots} Spots Filled
         </div>
 
         {error && (

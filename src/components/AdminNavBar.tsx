@@ -33,7 +33,7 @@ function AdminNavBar(props: UserNavBarProps) {
               </Link>
             </li>
             <li>
-              <Link href="/" className="text-white text-sm">
+              <Link href="/admin/email" className="text-white text-sm">
                 Contact Volunteers
               </Link>
             </li>
