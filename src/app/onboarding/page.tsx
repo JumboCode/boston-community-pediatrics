@@ -61,7 +61,7 @@ function OnboardingPage() {
             // User inputs these now
             phoneNumber: formData.get("phone"),
             dateOfBirth: formData.get("dob"), // "YYYY-MM-DD"
-            speaksSpanish: formData.get("speaksSpanish"),
+            speaksSpanish: formData.get("speaksSpanish") === "true",
             streetAddress: formData.get("street"),
             city: formData.get("city"),
             state: formData.get("state"),
@@ -196,6 +196,7 @@ function OnboardingPage() {
                   type="radio"
                   name="speaksSpanish"
                   value="true"
+                  required
                   className="accent-bcp-blue rounded-md"
                 />
                 <label

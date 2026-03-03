@@ -395,6 +395,7 @@ const SignupForm = () => {
                 type="radio"
                 name="speaksSpanish"
                 value="true"
+                required
                 className="accent-bcp-blue rounded-md"
               />
               <label

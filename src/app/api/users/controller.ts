@@ -40,6 +40,7 @@ export async function createUser(data: User) {
       state: data.state,
       zipCode: data.zipCode,
       role: (data.role as UserRole) || "VOLUNTEER",
+      speaksSpanish: data.speaksSpanish ?? null,
     },
   });
   return newUser;
