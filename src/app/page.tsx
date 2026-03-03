@@ -34,15 +34,12 @@ const Home: React.FC = () => {
       try {
         const res = await fetch("/api/events/pinned");
         const data = await res.json();
-
-        console.log(data);
-
         const now = new Date();
 
         data.forEach((event: Event) => {
           if (new Date(event.endTime) < now) {
             fetch(`/api/events/${event.id}/unpin`, { method: "POST" }).catch(
-              (err) => console.error(`Failed to unpin event ${event.id}:`, err)
+              () => console.error(`Failed to unpin event ${event.id}:`)
             );
           }
         });

@@ -37,7 +37,6 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
     error = "Failed to load volunteers";
   }
 
-  const volunteerNames = volunteers.map((v) => `${v.firstName} ${v.lastName}`);
   const isPast = new Date() > new Date(endTime);
 
   return (
@@ -83,7 +82,8 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
 
       <div className="border-b border-gray-300 w-[250px] p-[20px]">
         <div className="text-bcp-blue text-[22px] font-medium font-avenir text-right">
-          {volunteers.length}/{totalSpots} Spots Filled
+          {volunteers.reduce((acc, v) => acc + 1 + (v.guests?.length ?? 0), 0)}/
+          {totalSpots} Spots Filled
         </div>
 
         {error && (
@@ -93,7 +93,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
         )}
 
         <div className="mt-[20px] overflow-y-auto pr-1">
-          {volunteerNames.length === 0 ? (
+          {volunteers.length === 0 ? (
             <div className="flex flex-col items-center text-center text-bcp-blue mt-4">
               {isPast ? (
                 <>

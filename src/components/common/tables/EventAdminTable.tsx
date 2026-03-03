@@ -190,7 +190,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        // Changed from eventSignup/waitlist to registrations which worked for 
+        // Changed from eventSignup/waitlist to registrations which worked for
         // sending emails, but just in case something breaks here is a comment :D
         const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
@@ -386,7 +386,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <thead className="bg-white sticky top-0 z-10">
             <tr className="text-left">
               <th className="py-3 px-5 font-normal"></th>
-              <th className="py-3 pl-29 px-4 font-normal">Name</th>
+              <th className="py-3 px-4 font-normal">Name</th>
               <th className="py-3 px-4 font-normal">Email</th>
               <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
               <th className="py-3 px-4 font-normal"></th>
@@ -477,7 +477,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             })}
             {volunteers.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-gray-400">
+                <td colSpan={6} className="py-8 text-center text-gray-400">
                   No one has signed up yet.
                 </td>
               </tr>
@@ -512,16 +512,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </h1>
             </div>
 
-            <table className="w-full border-white-700 text-[#234254]">
+            <table className="w-full border-white-700 text-bcp-blue">
               <thead className="bg-white sticky top-0 z-10">
                 <tr className="text-left">
                   <th className="py-3 px-5 font-normal"></th>
-                  <th className="py-3 pl-29 px-4 font-normal">Name</th>
+                  <th className="py-3 px-4 font-normal">Name</th>
                   <th className="py-3 px-4 font-normal">Email</th>
                   <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
                   <th className="py-3 px-4 font-normal"></th>
                   {/* Spanish column header */}
-                  <th className="py-3 px-4 pl-13 font-normal">
+                  <th className="py-3 px-4 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
                       className="hover:underline transition-all duration-200 "
@@ -613,7 +613,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 })}
                 {waitlist.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400">
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
                       No one is on the waitlist.
                     </td>
                   </tr>

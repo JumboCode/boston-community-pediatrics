@@ -89,7 +89,7 @@ export default async function EventsPage() {
           </h1>
           {user?.role === UserRole.ADMIN && (
             <Link
-              href="/event/createEvent"
+              href="/admin/createEvent"
               className="ml-auto rounded-lg bg-bcp-blue text-white mx-4 mt-1"
             >
               <Button label="Create New Event" />
@@ -157,4 +157,3 @@ export default async function EventsPage() {
     </div>
   );
 }
-
