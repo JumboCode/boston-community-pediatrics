@@ -8,6 +8,76 @@ import blankProfile from "@/assets/icons/Group 1.svg";
 import Link from "next/link";
 import Modal from "@/components/common/Modal";
 
+type MyRegistration = {
+  id: string;
+  userId: string;
+  eventId: string;
+  positionId: string;
+  hasGuests: boolean;
+  date: string | null;
+  time: string | null;
+  notes: string | null;
+  type: "signup" | "waitlist";
+  status: "registered" | "waitlisted";
+  imageUrl?: string; // Added by frontend
+  guests: Array<{
+    id: string;
+    positionId: string;
+    firstName: string;
+    lastName: string;
+    emailAddress: string | null;
+    relation: string | null;
+    phoneNumber: string | null;
+    signupId: string;
+    dateOfBirth: string | null;
+    comments: string | null;
+    speaksSpanish: boolean | null;
+  }>;
+  position: {
+    id: string;
+    position: string;
+    eventId: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    description: string;
+    filledSlots: number;
+    totalSlots: number;
+    addressLine1: string;
+    addressLine2: string | null;
+    city: string;
+    country: string;
+    state: string;
+    zipCode: string;
+    event: {
+      id: string;
+      name: string;
+      description: string;
+      date: string[];
+      startTime: string;
+      endTime: string;
+      city: string;
+      state: string;
+      country: string;
+      zipCode: string;
+      lat: number | null;
+      lng: number | null;
+      addressLine1: string;
+      addressLine2: string | null;
+      images: string[];
+      pinned: boolean;
+      imagesDeleted: boolean;
+    };
+  };
+};
+
+type ModalButton = {
+  label: string;
+  variant?: "primary" | "secondary" | "danger";
+  loading?: boolean;
+  onClick: () => void;
+};
+
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
@@ -22,7 +92,7 @@ export default function ProfilePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState<string | undefined>();
   const [modalMessage, setModalMessage] = useState<string | undefined>();
-  const [modalButtons, setModalButtons] = useState<any[]>([]);
+  const [modalButtons, setModalButtons] = useState<ModalButton[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
   // 1. Fetch User Phone Number
@@ -57,6 +127,7 @@ export default function ProfilePage() {
         const response = await fetch(`/api/registrations?userId=${user.id}`);
         if (response.ok) {
           const rawData: MyRegistration[] = await response.json();
+          console.log(rawData);
 
           const enrichedData = await Promise.all(
             rawData.map(async (reg) => {

@@ -136,7 +136,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           waitlistPosition: email.waitlistPosition,
         });
       } else if (email.kind === "removed") {
-          await sendRemoved({
+        await sendRemoved({
           to,
           firstName: email.user.firstName,
           eventName: email.position.event.name,
@@ -150,7 +150,6 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
       }
     } catch (e) {
       console.error("Email failed (continuing anyway):", e);
-      
     }
   }
 }
@@ -440,6 +439,7 @@ export async function PUT(req: NextRequest) {
         }
 
         // SCENARIO 2: Does NOT fit -> Move to Waitlist
+        if (!currentSignup.userId) throw new Error("No ID on user");
         const user = await tx.user.findUnique({
           where: { id: currentSignup.userId },
           select: { firstName: true, emailAddress: true },
@@ -529,6 +529,9 @@ export async function PUT(req: NextRequest) {
         });
 
         if (!position) throw new Error("Position data missing");
+        if (!currentWaitlist.userId) {
+          throw new Error("ID is required");
+        }
 
         const user = await tx.user.findUnique({
           where: { id: currentWaitlist.userId },
@@ -620,7 +623,7 @@ export async function PUT(req: NextRequest) {
       throw new Error("Registration ID not found in Signup or Waitlist");
     });
 
-    const { emails = [], ...safeResult } = result as any;
+    const { emails = [], ...safeResult } = result;
     await sendQueuedEmails(emails);
 
     return NextResponse.json(safeResult, { status: 200 });
@@ -821,6 +824,10 @@ export async function DELETE(req: NextRequest) {
         });
 
         if (!positionDetails) throw new Error("Position data missing");
+        if (!signup.user)
+          throw new Error(
+            "Signup user does not exist before pushing queue for email"
+          );
 
         // Optional: queue removal/cancellation email (will no-op until helper exists)
         emails.push({
@@ -898,17 +905,19 @@ export async function DELETE(req: NextRequest) {
               data: { filledSlots: { increment: spotsNeeded } },
             });
 
-            // Queue promotion email
-            emails.push({
-              kind: "registered",
-              wasWaitlisted: true,
-              user: candidate.user,
-              position: {
-                ...positionDetails,
-                filledSlots: currentFilled,
-              },
-              filledSlotsAfter: currentFilled,
-            });
+            if (candidate.user) {
+              // Queue promotion email
+              emails.push({
+                kind: "registered",
+                wasWaitlisted: true,
+                user: candidate.user,
+                position: {
+                  ...positionDetails,
+                  filledSlots: currentFilled,
+                },
+                filledSlotsAfter: currentFilled,
+              });
+            }
           } else {
             // Strict FIFO: Stop if the next person doesn't fit
             break;
@@ -945,7 +954,7 @@ export async function DELETE(req: NextRequest) {
         },
       });
 
-      if (waitlistEntry) {
+      if (waitlistEntry && waitlistEntry.user) {
         // Optional: queue removal email (will no-op until helper exists)
         emails.push({
           kind: "removed",
@@ -963,7 +972,7 @@ export async function DELETE(req: NextRequest) {
       throw new Error("Registration not found");
     });
 
-    const { emails = [], ...safeResult } = result as any;
+    const { emails = [], ...safeResult } = result;
     await sendQueuedEmails(emails);
 
     return NextResponse.json(safeResult, { status: 200 });

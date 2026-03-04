@@ -22,7 +22,7 @@ export async function getSignupsByUserId(userId: string) {
 export async function getUsersByPositionId(
   positionId: string,
   isAdmin: boolean
-) {
+): Promise<PublicUser[] | AdminUser[]> {
   const signups = await prisma.eventSignup.findMany({
     where: { positionId },
     include: {
@@ -49,7 +49,7 @@ export interface AdminUser {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
-  speaksSpanish: boolean;
+  speaksSpanish: boolean | null;
   guestOf?: string; // For displaying "Guest of X"
   isGuest?: boolean; // To mark if this row is a guest
 }
@@ -77,6 +77,7 @@ function adminUserWithGuests(s: {
     emailAddress: guest.emailAddress || "",
     phoneNumber: guest.phoneNumber || "",
     guestOf: `${s.user.firstName} ${s.user.lastName}`,
+    speaksSpanish: guest.speaksSpanish,
     isGuest: true,
   }));
 
@@ -98,7 +99,11 @@ export interface PublicGuest {
   lastName: string;
 }
 
-function publicUser(s: { id: string; user: User; guests: Guest[] }): PublicUser {
+function publicUser(s: {
+  id: string;
+  user: User;
+  guests: Guest[];
+}): PublicUser {
   return {
     id: s.user.id,
     signupId: s.id,

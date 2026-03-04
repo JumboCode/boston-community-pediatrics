@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import { AdminUser } from "@/app/api/eventSignup/controller";
+import { WaitlistEntry } from "@/app/api/waitlist/route";
 
 interface FrontEndUser {
   userId: string;
@@ -13,10 +14,10 @@ interface FrontEndUser {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
-  speaksSpanish: boolean;
+  speaksSpanish: boolean; // Keep as boolean
   selected: boolean;
   guestOf?: string;
-  isGuest?: boolean; // ← ADD THIS LINE
+  isGuest?: boolean;
 }
 
 interface EventAdminTableProps {
@@ -57,7 +58,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   );
 
   // Fetch waitlist ONLY if user is admin
-  const { data: waitlistSignups } = useSWR<AdminUser[]>(
+  const { data: waitlistSignups } = useSWR<WaitlistEntry[]>(
     positionId && isAdmin ? `/api/waitlist?positionId=${positionId}` : null,
     fetcher
   );
@@ -72,10 +73,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
-      speaksSpanish: s.speaksSpanish,
+      speaksSpanish: s.speaksSpanish ?? false, // Convert null to false
       selected: false,
       guestOf: s.guestOf,
-      isGuest: s.isGuest, // ← ADD THIS LINE
+      isGuest: s.isGuest ?? false,
     }));
   }, [signups]);
 
@@ -90,9 +91,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
+      speaksSpanish: false, // Add missing property (waitlist doesn't track this)
       selected: false,
       guestOf: s.guestOf,
-      isGuest: s.isGuest, // ← ADD THIS LINE
+      isGuest: s.isGuest ?? false,
     }));
   }, [waitlistSignups]);
 

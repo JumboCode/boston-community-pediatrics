@@ -30,7 +30,10 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
 
   try {
     if (positionId) {
-      volunteers = await getUsersByPositionId(positionId, false);
+      volunteers = (await getUsersByPositionId(
+        positionId,
+        false
+      )) as PublicUser[];
     }
   } catch (err) {
     console.error("Failed to load volunteers:", err);
