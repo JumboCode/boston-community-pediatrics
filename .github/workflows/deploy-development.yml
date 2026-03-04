@@ -1,11 +1,11 @@
-name: Vercel Production Deployment
+name: Vercel Development Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 on:
   push:
     branches:
-      - prod
+      - main
 jobs:
   prod-deploy:
     runs-on: ubuntu-latest
@@ -17,4 +17,4 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --token=${{ secrets.VERCEL_TOKEN }}
