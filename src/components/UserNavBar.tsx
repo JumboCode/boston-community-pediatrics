@@ -47,8 +47,8 @@ function UserNavBar(props: UserNavBarProps) {
             </li>
             {isSignedIn ? (
               <li className="flex items-center gap-2">
-                <span className="text-white font-medium">{firstName}</span>
-                <Link href="/profile">
+                <Link className="flex items-center gap-2" href="/profile">
+                  <span className="text-white font-medium">{firstName}</span>
                   <Image
                     src={profileImageUrl ?? blankProfile}
                     alt="Profile"
