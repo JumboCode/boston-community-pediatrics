@@ -407,7 +407,6 @@ export default function ProfilePage() {
       </div>
 
       {/* PROFILE CARD */}
-      {/* TODO, I changed width should it be wider to account for longer emails? */}
       <div className="absolute top-[248px] right-[121px] h-[420px] w-[360px] rounded-lg bg-light-bcp-blue">
         <div className="absolute top-[30px] left-1/2 -translate-x-1/2">
           <Image
