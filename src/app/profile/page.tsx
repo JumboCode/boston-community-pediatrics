@@ -350,14 +350,6 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen p-8">
-      <div className="w-full flex justify-center mt-3">
-        <button
-          onClick={() => signOut(() => router.push("/"))}
-          className="text-black text-sm hover:text-red-200 transition-colors font-medium underline decoration-transparent hover:decoration-red-200"
-        >
-          Sign Out
-        </button>
-      </div>
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
@@ -415,7 +407,8 @@ export default function ProfilePage() {
       </div>
 
       {/* PROFILE CARD */}
-      <div className="absolute top-[248px] right-[121px] h-[420px] w-[305px] rounded-lg bg-light-bcp-blue">
+      {/* TODO, I changed width should it be wider to account for longer emails? */}
+      <div className="absolute top-[248px] right-[121px] h-[420px] w-[360px] rounded-lg bg-light-bcp-blue">
         <div className="absolute top-[30px] left-1/2 -translate-x-1/2">
           <Image
             src={profileImageUrl ?? blankProfile}
@@ -444,43 +437,49 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex justify-between gap-31">
+          <div className="flex flex-row justify-between items-center gap-10">
             <div className="ml-[25px] text-[16px] text-white">Email</div>
-            <div className="flex-1 truncate">
+            <div className="flex items-center gap-2 mr-[25px] min-w-0">
               <div
                 title={emailAddress}
-                className="mr-[25px] text-[16px] truncate text-[16px] text-white"
+                className="text-[16px] text-white truncate"
               >
                 {emailAddress}
               </div>
-              <div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(emailAddress)}
-                  className="text-white/70 hover:text-white transition"
-                  aria-label="Copy email"
+              <button
+                onClick={() => navigator.clipboard.writeText(emailAddress)}
+                className="text-white/70 hover:text-white transition flex-shrink-0"
+                aria-label="Copy email"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
-              </div>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
 
-        <button className="ml-[99.62px] mt-[30.82px] h-[44px] w-[113px] rounded-lg border-[1px] bg-white text-black hover:bg-gray-300">
-          <div className="text-[16px]">
-            <Link href="/profile/edit">Edit details</Link>
-          </div>
-        </button>
+        <div className="flex justify-center gap-4 mt-[30.82px]">
+          <button className="h-[44px] w-[113px] rounded-lg bg-white text-black hover:bg-gray-300">
+            <div className="text-[16px]">
+              <Link href="/profile/edit">Edit details</Link>
+            </div>
+          </button>
+          <button
+            className="h-[44px] w-[113px] rounded-lg bg-bcp-blue text-white hover:bg-gray-600 cursor-pointer"
+            onClick={() => signOut(() => router.push("/"))}
+          >
+            Log Out
+          </button>
+        </div>
       </div>
 
       {/* PAST EVENTS */}
