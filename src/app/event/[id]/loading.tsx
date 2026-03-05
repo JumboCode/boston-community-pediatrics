@@ -1,7 +1,7 @@
 
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import EventAdminTableSkeleton from "@/components/ui/skeleton/EventAdminTableSkeleton";
-import EventVolunteerTableSkeleton from "@/components/ui/skeleton/EventVolunteerTableSkeleton";
+import EventTableSkeleton from "@/components/ui/skeleton/EventTableSkeleton";
 
 export default function Loading() {
   return (
@@ -21,7 +21,7 @@ export default function Loading() {
       </div>
 
       {/* Table */}
-      <EventVolunteerTableSkeleton />
+      <EventTableSkeleton />
     </div>
   );
 }

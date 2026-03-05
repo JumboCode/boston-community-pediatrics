@@ -2,7 +2,7 @@ import Skeleton from "@/components/ui/skeleton/Skeleton";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
 
-function EventVolunteerTableSkeleton() {
+function EventTableSkeleton() {
   return (
     <div className="w-full flex justify-center">
       {/* Outer box */}
@@ -76,4 +76,4 @@ function EventVolunteerTableSkeleton() {
   );
 }
 
-export default EventVolunteerTableSkeleton;
+export default EventTableSkeleton;
