@@ -86,7 +86,7 @@ export default function ProfilePage() {
   // Redirect if not signed in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isLoaded, isSignedIn, router]);
 
@@ -95,6 +95,8 @@ export default function ProfilePage() {
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
   const [userRole, setUserRole] = useState<string>("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [dbFirstName, setDbFirstName] = useState<string>("");
+  const [dbLastName, setDbLastName] = useState<string>("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState<string | undefined>();
@@ -112,6 +114,8 @@ export default function ProfilePage() {
           const userData = await response.json();
           setPhoneNumber(userData.phoneNumber ?? "—");
           setUserRole(userData.role ?? "VOLUNTEER");
+          setDbFirstName(userData.firstName ?? "");
+          setDbLastName(userData.lastName ?? "");
           if (userData.profileImage) {
             setProfileImageUrl(userData.profileImage); // use URL directly
           }
@@ -320,8 +324,10 @@ export default function ProfilePage() {
     return <main className="min-h-screen p-8" />;
   }
 
-  const firstName = isSignedIn ? (user?.firstName ?? "") : "Guest";
-  const lastName = isSignedIn ? (user?.lastName ?? "") : "";
+  const firstName =
+    dbFirstName || (isSignedIn ? (user?.firstName ?? "") : "Guest");
+  console.log("firstName: ", firstName);
+  const lastName = dbLastName || (isSignedIn ? (user?.lastName ?? "") : "");
   const emailAddress = isSignedIn
     ? (user?.primaryEmailAddress?.emailAddress ?? "—")
     : "—";

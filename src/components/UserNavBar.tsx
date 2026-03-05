@@ -7,12 +7,13 @@ import { useUser } from "@clerk/nextjs";
 
 interface UserNavBarProps {
   profileImageUrl: string | null;
+  firstName?: string;
 }
 
 function UserNavBar(props: UserNavBarProps) {
-  const { profileImageUrl } = props;
+  const { profileImageUrl, firstName: dbFirstName } = props;
   const { user, isSignedIn } = useUser();
-  const firstName = user?.firstName ?? "Guest";
+  const firstName = (dbFirstName || user?.firstName) ?? "Guest";
 
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">

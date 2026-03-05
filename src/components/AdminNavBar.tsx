@@ -9,12 +9,13 @@ import { useUser } from "@clerk/nextjs";
 
 interface UserNavBarProps {
   profileImageUrl: string | null;
+  firstName?: string;
 }
 
 function AdminNavBar(props: UserNavBarProps) {
-  const { profileImageUrl } = props;
+  const { profileImageUrl, firstName: dbFirstName } = props;
   const { user } = useUser();
-  const firstName = user?.firstName ?? "Admin";
+  const firstName = (dbFirstName || user?.firstName) ?? "Admin";
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
