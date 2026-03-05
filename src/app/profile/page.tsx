@@ -1,6 +1,6 @@
 "use client";
 import ProfileEventCard from "@/components/events/ProfileEventCard";
-import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
+import { useUser, useClerk } from "@clerk/nextjs"; 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -19,7 +19,7 @@ type MyRegistration = {
   notes: string | null;
   type: "signup" | "waitlist";
   status: "registered" | "waitlisted";
-  imageUrl?: string; // Added by frontend
+  imageUrl?: string; 
   guests: Array<{
     id: string;
     positionId: string;
@@ -117,7 +117,7 @@ export default function ProfilePage() {
           setDbFirstName(userData.firstName ?? "");
           setDbLastName(userData.lastName ?? "");
           if (userData.profileImage) {
-            setProfileImageUrl(userData.profileImage); // use URL directly
+            setProfileImageUrl(userData.profileImage);
           }
         }
       } catch (err) {
@@ -138,7 +138,6 @@ export default function ProfilePage() {
         const response = await fetch(`/api/registrations?userId=${user.id}`);
         if (response.ok) {
           const rawData: MyRegistration[] = await response.json();
-          console.log(rawData);
 
           const enrichedData = await Promise.all(
             rawData.map(async (reg) => {
@@ -148,7 +147,6 @@ export default function ProfilePage() {
               if (images && images.length > 0) {
                 try {
                   const filename = images[0];
-                  // Call your image API
                   const imgRes = await fetch(
                     `/api/images?filename=${filename}`
                   );
@@ -320,13 +318,17 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  if (!isLoaded || loading) {
-    return <main className="min-h-screen p-8" />;
+  // Wait for Clerk, event data (loading), and the user's role from the DB
+  if (!isLoaded || loading || userRole === "") {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-8">
+        <p className="text-xl text-gray-500 font-medium animate-pulse">Loading...</p>
+      </main>
+    );
   }
 
   const firstName =
     dbFirstName || (isSignedIn ? (user?.firstName ?? "") : "Guest");
-  console.log("firstName: ", firstName);
   const lastName = dbLastName || (isSignedIn ? (user?.lastName ?? "") : "");
   const emailAddress = isSignedIn
     ? (user?.primaryEmailAddress?.emailAddress ?? "—")
@@ -361,6 +363,64 @@ export default function ProfilePage() {
 
   const isAdmin = userRole === "ADMIN";
 
+  // --- ADMIN LAYOUT ---
+  if (isAdmin) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-8">
+        <div className="w-[850px] max-w-full rounded-md bg-light-bcp-blue py-16 px-10 shadow-lg flex flex-col items-center">
+          
+          {/* Profile Image */}
+          <div className="mb-6">
+            <Image
+              src={profileImageUrl ?? blankProfile}
+              alt="Profile"
+              width={160}
+              height={160}
+              className="h-[160px] w-[160px] rounded-full object-cover bg-gray-200"
+              unoptimized={!!profileImageUrl}
+            />
+          </div>
+
+          {/* Name & Role */}
+          <div className="text-center text-white mb-10">
+            <h1 className="text-[32px] font-bold">
+              {firstName} {lastName} &bull; Admin
+            </h1>
+            <p className="text-[18px] mt-1">Member since {memberSince}</p>
+          </div>
+
+          {/* Contact Details */}
+          <div className="w-full max-w-[600px] flex flex-col gap-4 text-white text-[18px] mb-12">
+            <div className="flex justify-between items-center">
+              <span>Phone number</span>
+              <span>{phoneNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Email</span>
+              <span className="truncate ml-4">{emailAddress}</span>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-center gap-6">
+            <Link href="/profile/edit">
+              <button className="px-8 py-3 rounded-md bg-white text-gray-800 font-medium hover:bg-gray-100 transition-colors">
+                Edit Details
+              </button>
+            </Link>
+            <button
+              className="px-8 py-3 rounded-md bg-slate-700 text-white font-medium hover:bg-slate-800 transition-colors"
+              onClick={() => signOut(() => router.push("/"))}
+            >
+              Log Out
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // --- VOLUNTEER LAYOUT (Original) ---
   return (
     <main className="min-h-screen p-8">
       {/* UPCOMING EVENTS */}
@@ -395,22 +455,10 @@ export default function ProfilePage() {
                 totalSlots={reg.position.totalSlots}
                 userRole={userRole}
                 onEdit={() => {
-                  if (isAdmin) {
-                    // Admin -> Go to Event Details Page
-                    router.push(`/event/${event.id}`);
-                  } else {
-                    // User -> Go to Registration Page
-                    router.push(`/register/${reg.positionId}`);
-                  }
+                  router.push(`/register/${reg.positionId}`);
                 }}
                 onRemove={() => {
-                  if (isAdmin) {
-                    // Admin -> Delete Event API
-                    handleDeleteEvent(event.id, reg.id);
-                  } else {
-                    // User -> Cancel Signup API
-                    handleRemove(reg.id);
-                  }
+                  handleRemove(reg.id);
                 }}
                 onVolunteer={() => router.push(`/event/${event.id}`)}
               />

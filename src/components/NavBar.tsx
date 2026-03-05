@@ -13,7 +13,16 @@ function NavBar() {
   const [dbFirstName, setDbFirstName] = useState<string>("");
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user?.id) return;
+    if (!isLoaded) return;
+
+    // Clear state when the user logs out
+    if (!isSignedIn || !user?.id) {
+      setIsAdmin(false);
+      setProfileImage(null);
+      setDbFirstName("");
+      return;
+    }
+    
     async function fetchUser() {
       try {
         const res = await fetch("/api/users?id=" + user?.id);
