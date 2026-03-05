@@ -407,7 +407,7 @@ export default function ProfilePage() {
       </div>
 
       {/* PROFILE CARD */}
-      <div className="absolute top-[248px] right-[121px] h-[420px] w-[360px] rounded-lg bg-light-bcp-blue">
+      <div className="absolute top-[248px] right-[121px] h-[420px] w-[360px] rounded-2xl bg-light-bcp-blue">
         <div className="absolute top-[30px] left-1/2 -translate-x-1/2">
           <Image
             src={profileImageUrl ?? blankProfile}
