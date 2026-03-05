@@ -9,6 +9,7 @@ import Carousel from "../Carousel";
 import { mutate } from "swr";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { getPublicURL } from "@/lib/r2";
 
 // API shapes used by this component
 type APIPosition = Partial<{
@@ -85,6 +86,7 @@ const createStaticImageData = (url: string): StaticImageData =>
     blurWidth: 0,
     blurHeight: 0,
   }) as StaticImageData;
+
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,7 +161,9 @@ const EventForm = () => {
     });
   };
 
-  const [carouselImages, setCarouselImages] = useState<StaticImageData[]>([]);
+  const [carouselImages, setCarouselImages] = useState<
+    (StaticImageData | string)[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleAddPhotosClick = () => fileInputRef.current?.click();
   const handleFilesSelected = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -718,9 +722,10 @@ const EventForm = () => {
 
       // Map images (best-effort)
       if (Array.isArray(result.images) && result.images.length) {
-        setCarouselImages(
-          result.images.map((url) => createStaticImageData(url))
-        );
+        const parsedImages = result.images
+          .map((filename) => getPublicURL(filename))
+          .filter((url) => url.trim() !== "") as string[];
+        setCarouselImages(parsedImages);
       }
     };
 
@@ -1146,7 +1151,9 @@ const EventForm = () => {
               <input
                 id={`position-apt-${index}`}
                 type="text"
-                value={position.sameAsAddress ? event.apt : position.apt}
+                value={
+                  position.sameAsAddress ? event.apt || "" : position.apt || ""
+                }
                 disabled={position.sameAsAddress}
                 onChange={(e) =>
                   handlePositionChange(index, "apt", e.target.value)

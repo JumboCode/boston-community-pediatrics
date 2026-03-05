@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 function NavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user?.id) return;
@@ -16,6 +17,9 @@ function NavBar() {
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setIsAdmin(data?.role == "ADMIN");
+        if (data.profileImage) {
+          setProfileImage(data.profileImage); // use URL directly
+        }
       } catch (err) {
         console.error(err);
       }
@@ -25,7 +29,15 @@ function NavBar() {
 
   if (isAdmin === null) return null;
 
-  return <>{isAdmin ? <AdminNavBar /> : <UserNavBar />}</>;
+  return (
+    <>
+      {isAdmin ? (
+        <AdminNavBar profileImageUrl={profileImage} />
+      ) : (
+        <UserNavBar profileImageUrl={profileImage} />
+      )}
+    </>
+  );
 }
 
 export default NavBar;

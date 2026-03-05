@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import blankProfile from "@/assets/icons/Group 1.svg";
 
 // --- Types ---
 interface Guest {
@@ -11,6 +13,7 @@ interface Guest {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
+  speaksSpanish: boolean;
   relationship: string;
   comments: string;
 }
@@ -23,6 +26,7 @@ interface EventSignUpFormProps {
     emailAddress: string;
     phoneNumber: string;
     dateOfBirth?: string;
+    profileImage?: string | null;
   };
   positionData: {
     id: string;
@@ -51,21 +55,24 @@ export default function EventSignUpForm({
   const [registrationId, setRegistrationId] = useState<string | null>(
     initialRegistrationId
   );
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isWaitlisted, setIsWaitlisted] = useState(false);
   const [waitlistMessage, setWaitlistMessage] = useState(
-    "We’ll keep you updated!"
+    "We'll keep you updated!"
   );
+
+  // Use the URL directly — no getPublicURL needed
+  const profileImageSrc = userData.profileImage ?? blankProfile;
 
   useEffect(() => {
     if (initialGuests.length > 0) {
       const sanitizedGuests = initialGuests.map((g) => ({
         ...g,
-        email: g.email ?? "", // Convert null to empty string
+        email: g.email ?? "",
         phoneNumber: g.phoneNumber ?? "",
+        speaksSpanish: g.speaksSpanish ?? false,
         relationship: g.relationship ?? "",
         comments: g.comments ?? "",
         dateOfBirth: g.dateOfBirth ?? "",
@@ -77,7 +84,6 @@ export default function EventSignUpForm({
     if (initialRegistrationId) setRegistrationId(initialRegistrationId);
   }, [initialGuests, initialRegistrationId]);
 
-  // --- Guest Handlers ---
   const addGuest = () => {
     const newGuest: Guest = {
       id: crypto.randomUUID(),
@@ -87,10 +93,10 @@ export default function EventSignUpForm({
       phoneNumber: "",
       dateOfBirth: "",
       relationship: "",
+      speaksSpanish: false,
       comments: "",
     };
     setGuests([...guests, newGuest]);
-    // Clear error if they add a guest (assuming they might be fixing a "too few guests" issue, though not applicable here)
     setErrorMessage(null);
   };
 
@@ -99,15 +105,17 @@ export default function EventSignUpForm({
     setErrorMessage(null);
   };
 
-  const updateGuest = (id: string, field: keyof Guest, value: string) => {
+  const updateGuest = (
+    id: string,
+    field: keyof Guest,
+    value: string | boolean
+  ) => {
     setGuests(guests.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   };
 
-  // --- API Submission ---
   const handleSignUp = async () => {
-    setErrorMessage(null); // Reset errors on new submit
+    setErrorMessage(null);
 
-    // Simple validation check
     const isValid = guests.every(
       (g) => g.firstName && g.lastName && g.dateOfBirth && g.relationship
     );
@@ -141,7 +149,6 @@ export default function EventSignUpForm({
 
       const responseData = await res.json();
 
-      // 1. Handle Errors (400, 409, 500)
       if (!res.ok) {
         setErrorMessage(responseData.error || "An unexpected error occurred.");
         window.scrollTo(0, 0);
@@ -149,10 +156,7 @@ export default function EventSignUpForm({
         return;
       }
 
-      // 2. Handle Success Scenarios
       const record = responseData.data;
-      // --- NEW CODE (FIX) ---
-      // Always update the ID because switching tables (Waitlist <-> Signup) changes the ID
       if (record?.id) {
         setRegistrationId(record.id);
       }
@@ -164,7 +168,6 @@ export default function EventSignUpForm({
           "You are on the waitlist. We will notify you if a spot opens up."
         );
       } else if (responseData.status === "moved_to_waitlist") {
-        // This is the specific PUT scenario
         setIsWaitlisted(true);
         setIsSuccess(false);
         setWaitlistMessage(
@@ -172,7 +175,6 @@ export default function EventSignUpForm({
             "Your update exceeded capacity, so you have been moved to the waitlist."
         );
       } else {
-        // Registered
         setIsSuccess(true);
         setIsWaitlisted(false);
       }
@@ -187,13 +189,11 @@ export default function EventSignUpForm({
     }
   };
 
-  // --- WAITLIST VIEW COMPONENT ---
   if (isWaitlisted) {
     return (
       <div className="bg-[#5a718c] p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
         <h2 className="text-3xl font-bold mb-2">Waitlist Confirmed</h2>
         <p className="text-blue-100 mb-8 text-lg">{waitlistMessage}</p>
-
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
             EVENT
@@ -215,7 +215,6 @@ export default function EventSignUpForm({
             </p>
           </div>
         </div>
-
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsWaitlisted(false)}
@@ -234,7 +233,6 @@ export default function EventSignUpForm({
     );
   }
 
-  // --- SUCCESS VIEW COMPONENT ---
   if (isSuccess) {
     return (
       <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
@@ -242,7 +240,6 @@ export default function EventSignUpForm({
         <p className="text-blue-100 mb-8">
           A confirmation has been sent to your email.
         </p>
-
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
             EVENT
@@ -264,7 +261,6 @@ export default function EventSignUpForm({
             </p>
           </div>
         </div>
-
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsSuccess(false)}
@@ -283,14 +279,12 @@ export default function EventSignUpForm({
     );
   }
 
-  // --- FORM VIEW (Standard) ---
   return (
     <div className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 w-full max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold text-center text-[#1e293b] mb-8">
         {eventName}
       </h1>
 
-      {/* ERROR ALERT BANNER */}
       {errorMessage && (
         <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
           <svg
@@ -335,7 +329,17 @@ export default function EventSignUpForm({
 
       <div className="border border-gray-300 rounded-lg p-6 mb-8">
         <div className="flex flex-col sm:flex-row gap-6 mb-6">
-          <div className="w-24 h-24 bg-gray-200 rounded-sm shrink-0" />
+          <Image
+            src={profileImageSrc}
+            alt="Profile"
+            width={96}
+            height={96}
+            className="w-24 h-24 rounded-sm object-cover shrink-0"
+            unoptimized={
+              typeof profileImageSrc === "string" &&
+              profileImageSrc.startsWith("http")
+            }
+          />
           <div className="space-y-1.5 text-sm text-gray-800 pt-1">
             <p>
               <span className="font-semibold text-gray-900">Name:</span>{" "}
@@ -379,7 +383,6 @@ export default function EventSignUpForm({
             </div>
 
             <div className="space-y-4">
-              {/* SPLIT FIRST/LAST NAME */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -411,8 +414,8 @@ export default function EventSignUpForm({
                 </div>
               </div>
 
-              {/* REQUIRED DOB and RELATIONSHIP */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* REQUIRED DOB and RELATIONSHIP and SPEAKSPANISH */}
+              <div className="flex flex-col gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Participant DOB <span className="text-red-500">*</span>
@@ -427,6 +430,54 @@ export default function EventSignUpForm({
                     }
                   />
                 </div>
+
+                <div className="flex flex-row items-center gap-4 flex-wrap justify-between">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Does this person speak Spanish?{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex flex-row text-right gap-6">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id={`speaksSpanish-yes-${guest.id}`}
+                        name={`speaksSpanish-${guest.id}`}
+                        value="true"
+                        className="accent-bcp-blue"
+                        checked={guest.speaksSpanish === true}
+                        onChange={() =>
+                          updateGuest(guest.id, "speaksSpanish", true)
+                        }
+                      />
+                      <label
+                        htmlFor={`speaksSpanish-yes-${guest.id}`}
+                        className="text-base font-normal text-medium-gray"
+                      >
+                        Yes
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id={`speaksSpanish-no-${guest.id}`}
+                        name={`speaksSpanish-${guest.id}`}
+                        value="false"
+                        className="accent-bcp-blue"
+                        checked={guest.speaksSpanish === false}
+                        onChange={() =>
+                          updateGuest(guest.id, "speaksSpanish", false)
+                        }
+                      />
+                      <label
+                        htmlFor={`speaksSpanish-no-${guest.id}`}
+                        className="text-base font-normal text-medium-gray"
+                      >
+                        No
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Relationship <span className="text-red-500">*</span>
@@ -444,7 +495,6 @@ export default function EventSignUpForm({
                 </div>
               </div>
 
-              {/* OPTIONAL FIELDS */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email (optional)
@@ -529,7 +579,6 @@ export default function EventSignUpForm({
         >
           Cancel
         </button>
-
         <button
           onClick={handleSignUp}
           disabled={isSubmitting}

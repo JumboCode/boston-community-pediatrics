@@ -9,6 +9,7 @@ export async function GET() {
       name: true,
       images: true,
       startTime: true,
+      endTime: true,
       addressLine1: true,
       date: true,
     },

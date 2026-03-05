@@ -1,10 +1,82 @@
 "use client";
-import EventCard from "@/components/events/EventCard";
+import ProfileEventCard from "@/components/events/ProfileEventCard";
 import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import blankProfile from "@/assets/icons/Group 1.svg";
 import Link from "next/link";
 import Modal from "@/components/common/Modal";
+
+type MyRegistration = {
+  id: string;
+  userId: string;
+  eventId: string;
+  positionId: string;
+  hasGuests: boolean;
+  date: string | null;
+  time: string | null;
+  notes: string | null;
+  type: "signup" | "waitlist";
+  status: "registered" | "waitlisted";
+  imageUrl?: string; // Added by frontend
+  guests: Array<{
+    id: string;
+    positionId: string;
+    firstName: string;
+    lastName: string;
+    emailAddress: string | null;
+    relation: string | null;
+    phoneNumber: string | null;
+    signupId: string;
+    dateOfBirth: string | null;
+    comments: string | null;
+    speaksSpanish: boolean | null;
+  }>;
+  position: {
+    id: string;
+    position: string;
+    eventId: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    description: string;
+    filledSlots: number;
+    totalSlots: number;
+    addressLine1: string;
+    addressLine2: string | null;
+    city: string;
+    country: string;
+    state: string;
+    zipCode: string;
+    event: {
+      id: string;
+      name: string;
+      description: string;
+      date: string[];
+      startTime: string;
+      endTime: string;
+      city: string;
+      state: string;
+      country: string;
+      zipCode: string;
+      lat: number | null;
+      lng: number | null;
+      addressLine1: string;
+      addressLine2: string | null;
+      images: string[];
+      pinned: boolean;
+      imagesDeleted: boolean;
+    };
+  };
+};
+
+type ModalButton = {
+  label: string;
+  variant?: "primary" | "secondary" | "danger";
+  loading?: boolean;
+  onClick: () => void;
+};
 
 export default function ProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -14,17 +86,18 @@ export default function ProfilePage() {
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
-  const [userRole, setUserRole] = useState<string>(""); // <--- NEW STATE
+  const [userRole, setUserRole] = useState<string>("");
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState<string | undefined>();
   const [modalMessage, setModalMessage] = useState<string | undefined>();
-  const [modalButtons, setModalButtons] = useState<any[]>([]);
+  const [modalButtons, setModalButtons] = useState<ModalButton[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
   // 1. Fetch User Phone Number
   useEffect(() => {
-    async function fetchPhoneNumber() {
+    async function fetchUserData() {
       if (!user?.id) return;
       try {
         const response = await fetch(`/api/users?id=${user.id}`);
@@ -32,14 +105,17 @@ export default function ProfilePage() {
           const userData = await response.json();
           setPhoneNumber(userData.phoneNumber ?? "—");
           setUserRole(userData.role ?? "VOLUNTEER");
+          if (userData.profileImage) {
+            setProfileImageUrl(userData.profileImage); // use URL directly
+          }
         }
       } catch (err) {
-        console.error("Failed to load phone number:", err);
+        console.error("Failed to load user data:", err);
       }
     }
 
     if (isLoaded && isSignedIn) {
-      fetchPhoneNumber();
+      fetchUserData();
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
@@ -51,14 +127,13 @@ export default function ProfilePage() {
         const response = await fetch(`/api/registrations?userId=${user.id}`);
         if (response.ok) {
           const rawData: MyRegistration[] = await response.json();
+          console.log(rawData);
 
-          // Process images in parallel
           const enrichedData = await Promise.all(
             rawData.map(async (reg) => {
               const images = reg.position.event.images;
-              let resolvedUrl = "/event1.jpg"; // Default fallback
+              let resolvedUrl = "/event1.jpg";
 
-              // If we have an image filename, fetch the public URL
               if (images && images.length > 0) {
                 try {
                   const filename = images[0];
@@ -72,7 +147,7 @@ export default function ProfilePage() {
                       resolvedUrl = imgData.url;
                     }
                   }
-                } catch (err) {
+                } catch {
                   console.error(
                     "Failed to fetch image for event",
                     reg.position.event.id
@@ -80,7 +155,6 @@ export default function ProfilePage() {
                 }
               }
 
-              // Return the registration object with the new URL attached
               return { ...reg, imageUrl: resolvedUrl };
             })
           );
@@ -147,7 +221,7 @@ export default function ProfilePage() {
                 },
               ]);
             }
-          } catch (error) {
+          } catch {
             setModalTitle("Error");
             setModalMessage("An error occurred. Please try again.");
             setModalButtons([
@@ -219,7 +293,7 @@ export default function ProfilePage() {
                 { label: "Close", onClick: () => setModalOpen(false) },
               ]);
             }
-          } catch (error) {
+          } catch {
             setModalTitle("Error");
             setModalMessage("An error occurred while deleting the event.");
             setModalButtons([
@@ -249,21 +323,16 @@ export default function ProfilePage() {
       ? new Date(user.createdAt).getFullYear()
       : "0000";
 
-  // --- FILTERING LOGIC ---
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
   const upcoming: MyRegistration[] = [];
   const past: MyRegistration[] = [];
 
-  // Separate events into Upcoming and Past
   myEvents.forEach((reg) => {
     if (!reg.position?.event?.date || reg.position.event.date.length === 0)
       return;
-
     const eventDate = new Date(reg.position.event.date[0]);
-
-    // Sort into buckets
     if (eventDate >= now) {
       upcoming.push(reg);
     } else {
@@ -271,9 +340,6 @@ export default function ProfilePage() {
     }
   });
 
-  // upcoming = DEMO_UPCOMING_EVENTS; // remove this after testing
-
-  // Sort Past events: Most recent first (Descending)
   past.sort((a, b) => {
     const dateA = new Date(a.position.event.date[0]).getTime();
     const dateB = new Date(b.position.event.date[0]).getTime();
@@ -311,20 +377,18 @@ export default function ProfilePage() {
                 : new Date();
 
             return (
-              <EventCard
+              <ProfileEventCard
                 key={reg.id}
-                id={event.id} // Link to the general event page
+                id={event.id}
                 image={reg.imageUrl || "/event1.jpg"}
                 title={event.name}
-                startTime={new Date(event.startTime)}
+                startTime={new Date(reg.position.startTime)}
                 endTime={new Date(reg.position.endTime)}
                 location={event.addressLine1}
                 date={firstDate}
                 filledSlots={reg.position.filledSlots}
                 totalSlots={reg.position.totalSlots}
                 userRole={userRole}
-                // 👇 THIS IS THE FIX: Pass the positionId to the register page
-                // CONDITIONAL ACTIONS
                 onEdit={() => {
                   if (isAdmin) {
                     // Admin -> Go to Event Details Page
@@ -352,7 +416,16 @@ export default function ProfilePage() {
 
       {/* PROFILE CARD */}
       <div className="absolute top-[248px] right-[121px] h-[420px] w-[305px] rounded-lg bg-light-bcp-blue">
-        <div className="absolute top-[30px] left-1/2 h-[105px] w-[105px] -translate-x-1/2 transform rounded-full bg-[#D9D9D9]" />
+        <div className="absolute top-[30px] left-1/2 -translate-x-1/2">
+          <Image
+            src={profileImageUrl ?? blankProfile}
+            alt="Profile"
+            width={105}
+            height={105}
+            className="h-[105px] w-[105px] rounded-full object-cover"
+            unoptimized={!!profileImageUrl}
+          />
+        </div>
 
         <div className="mt-40 flex flex-col items-center space-y-[1px]">
           <div className="text-[24px] font-bold text-white">
@@ -414,11 +487,8 @@ export default function ProfilePage() {
       <div className="mt-[41px] ml-[120px] mb-20">
         <h2 className="text-[28px] font-bold mb-6">Your Past Events</h2>
 
-        {/* Card Container */}
         <div className="w-[690px] rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          {/* Table Header */}
           <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] border-b border-gray-200 bg-white py-4 px-4">
-            {/* Empty space above Date */}
             <div className=""></div>
             <div className="text-left text-[14px] font-medium text-gray-900">
               Event
@@ -431,63 +501,58 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Table Body - Scrollable to match screenshot scrollbar */}
           <div className="max-h-[320px] overflow-y-auto">
             {past.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 No past events found.
               </div>
             ) : (
-              past.map((reg, idx) => {
+              past.map((reg) => {
                 const dateObj = new Date(reg.position.event.date[0]);
                 const month = dateObj
                   .toLocaleString("default", { month: "short" })
                   .toUpperCase();
                 const day = dateObj.getDate().toString().padStart(2, "0");
 
-                // Calculate duration in hours
                 const start = new Date(reg.position.event.startTime).getTime();
                 const end = new Date(reg.position.endTime).getTime();
                 const hoursVal = !isNaN(end - start)
                   ? (end - start) / (1000 * 60 * 60)
                   : 0;
-
-                // Format: if whole number show "5", if decimal show "5.5"
                 const hoursDisplay =
                   hoursVal % 1 === 0
                     ? hoursVal.toString()
                     : hoursVal.toFixed(1);
 
                 return (
-                  <div
-                    key={reg.id}
-                    className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors"
-                  >
-                    {/* Date Column */}
-                    <div className="flex flex-col items-center justify-center leading-none">
-                      <span className="text-[11px] font-bold uppercase text-gray-500">
-                        {month}
-                      </span>
-                      <span className="text-[22px] font-bold text-black">
-                        {day}
-                      </span>
-                    </div>
+                  <Link href={`/event/${reg.position.event.id}`} key={reg.id}>
+                    <div className="grid grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors">
+                      {/* Date Column */}
+                      <div className="flex flex-col items-center justify-center leading-none">
+                        <span className="text-[11px] font-bold uppercase text-gray-500">
+                          {month}
+                        </span>
+                        <span className="text-[22px] font-bold text-black">
+                          {day}
+                        </span>
+                      </div>
 
-                    {/* Event Name */}
-                    <div className="text-[16px] font-medium text-black truncate pr-2">
-                      {reg.position.event.name}
-                    </div>
+                      {/* Event Name */}
+                      <div className="text-[16px] font-medium text-black truncate pr-2">
+                        {reg.position.event.name}
+                      </div>
 
-                    {/* Position */}
-                    <div className="text-[14px] text-gray-600 truncate pr-2">
-                      {reg.position.position}
-                    </div>
+                      {/* Position */}
+                      <div className="text-[14px] text-gray-600 truncate pr-2">
+                        {reg.position.position}
+                      </div>
 
-                    {/* Hours */}
-                    <div className="text-[14px] font-medium text-black text-center">
-                      {hoursDisplay}
+                      {/* Hours */}
+                      <div className="text-[14px] font-medium text-black text-center">
+                        {hoursDisplay}
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}

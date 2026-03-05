@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-type WaitlistEntry = {
+export type WaitlistEntry = {
   waitlistId: string;
   userId: string;
   firstName: string;

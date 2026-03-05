@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg"; // Ensure this path is correct
 
 export default function EditProfilePage() {
   const { user, isLoaded } = useUser();
@@ -107,7 +106,6 @@ export default function EditProfilePage() {
   }
 
   // --- SUBMIT ---
-  // --- SUBMIT ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -136,7 +134,6 @@ export default function EditProfilePage() {
       }
 
       // 2. Update Database
-      // WE CHANGED THE STRUCTURE HERE 👇
       const res = await fetch("/api/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -343,9 +340,11 @@ export default function EditProfilePage() {
                   className="w-[160px] h-[160px] border-2 border-dashed border-gray-500 rounded flex items-center justify-center bg-[#f9f9f9] cursor-pointer hover:bg-gray-100 transition-colors shrink-0 overflow-hidden relative"
                 >
                   {previewUrl ? (
-                    <img
+                    <Image
                       src={previewUrl}
                       alt="Preview"
+                      width={48}
+                      height={48}
                       className="w-full h-full object-cover"
                     />
                   ) : (

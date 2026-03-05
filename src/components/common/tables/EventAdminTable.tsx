@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import { AdminUser } from "@/app/api/eventSignup/controller";
+import { WaitlistEntry } from "@/app/api/waitlist/route";
 
 interface FrontEndUser {
   userId: string;
@@ -11,11 +12,12 @@ interface FrontEndUser {
   waitlistId?: string;
   firstName: string;
   lastName: string;
-  emailAddress: string; 
+  emailAddress: string;
   phoneNumber: string;
+  speaksSpanish: boolean; // Keep as boolean
   selected: boolean;
   guestOf?: string;
-  isGuest?: boolean; // ← ADD THIS LINE
+  isGuest?: boolean;
 }
 
 interface EventAdminTableProps {
@@ -23,7 +25,6 @@ interface EventAdminTableProps {
   startTime: string;
   endTime: string;
   description: string;
-  filledSlots: number;
   totalSlots: number;
   location: string;
   positionId: string;
@@ -36,7 +37,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     startTime,
     endTime,
     description,
-    filledSlots,
     totalSlots,
     location,
     positionId,
@@ -58,7 +58,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   );
 
   // Fetch waitlist ONLY if user is admin
-  const { data: waitlistSignups } = useSWR<AdminUser[]>(
+  const { data: waitlistSignups } = useSWR<WaitlistEntry[]>(
     positionId && isAdmin ? `/api/waitlist?positionId=${positionId}` : null,
     fetcher
   );
@@ -73,9 +73,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
+      speaksSpanish: s.speaksSpanish ?? false, // Convert null to false
       selected: false,
       guestOf: s.guestOf,
-      isGuest: s.isGuest, // ← ADD THIS LINE
+      isGuest: s.isGuest ?? false,
     }));
   }, [signups]);
 
@@ -90,9 +91,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
+      speaksSpanish: false, // Add missing property (waitlist doesn't track this)
       selected: false,
       guestOf: s.guestOf,
-      isGuest: s.isGuest, // ← ADD THIS LINE
+      isGuest: s.isGuest ?? false,
     }));
   }, [waitlistSignups]);
 
@@ -190,7 +192,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        const res = await fetch(`/api/eventSignup?id=${signUpId}`, {
+        // Changed from eventSignup/waitlist to registrations which worked for
+        // sending emails, but just in case something breaks here is a comment :D
+        const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
         });
 
@@ -225,7 +229,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ];
 
       const deletePromises = uniqueWaitlistIds.map(async (waitlistId) => {
-        const res = await fetch(`/api/waitlist?id=${waitlistId}`, {
+        const res = await fetch(`/api/registrations?id=${waitlistId}`, {
           method: "DELETE",
         });
 
@@ -285,6 +289,48 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     }
   };
 
+  const handleSendVolunteerEmail = () => {
+    // TODO: Guest shi
+    const selected = volunteers.filter((v) => v.selected && !v.isGuest);
+    const userIds = Array.from(new Set(selected.map((v) => v.userId)));
+
+    if (userIds.length === 0) return;
+
+    /* 
+    basically, if we want the data to go to the other page, we have two options:
+    - we can put them all in the URL, this is bad cuz it will get hella long
+    - we can put them in the session storage
+    */
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(userIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "volunteers");
+
+    router.push("/admin/email");
+  };
+
+  const handleSendWaitlistEmail = () => {
+    // TODO: Guest shi
+    const selected = waitlist.filter((v) => v.selected && !v.isGuest);
+    const userIds = Array.from(new Set(selected.map((v) => v.userId)));
+
+    if (userIds.length === 0) return;
+
+    /* 
+    basically, if we want the data to go to the other page, we have two options:
+    - we can put them all in the URL, this is bad cuz it will get hella long
+    - we can put them in the session storage
+    */
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(userIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "waitlist");
+
+    router.push("/admin/email");
+  };
+
   return (
     <div className="min-w-[1100px] flex items-center justify-center p-6">
       <div className="w-full max-w-[996px] bg-white border border-black font-sans">
@@ -323,14 +369,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <div className="flex flex-row items-center gap-10 mb-1 px-5">
             <div className="w-[280px] block">
               <p className="text-[24px] w-[280px] block">
-                {filledSlots}/{totalSlots} Spots Filled
+                {volunteers.length}/{totalSlots} Spots Filled
               </p>
             </div>
             <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
                 className="bg-light-bcp-blue h-4 rounded-full"
                 style={{
-                  width: `${totalSlots ? (filledSlots / totalSlots) * 100 : 0}%`,
+                  width: `${totalSlots ? (volunteers.length / totalSlots) * 100 : 0}%`,
                 }}
               ></div>
             </div>
@@ -342,10 +388,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           <thead className="bg-white sticky top-0 z-10">
             <tr className="text-left">
               <th className="py-3 px-5 font-normal"></th>
-              <th className="py-3 pl-29 px-4 font-normal">Name</th>
+              <th className="py-3 px-4 font-normal">Name</th>
               <th className="py-3 px-4 font-normal">Email</th>
               <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-              <th className="py-3 px-4 pl-13 font-normal">
+              <th className="py-3 px-4 font-normal"></th>
+              {/* Spanish column header */}
+              <th className="py-3 px-4 font-normal">
                 <button
                   onClick={toggleSelectAll}
                   className="hover:underline transition-all duration-200 "
@@ -381,16 +429,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <div className="flex items-center gap-3">
                       {p.isGuest ? (
                         <div className="flex items-start relative">
-                          {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                          <div
-                            className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          {/* Guest circle - #D9D9D9 */}
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
+                          {/* Vertical connector line - 30px tall, 5px wide*/}
+                          <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                          {/* Guest circle */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                           <div className="ml-3">
                             <div>
                               {p.firstName} {p.lastName}
@@ -399,16 +441,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 relative">
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                            style={{ backgroundColor: "#D9D9D9" }}
-                          ></div>
-                          {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                          {/* Vertical line extending down - 30px tall, 5px wide*/}
                           {hasGuestBelow && (
-                            <div
-                              className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                              style={{ backgroundColor: "#D9D9D9" }}
-                            ></div>
+                            <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
                           <div>
                             {p.firstName} {p.lastName}
@@ -419,6 +455,14 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   </td>
                   <td className="py-3 px-4">{p.emailAddress}</td>
                   <td className="py-3 px-4">{p.phoneNumber}</td>
+                  <td className="py-3 px-4">
+                    {p.speaksSpanish && (
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                        S
+                      </div>
+                    )}
+                  </td>
+
                   <td className="py-3 px-4 text-center">
                     {/* Only show checkbox for main users, not guests */}
                     {!p.isGuest && (
@@ -433,6 +477,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 </tr>
               );
             })}
+            {volunteers.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-gray-400">
+                  No one has signed up yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 
@@ -443,6 +494,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <Button
                 label="Send Email"
                 altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                onClick={handleSendVolunteerEmail}
               />
               <Button
                 label="Remove from Event"
@@ -462,14 +514,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </h1>
             </div>
 
-            <table className="w-full border-white-700 text-[#234254]">
+            <table className="w-full border-white-700 text-bcp-blue">
               <thead className="bg-white sticky top-0 z-10">
                 <tr className="text-left">
                   <th className="py-3 px-5 font-normal"></th>
-                  <th className="py-3 pl-29 px-4 font-normal">Name</th>
+                  <th className="py-3 px-4 font-normal">Name</th>
                   <th className="py-3 px-4 font-normal">Email</th>
                   <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-                  <th className="py-3 px-4 pl-13 font-normal">
+                  <th className="py-3 px-4 font-normal"></th>
+                  {/* Spanish column header */}
+                  <th className="py-3 px-4 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
                       className="hover:underline transition-all duration-200 "
@@ -507,16 +561,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         <div className="flex items-center gap-3">
                           {p.isGuest ? (
                             <div className="flex items-start relative">
-                              {/* Vertical connector line - 30px tall, 5px wide, #D9D9D9 */}
-                              <div
-                                className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px]"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              {/* Guest circle - #D9D9D9 */}
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
+                              {/* Vertical connector line - 30px tall, 5px wide,*/}
+                              <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                              {/* Guest circle */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                               <div className="ml-3">
                                 <div>
                                   {p.firstName} {p.lastName}
@@ -530,16 +578,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative">
-                              <div
-                                className="w-10 h-10 rounded-full flex-shrink-0 relative z-10"
-                                style={{ backgroundColor: "#D9D9D9" }}
-                              ></div>
-                              {/* Vertical line extending down - 30px tall, 5px wide, #D9D9D9 */}
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                              {/* Vertical line extending down - 30px tall, 5px wide */}
                               {hasGuestBelow && (
-                                <div
-                                  className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px]"
-                                  style={{ backgroundColor: "#D9D9D9" }}
-                                ></div>
+                                <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
                               <div>
                                 {p.firstName} {p.lastName}
@@ -550,6 +592,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       </td>
                       <td className="py-3 px-4">{p.emailAddress}</td>
                       <td className="py-3 px-4">{p.phoneNumber}</td>
+                      <td className="py-3 px-4">
+                        {p.speaksSpanish && (
+                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                            S
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-center">
                         {/* Only show checkbox for main users */}
                         {!p.isGuest && (
@@ -564,6 +613,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     </tr>
                   );
                 })}
+                {waitlist.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                      No one is on the waitlist.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
@@ -575,6 +631,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <Button
                       label="Send Email"
                       altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                      onClick={handleSendWaitlistEmail}
                     />
                     <Button
                       label="Add to Event"
