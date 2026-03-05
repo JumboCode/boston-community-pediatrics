@@ -1,7 +1,7 @@
 "use client";
 
 interface SkeletonProps {
-  className: string;
+  className?: string;
 }
 
 function Skeleton(props: SkeletonProps){

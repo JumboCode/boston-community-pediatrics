@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
+import ManageRolesSkeleton from "@/components/ui/skeleton/ManageRolesSkeleton";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
@@ -41,7 +42,7 @@ const ManageRolesPage = () => {
   const router = useRouter();
 
   // Fetch signups for the position (volunteers)
-  const { data: allVols } = useSWR<FrontEndUser[]>(`/api/users`, fetcher);
+  const { data: allVols, isLoading: isLoadingVols } = useSWR<FrontEndUser[]>(`/api/users`, fetcher);
 
   const frontEndUsers = useMemo(() => {
     if (!allVols) return [];
@@ -95,6 +96,10 @@ const ManageRolesPage = () => {
     setModalMessage(null);
     router.refresh();
   }, [router]);
+
+  if (isLoadingVols) {
+    return <ManageRolesSkeleton/>;
+}
 
   // Delete User - show confirmation first
   const handleDeleteConfirm = () => {

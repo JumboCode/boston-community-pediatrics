@@ -1,6 +1,5 @@
 
 import Skeleton from "@/components/ui/skeleton/Skeleton";
-import EventAdminTableSkeleton from "@/components/ui/skeleton/EventAdminTableSkeleton";
 import EventTableSkeleton from "@/components/ui/skeleton/EventTableSkeleton";
 
 export default function Loading() {
@@ -9,14 +8,14 @@ export default function Loading() {
       <div className="pt-16 pb-12 flex flex-col items-center">
 
         {/* Carousel */}
-        <Skeleton className="w-[650px] h-[220px]" />
+        <Skeleton className="w-[996px] h-[360px]" />
 
         {/* Dots */}
-        <div className="flex gap-2 mt-3">
-          <Skeleton className="w-2 h-2 rounded-full" />
-          <Skeleton className="w-2 h-2 rounded-full" />
-          <Skeleton className="w-2 h-2 rounded-full" />
-          <Skeleton className="w-2 h-2 rounded-full" />
+        <div className="flex gap-[16px] mt-[24px]">
+          <Skeleton className="w-[10px] h-[10px] rounded-full" />
+          <Skeleton className="w-[10px] h-[10px] rounded-full" />
+          <Skeleton className="w-[10px] h-[10px] rounded-full" />
+          <Skeleton className="w-[10px] h-[10px] rounded-full" />
         </div>
       </div>
 

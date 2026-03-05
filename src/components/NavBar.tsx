@@ -3,6 +3,7 @@ import { useUser } from "@clerk/nextjs";
 import UserNavBar from "./UserNavBar";
 import AdminNavBar from "./AdminNavBar";
 import { useState, useEffect } from "react";
+import ProfilePageSkeleton from "./ui/skeleton/ProfilePageSkeleton";
 
 function NavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -27,7 +28,7 @@ function NavBar() {
     fetchUser();
   }, [user?.id, isLoaded, isSignedIn]);
 
-  if (isAdmin === null) return null;
+  if (isAdmin === null) return <ProfilePageSkeleton/>;
 
   return (
     <>

@@ -5,7 +5,6 @@ import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
-import EventAdminTableSkeleton from "@/components/ui/skeleton/EventAdminTableSkeleton";
 
 interface FrontEndUser {
   userId: string;
@@ -53,7 +52,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   // Fetch signups for the position (volunteers)
-  const { data: signups, isLoading } = useSWR<AdminUser[]>(
+  //took out isLoading...no use client here so no need
+  const { data: signups } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
@@ -115,9 +115,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     setWaitlist(frontEndWaitlistUsers);
   }, [frontEndWaitlistUsers]);
 
-  if(isLoading){
-    return <EventAdminTableSkeleton showWaitlist={isAdmin} />;
-  }
+  // if(isLoading){
+  //   return <EventAdminTableSkeleton showWaitlist={isAdmin} />;
+  // }
 
   // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {

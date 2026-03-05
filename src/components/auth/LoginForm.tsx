@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
 
 const LoginForm = () => {
   const { isLoaded, signIn, setActive } = useSignIn();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  if(!isLoaded) return <Basic Skeleton/>;
 
   // --- 1. EMAIL/PASSWORD LOGIN ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
