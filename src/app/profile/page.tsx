@@ -83,6 +83,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const { signOut } = useClerk();
 
+  // Redirect if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/login');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
