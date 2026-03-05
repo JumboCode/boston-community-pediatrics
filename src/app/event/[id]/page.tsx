@@ -8,6 +8,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import EventVolunteerTable from "@/components/common/tables/EventVolunteerTable";
 import { getPublicURL } from "@/lib/r2";
+import Link from "next/link";
+import Image from "next/image";
+import arrowLeft from "@/assets/icons/arrow-left.svg";
 
 export default async function EventDetailsPage(props: {
   params: { id: string };
@@ -32,125 +35,133 @@ export default async function EventDetailsPage(props: {
       .filter((url) => url.trim() !== "") as string[];
 
     return (
-      <div className="flex flex-col justify-center items-center">
-        <div className="pt-16 pb-12 flex flex-col items-center">
-          {/* Carousel at the top */}
-          <Carousel
-            images={imageUrls.length > 0 ? imageUrls : [rectangleGray]}
-          />
+      <div className="relative">
+        <Link href="/event" className="absolute top-10 left-12">
+          <Image src={arrowLeft} alt="Back to events" className="w-8 h-8" />
+        </Link>
+        <div className="flex flex-col justify-center items-center">
+          <div className="pt-16 pb-12 flex flex-col items-center">
+            {/* Carousel at the top */}
+            <Carousel
+              images={imageUrls.length > 0 ? imageUrls : [rectangleGray]}
+            />
 
-          {/* Event details */}
-          <section className="max-w-[1000px] mt-[56px]">
-            <h1 className="text-bcp-blue text-[40px] leading-[44px]">
-              {event.name ? event.name : "Event Name"}
-            </h1>
-            {/* Date */}
-            <p className="mt-[8px] text-bcp-blue text-[28px] leading-[40px]">
-              {(() => {
-                if (!event.startTime) return "Date unavailable";
+            {/* Event details */}
+            <section className="max-w-[1000px] mt-[56px]">
+              <h1 className="text-bcp-blue text-[40px] leading-[44px]">
+                {event.name ? event.name : "Event Name"}
+              </h1>
+              {/* Date */}
+              <p className="mt-[8px] text-bcp-blue text-[28px] leading-[40px]">
+                {(() => {
+                  if (!event.startTime) return "Date unavailable";
 
-                const start = new Date(event.startTime);
-                const end = new Date(event.endTime);
+                  const start = new Date(event.startTime);
+                  const end = new Date(event.endTime);
 
-                if (isNaN(start.getTime())) return "Date unavailable";
+                  if (isNaN(start.getTime())) return "Date unavailable";
 
-                const month = start.toLocaleString(undefined, {
-                  month: "long",
-                });
-                const year = start.getFullYear();
+                  const month = start.toLocaleString(undefined, {
+                    month: "long",
+                  });
+                  const year = start.getFullYear();
 
-                if (start.toDateString() === end.toDateString()) {
-                  return `${month} ${start.getDate()}, ${year}`;
-                }
+                  if (start.toDateString() === end.toDateString()) {
+                    return `${month} ${start.getDate()}, ${year}`;
+                  }
 
-                return `${month} ${start.getDate()}-${end.getDate()}, ${year}`;
-              })()}
-            </p>
-            {/* Time */}
-            <p className="mt-[4px] text-bcp-blue text-[28px] leading-[40px]">
-              {event.startTime && event.endTime
-                ? `${new Date(event.startTime).toLocaleTimeString("en-US", {
-                    timeZone: "America/New_York",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })} – ${new Date(event.endTime).toLocaleTimeString("en-US", {
-                    timeZone: "America/New_York",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}`
-                : "Time unavailable"}
-            </p>
-            {/* Address */}
-            <p className="mt-[4px] text-bcp-blue text-[20px] leading-[32px]">
-              {[
-                event.addressLine1,
-                event.addressLine2,
-                `${event.city} ${event.state} ${event.zipCode}`,
-              ]
-                .filter(Boolean)
-                .join(", ")}
-            </p>
-
-            <p className="mt-[32px] text-bcp-blue text-[16px] leading-[24px]">
-              {event.description}
-            </p>
-            {isExpired && (
-              <p className="mt-6 text-gray-500 italic">
-                This event has already taken place and is no longer accepting
-                sign-ups.
+                  return `${month} ${start.getDate()}-${end.getDate()}, ${year}`;
+                })()}
               </p>
-            )}
-          </section>
-        </div>
+              {/* Time */}
+              <p className="mt-[4px] text-bcp-blue text-[28px] leading-[40px]">
+                {event.startTime && event.endTime
+                  ? `${new Date(event.startTime).toLocaleTimeString("en-US", {
+                      timeZone: "America/New_York",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })} – ${new Date(event.endTime).toLocaleTimeString(
+                      "en-US",
+                      {
+                        timeZone: "America/New_York",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      }
+                    )}`
+                  : "Time unavailable"}
+              </p>
+              {/* Address */}
+              <p className="mt-[4px] text-bcp-blue text-[20px] leading-[32px]">
+                {[
+                  event.addressLine1,
+                  event.addressLine2,
+                  `${event.city} ${event.state} ${event.zipCode}`,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
 
-        <div
-          className={`flex flex-col items-center justify-center ${
-            user?.role !== UserRole.ADMIN
-              ? "border border-gray-800 max-w-[1000px] m-10"
-              : "space-y-6 p-3"
-          }`}
-        >
-          {positions.map((item: EventPosition) => {
-            // Format address
-            const location = [
-              item.addressLine1,
-              item.addressLine2, // optional
-              `${item.city} ${item.state} ${item.zipCode}`,
-            ]
-              .filter(Boolean) // remove empty strings
-              .join(", ");
+              <p className="mt-[32px] text-bcp-blue text-[16px] leading-[24px]">
+                {event.description}
+              </p>
+              {isExpired && (
+                <p className="mt-6 text-gray-500 italic">
+                  This event has already taken place and is no longer accepting
+                  sign-ups.
+                </p>
+              )}
+            </section>
+          </div>
 
-            if (user?.role == UserRole.ADMIN) {
-              return (
-                <EventAdminTable
-                  key={item.id}
-                  position={item.position}
-                  startTime={item.startTime.toString()}
-                  endTime={item.endTime.toString()}
-                  description={item.description}
-                  totalSlots={item.totalSlots}
-                  positionId={item.id}
-                  location={location}
-                  isAdmin={true} // ← ADD THIS LINE!
-                />
-              );
-            } else {
-              return (
-                <EventVolunteerTable
-                  key={item.id}
-                  positionTitle={item.position}
-                  startTime={item.startTime.toString()}
-                  endTime={item.endTime.toString()}
-                  description={item.description}
-                  totalSpots={item.totalSlots}
-                  positionId={item.id}
-                  streetAddress={location}
-                />
-              );
-            }
-          })}
-          {/* Bottom spacer */}
-          <div></div>
+          <div
+            className={`flex flex-col items-center justify-center ${
+              user?.role !== UserRole.ADMIN
+                ? "border border-gray-800 max-w-[1000px] m-10"
+                : "space-y-6 p-3"
+            }`}
+          >
+            {positions.map((item: EventPosition) => {
+              // Format address
+              const location = [
+                item.addressLine1,
+                item.addressLine2, // optional
+                `${item.city} ${item.state} ${item.zipCode}`,
+              ]
+                .filter(Boolean) // remove empty strings
+                .join(", ");
+
+              if (user?.role == UserRole.ADMIN) {
+                return (
+                  <EventAdminTable
+                    key={item.id}
+                    position={item.position}
+                    startTime={item.startTime.toString()}
+                    endTime={item.endTime.toString()}
+                    description={item.description}
+                    totalSlots={item.totalSlots}
+                    positionId={item.id}
+                    location={location}
+                    isAdmin={true} // ← ADD THIS LINE!
+                  />
+                );
+              } else {
+                return (
+                  <EventVolunteerTable
+                    key={item.id}
+                    positionTitle={item.position}
+                    startTime={item.startTime.toString()}
+                    endTime={item.endTime.toString()}
+                    description={item.description}
+                    totalSpots={item.totalSlots}
+                    positionId={item.id}
+                    streetAddress={location}
+                  />
+                );
+              }
+            })}
+            {/* Bottom spacer */}
+            <div></div>
+          </div>
         </div>
       </div>
     );
