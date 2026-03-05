@@ -249,74 +249,74 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  const handleDeleteEvent = (eventId: string, registrationId?: string) => {
-    setModalTitle("Delete Event?");
-    setModalMessage(
-      "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
-    );
+  // const handleDeleteEvent = (eventId: string, registrationId?: string) => {
+  //   setModalTitle("Delete Event?");
+  //   setModalMessage(
+  //     "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
+  //   );
 
-    setModalButtons([
-      {
-        label: "Cancel",
-        variant: "secondary",
-        onClick: () => setModalOpen(false),
-      },
-      {
-        label: "Delete",
-        variant: "danger",
-        loading: modalLoading,
-        onClick: async () => {
-          try {
-            setModalLoading(true);
+  //   setModalButtons([
+  //     {
+  //       label: "Cancel",
+  //       variant: "secondary",
+  //       onClick: () => setModalOpen(false),
+  //     },
+  //     {
+  //       label: "Delete",
+  //       variant: "danger",
+  //       loading: modalLoading,
+  //       onClick: async () => {
+  //         try {
+  //           setModalLoading(true);
 
-            if (eventId.startsWith("evt-") || eventId === "demo-event") {
-              setModalTitle("Demo Event Deleted");
-              setModalMessage("This was a demo event.");
-              setModalButtons([
-                { label: "Close", onClick: () => setModalOpen(false) },
-              ]);
-              return;
-            }
+  //           if (eventId.startsWith("evt-") || eventId === "demo-event") {
+  //             setModalTitle("Demo Event Deleted");
+  //             setModalMessage("This was a demo event.");
+  //             setModalButtons([
+  //               { label: "Close", onClick: () => setModalOpen(false) },
+  //             ]);
+  //             return;
+  //           }
 
-            const res = await fetch(`/api/events?id=${eventId}`, {
-              method: "DELETE",
-            });
+  //           const res = await fetch(`/api/events?id=${eventId}`, {
+  //             method: "DELETE",
+  //           });
 
-            if (res.ok) {
-              if (registrationId) {
-                setMyEvents((prev) =>
-                  prev.filter((evt) => evt.id !== registrationId)
-                );
-              }
+  //           if (res.ok) {
+  //             if (registrationId) {
+  //               setMyEvents((prev) =>
+  //                 prev.filter((evt) => evt.id !== registrationId)
+  //               );
+  //             }
 
-              setModalTitle("Event Deleted");
-              setModalMessage("Event successfully deleted.");
-              setModalButtons([
-                { label: "Close", onClick: () => setModalOpen(false) },
-              ]);
-            } else {
-              const err = await res.json();
-              setModalTitle("Error");
-              setModalMessage(err.error || "Failed to delete event.");
-              setModalButtons([
-                { label: "Close", onClick: () => setModalOpen(false) },
-              ]);
-            }
-          } catch {
-            setModalTitle("Error");
-            setModalMessage("An error occurred while deleting the event.");
-            setModalButtons([
-              { label: "Close", onClick: () => setModalOpen(false) },
-            ]);
-          } finally {
-            setModalLoading(false);
-          }
-        },
-      },
-    ]);
+  //             setModalTitle("Event Deleted");
+  //             setModalMessage("Event successfully deleted.");
+  //             setModalButtons([
+  //               { label: "Close", onClick: () => setModalOpen(false) },
+  //             ]);
+  //           } else {
+  //             const err = await res.json();
+  //             setModalTitle("Error");
+  //             setModalMessage(err.error || "Failed to delete event.");
+  //             setModalButtons([
+  //               { label: "Close", onClick: () => setModalOpen(false) },
+  //             ]);
+  //           }
+  //         } catch {
+  //           setModalTitle("Error");
+  //           setModalMessage("An error occurred while deleting the event.");
+  //           setModalButtons([
+  //             { label: "Close", onClick: () => setModalOpen(false) },
+  //           ]);
+  //         } finally {
+  //           setModalLoading(false);
+  //         }
+  //       },
+  //     },
+  //   ]);
 
-    setModalOpen(true);
-  };
+  //   setModalOpen(true);
+  // };
 
   // Wait for Clerk, event data (loading), and the user's role from the DB
   if (!isLoaded || loading || userRole === "") {
