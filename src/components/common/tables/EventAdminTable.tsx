@@ -5,6 +5,7 @@ import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
+import EventAdminTableSkeleton from "@/components/ui/skeleton/EventAdminTableSkeleton";
 
 interface FrontEndUser {
   userId: string;
@@ -52,10 +53,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   // Fetch signups for the position (volunteers)
-  const { data: signups } = useSWR<AdminUser[]>(
+  const { data: signups, isLoading } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
+  
 
   // Fetch waitlist ONLY if user is admin
   const { data: waitlistSignups } = useSWR<WaitlistEntry[]>(
@@ -101,6 +103,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const [waitlist, setWaitlist] = useState<FrontEndUser[]>([]);
 
+  
+
   const router = useRouter();
 
   useEffect(() => {
@@ -110,6 +114,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   useEffect(() => {
     setWaitlist(frontEndWaitlistUsers);
   }, [frontEndWaitlistUsers]);
+
+  if(isLoading){
+    return <EventAdminTableSkeleton showWaitlist={isAdmin} />;
+  }
 
   // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {
