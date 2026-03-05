@@ -52,6 +52,7 @@ export interface AdminUser {
   speaksSpanish: boolean | null;
   guestOf?: string; // For displaying "Guest of X"
   isGuest?: boolean; // To mark if this row is a guest
+  comments?: string | null
 }
 
 function adminUserWithGuests(s: {

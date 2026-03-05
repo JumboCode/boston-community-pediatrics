@@ -64,6 +64,7 @@ model EventSignup {
   date       DateTime?
   time       DateTime?
   notes      String?
+  comments   String?
   event      Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -101,7 +102,6 @@ model Guest {
   phoneNumber   String?
   signupId      String
   dateOfBirth   String?
-  comments      String?
   speaksSpanish Boolean?
   signup        EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }
