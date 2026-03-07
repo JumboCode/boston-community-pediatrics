@@ -15,7 +15,7 @@
     "@clerk/nextjs": "^6.36.1",
     "@headlessui/react": "^2.2.9",
     "@prisma/client": "^6.19.0",
-    "@react-email/components": "^1.0.6",
+    "@react-email/components": "^1.0.8",
     "@react-email/render": "^2.0.4",
     "@react-email/tailwind": "^2.0.3",
     "@svgr/webpack": "^8.1.0",

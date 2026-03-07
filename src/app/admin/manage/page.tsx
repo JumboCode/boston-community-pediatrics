@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
@@ -17,6 +17,7 @@ interface FrontEndUser {
   phoneNumber: string;
   role: string;
   selected: boolean;
+  createdAt?: string;
 }
 
 const fetcher = async (url: string) => {
@@ -31,6 +32,17 @@ const ManageRolesPage = () => {
   const { user } = useUser();
   const currentUserId = user?.id;
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
+
+  // search/dropdown helpers copied from admin/email/page.tsx
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [sortOption, setSortOption] = useState<
+    "NAME_AZ" | "NAME_ZA" | "ADMIN" | "VOLUNTEER" | "DATE_NEWEST" | "DATE_OLDEST"
+  >("NAME_AZ");
+
   const [modalTitle, setModalTitle] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
@@ -54,6 +66,7 @@ const ManageRolesPage = () => {
         phoneNumber: v.phoneNumber,
         role: v.role,
         selected: false,
+        createdAt: v.createdAt,
       }))
       .sort((a, b) => {
         const firstNameCompare = a.firstName
@@ -90,11 +103,130 @@ const ManageRolesPage = () => {
 
   const selectedCount = volunteers.filter((v) => v.selected).length;
 
+  const seenVolunteers = volunteers.filter((v) => {
+    const full = `${v.lastName} ${v.firstName} ${v.emailAddress}`.toLowerCase();
+    return full.includes(searchQuery.toLowerCase());
+  });
+
+  const sortedVolunteers = useMemo(() => {
+    let list = [...volunteers];
+
+    // Apply role filters
+    if (sortOption === "ADMIN") {
+      list = list.filter((v) => v.role === "ADMIN");
+    } else if (sortOption === "VOLUNTEER") {
+      list = list.filter((v) => v.role === "VOLUNTEER");
+    }
+
+    // Apply sorting
+    if (sortOption === "NAME_AZ") {
+      list.sort((a, b) => {
+        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
+        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
+        return aName.localeCompare(bName);
+      });
+    } else if (sortOption === "NAME_ZA") {
+      list.sort((a, b) => {
+        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
+        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
+        return bName.localeCompare(aName);
+      });
+    } else if (sortOption === "DATE_NEWEST") {
+      list.sort((a, b) => {
+        const aDate = new Date(a.createdAt || 0).getTime();
+        const bDate = new Date(b.createdAt || 0).getTime();
+        return bDate - aDate;
+      });
+    } else if (sortOption === "DATE_OLDEST") {
+      list.sort((a, b) => {
+        const aDate = new Date(a.createdAt || 0).getTime();
+        const bDate = new Date(b.createdAt || 0).getTime();
+        return aDate - bDate;
+      });
+    }
+
+    return list;
+  }, [volunteers, sortOption]);
+
+  function addVolunteer(id: string) {
+    toggleSelect(id);
+    setSearchQuery("");
+    setDropdownOpen(false);
+  }
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+        setSearchQuery("");
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (dropdownOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [dropdownOpen]);
+  const copyEmailString = volunteers
+  .filter((v) => v.selected)
+  .map((v) => v.emailAddress)
+  .join("\r\n");
+
+const handleCopy = async () => {
+  try {
+    await navigator.clipboard.writeText(copyEmailString);
+  } catch (err) {
+    console.error(err);
+  }
+  
+};
+const handleSaveCSV = () => {
+  const header = "Last Name,First Name,Email Address,Phone Number";
+  const content = volunteers
+    .filter((v) => v.selected)
+    .map((v) => `${v.lastName},${v.firstName},${v.emailAddress},${v.phoneNumber}`)
+    .join("\n");
+
+  // const blob = new Blob([content], { type: "text/plain" });
+  const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "users.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+
   const closeModal = useCallback(() => {
     setModalTitle(null);
     setModalMessage(null);
     router.refresh();
   }, [router]);
+
+  const handleMessage = () => {
+    const selectedIds = volunteers
+      .filter((v) => v.selected)
+      .map((v) => v.userId);
+      
+    
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify(selectedIds)
+    );
+    sessionStorage.setItem("adminEmailSource", "manage");
+    
+    router.push("/admin/email");
+  };
 
   // Delete User - show confirmation first
   const handleDeleteConfirm = () => {
@@ -154,6 +286,8 @@ const ManageRolesPage = () => {
     setShowEditConfirm(true);
   };
 
+ 
+
   const handleEditApproved = async () => {
     setIsLoading(true);
     const volunteersToEdit: FrontEndUser[] = volunteers.filter(
@@ -209,6 +343,8 @@ const ManageRolesPage = () => {
     }
   };
 
+  
+
   return (
     <>
       <div className="items-center justify-center p-6 ml-60 mr-60">
@@ -221,6 +357,114 @@ const ManageRolesPage = () => {
             Manage Roles
           </Link>
         </h1>
+
+        {/* search bar + sort dropdown copied/adapted from admin/email/page.tsx */}
+        <div className="mb-4 flex items-center gap-4 w-full">
+          <div ref={containerRef} className="relative flex-1">
+            <div
+              className={`min-h-[44px] w-full rounded-lg border px-3 py-2
+                  flex flex-wrap gap-2 cursor-text focus-within:ring-2`}
+              onClick={() => setDropdownOpen(true)}
+            >
+              {volunteers
+                .filter((v) => v.selected)
+                .map((u) => (
+                  <span
+                    key={u.userId}
+                    className="flex items-center gap-1 border border-gray-400 
+                    rounded-full px-3 py-0.5 text-sm text-medium-black bg-white 
+                    whitespace-nowrap"
+                  >
+                    {u.lastName}, {u.firstName}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(u.userId);
+                      }}
+                      className="ml-1 text-gray-500 hover:text-red-500 
+                      leading-none"
+                      aria-label={`Remove ${u.firstName}`}
+                    >
+                      x
+                    </button>
+                  </span>
+                ))}
+              <span className="flex-1 min-w-[4px]" />
+            </div>
+
+            {dropdownOpen && (
+              <div className="absolute z-50 left-0 right-0 bg-white border 
+                    border-medium-gray rounded-lg shadow-lg mt-1">
+                <div className="p-2 border-b border-gray-100">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && seenVolunteers.length > 0) {
+                        addVolunteer(seenVolunteers[0].userId);
+                      }
+                    }}
+                    className="w-full border-none outline-none focus:ring-0 text-sm"
+                  />
+                </div>
+                {seenVolunteers.length === 0 && searchQuery ? (
+                  <div className="p-2 text-sm text-gray-500">No results</div>
+                ) : (
+                  seenVolunteers.map((u) => (
+                    <button
+                      key={u.userId}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        addVolunteer(u.userId);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-100 text-left text-sm"
+                    >
+                      {u.lastName}, {u.firstName}{" "}
+                      <span className="text-gray-500">({u.emailAddress})</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* sort-by dropdown */}
+          <div className="w-40">
+            <label htmlFor="sort" className="sr-only">
+              Sort by role
+            </label>
+            <select
+              id="sort"
+              value={sortOption}
+              onChange={(e) =>
+                setSortOption(
+                  e.target.value as
+                    | "NAME_AZ"
+                    | "NAME_ZA"
+                    | "ADMIN"
+                    | "VOLUNTEER"
+                    | "DATE_NEWEST"
+                    | "DATE_OLDEST"
+                )
+              }
+              className="h-[44px] w-full rounded-lg border px-3 py-2 text-sm"
+            >
+              <option value="NAME_AZ">Name (A–Z)</option>
+              <option value="NAME_ZA">Name (Z–A)</option>
+              <option value="ADMIN">Admin</option>
+              <option value="VOLUNTEER">Volunteer</option>
+              <option value="DATE_NEWEST">Date Created (Newest)</option>
+              <option value="DATE_OLDEST">Date Created (Oldest)</option>
+            </select>
+          </div>
+        </div>
+
         <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
           {/* Volunteer Table (populated by `/api/users`) */}
           <table className="w-full border-white-700 text-bcp-blue">
@@ -242,7 +486,7 @@ const ManageRolesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {volunteers.map((p, i) => {
+              {sortedVolunteers.map((p, i) => {
                 const rowNumber = i + 1;
 
                 return (
@@ -282,16 +526,19 @@ const ManageRolesPage = () => {
                 disabled={selectedCount <= 0}
                 label="Message"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                onClick={handleMessage}
               />
               <Button
                 disabled={selectedCount <= 0}
                 label="Copy to Clipboard"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                 onClick={handleCopy}
               />
               <Button
                 disabled={selectedCount <= 0}
                 label="Save as CSV"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                onClick={handleSaveCSV}
               />
             </div>
             <div className="flex justify-between gap-4">
