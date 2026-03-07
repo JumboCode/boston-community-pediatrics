@@ -281,9 +281,10 @@ export default function EventSignUpForm({
 
   return (
     <div className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 w-full max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-center text-[#1e293b] mb-8">
-        {eventName}
-      </h1>
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-semibold text-bcp-blue">{eventName}</h1>
+        <p className="text-lg text-gray-700 mt-2">{positionData?.position}</p>
+      </div>
 
       {errorMessage && (
         <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
@@ -357,14 +358,21 @@ export default function EventSignUpForm({
         </div>
       </div>
 
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Additional Comments
+        </label>
+
+        <textarea
+          rows={4}
+          className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none"
+        />
+      </div>
+
       <div className="mb-10 text-sm">
         <p className="mb-1">
           You are currently signing up for{" "}
           <span className="font-bold">{positionData?.position}</span>.
-        </p>
-        <p className="text-gray-600">
-          <span className="font-bold text-gray-900">Description:</span>{" "}
-          {positionData?.description}
         </p>
       </div>
 

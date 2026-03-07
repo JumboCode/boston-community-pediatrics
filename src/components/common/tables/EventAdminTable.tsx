@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
+import Modal from "@/components/common/Modal";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
 
@@ -18,7 +19,8 @@ interface FrontEndUser {
   selected: boolean;
   guestOf?: string;
   isGuest?: boolean;
-  comments?: string | null; // Add comments field
+  comments?: string | null;
+  memberSince?: number;
 }
 
 interface EventAdminTableProps {
@@ -45,7 +47,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   } = props;
 
   const [showCommentModal, setShowCommentModal] = useState(false);
-  const [selectedComment, setSelectedComment] = useState<string | null>(null);
+  const [selectedUserData, setSelectedUserData] = useState<{
+    name: string;
+    email: string;
+    phoneNumber: string;
+    speaksSpanish: boolean;
+    comment: string;
+    memberSince?: number;
+    guestName?: string;
+    guestEmail?: string;
+    guestPhoneNumber?: string;
+    guestSpeaksSpanish?: boolean;
+  } | null>(null);
 
   const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -81,7 +94,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
-      comments: s.comments, // Include comments from API
+      comments: s.comments,
+      memberSince: s.memberSince,
     }));
   }, [signups]);
 
@@ -100,7 +114,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
-      comments: s.comments, // Include comments from waitlist
+      comments: s.comments,
     }));
   }, [waitlistSignups]);
 
@@ -118,8 +132,34 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   }, [frontEndWaitlistUsers]);
 
   // Handle viewing comment
-  const handleViewComment = (comment: string) => {
-    setSelectedComment(comment);
+  const handleViewComment = (signUpId: string) => {
+    // Find the main user with this signUpId
+    const mainUser = volunteers.find(
+      (v) => v.signUpId === signUpId && !v.isGuest
+    );
+    if (!mainUser || !mainUser.comments) return;
+
+    // Find if there's a guest with this signUpId
+    const guest = volunteers.find((v) => v.signUpId === signUpId && v.isGuest);
+
+    setSelectedUserData({
+      name: `${mainUser.firstName} ${mainUser.lastName}`,
+      email: mainUser.emailAddress,
+      phoneNumber: mainUser.phoneNumber,
+      speaksSpanish: mainUser.speaksSpanish,
+      comment: mainUser.comments,
+
+      ...(mainUser.memberSince && {
+        memberSince: mainUser.memberSince,
+      }),
+
+      ...(guest && {
+        guestName: `${guest.firstName} ${guest.lastName}`,
+        guestEmail: guest.emailAddress,
+        guestPhoneNumber: guest.phoneNumber,
+        guestSpeaksSpanish: guest.speaksSpanish,
+      }),
+    });
     setShowCommentModal(true);
   };
 
@@ -441,11 +481,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    {/* Show "view comment" button only if comments exist and user is not a guest */}
-                    {!p.isGuest && p.comments && (
+                    {/* Show "view comment" button only if comments exist, user is not a guest, and comment is not null/empty */}
+                    {!p.isGuest && p.comments && p.comments.trim() !== "" && (
                       <button
-                        onClick={() => handleViewComment(p.comments!)}
-                        className="bg-bcp-blue text-white text-sm px-3 py-1 rounded-md hover:bg-[#1b323e] transition-colors"
+                        onClick={() => handleViewComment(p.signUpId!)}
+                        className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors"
                       >
                         view comment
                       </button>
@@ -581,15 +621,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {/* Show "view comment" button only if comments exist and user is not a guest */}
-                        {!p.isGuest && p.comments && (
-                          <button
-                            onClick={() => handleViewComment(p.comments!)}
-                            className="bg-bcp-blue text-white text-sm px-3 py-1 rounded-md hover:bg-[#1b323e] transition-colors"
-                          >
-                            view comment
-                          </button>
-                        )}
+                        {/* Waitlist comments if needed */}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {!p.isGuest && (
@@ -643,31 +675,107 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       </div>
 
       {/* Comment Modal */}
-      {showCommentModal && selectedComment && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setShowCommentModal(false)}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-2xl font-semibold text-bcp-blue mb-4">
-              Comment
-            </h2>
-            <p className="text-gray-700 mb-6 whitespace-pre-wrap">
-              {selectedComment}
-            </p>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowCommentModal(false)}
-                className="bg-bcp-blue text-white px-6 py-2 rounded-md hover:bg-[#1b323e] transition-colors"
-              >
-                Close
-              </button>
+      {showCommentModal && selectedUserData && (
+        <Modal
+          open={showCommentModal}
+          onClose={() => setShowCommentModal(false)}
+          layout="custom"
+          description={
+            <div className="w-full px-10 py-6 text-left text-bcp-blue">
+              {/* USER CARD */}
+              <div className="flex items-start gap-6 mb-8">
+                {/* Avatar */}
+                <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0" />
+
+                {/* Name + Member */}
+                <div className="min-w-[220px]">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold">
+                      {selectedUserData.name}
+                    </h3>
+
+                    {selectedUserData.speaksSpanish && (
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-full flex items-center justify-center border border-black text-sm font-bold">
+                        S
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedUserData.memberSince && (
+                    <p className="text-sm text-gray-500">
+                      Member since {selectedUserData.memberSince}
+                    </p>
+                  )}
+                </div>
+
+                {/* Contact Info */}
+                <div className="grid grid-cols-2 gap-x-6 text-sm">
+                  <span className="text-gray-600">Phone number</span>
+                  <span>{selectedUserData.phoneNumber}</span>
+
+                  <span className="text-gray-600">Email</span>
+                  <span>{selectedUserData.email}</span>
+                </div>
+              </div>
+
+              {/* GUEST SECTION */}
+              {selectedUserData.guestName && (
+                <div className="flex items-start gap-6 mb-8">
+                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0" />
+
+                  <div className="min-w-[220px]">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-bold">
+                        {selectedUserData.guestName}
+                      </h3>
+
+                      {selectedUserData.guestSpeaksSpanish && (
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-full flex items-center justify-center border border-black text-sm font-bold">
+                          S
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-gray-500">
+                      Guest of {selectedUserData.name.split(" ")[0]}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-6 text-sm">
+                    <span className="text-gray-600">Phone number</span>
+                    <span>{selectedUserData.guestPhoneNumber}</span>
+
+                    <span className="text-gray-600">Email</span>
+                    <span>{selectedUserData.guestEmail}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* COMMENT */}
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold mb-2">Comment</h4>
+                <p className="text-sm leading-relaxed text-gray-700">
+                  {selectedUserData.comment}
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          }
+          buttons={[
+            {
+              label: "Send message",
+              onClick: () => {
+                // TODO: Implement send message functionality
+                setShowCommentModal(false);
+              },
+              variant: "secondary",
+            },
+            {
+              label: "Go back",
+              onClick: () => setShowCommentModal(false),
+              variant: "primary",
+            },
+          ]}
+        />
       )}
     </div>
   );

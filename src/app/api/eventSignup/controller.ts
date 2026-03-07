@@ -53,12 +53,14 @@ export interface AdminUser {
   guestOf?: string; // For displaying "Guest of X"
   isGuest?: boolean; // To mark if this row is a guest
   comments?: string | null
+  memberSince: number;
 }
 
 function adminUserWithGuests(s: {
   id: string;
   user: User;
   guests: Guest[];
+  comments?: string | null;
 }): AdminUser[] {
   const mainUser: AdminUser = {
     id: s.user.id,
@@ -68,6 +70,7 @@ function adminUserWithGuests(s: {
     emailAddress: s.user.emailAddress,
     phoneNumber: s.user.phoneNumber,
     speaksSpanish: s.user.speaksSpanish ?? false,
+    comments: s.comments || null,
   };
 
   const guestUsers: AdminUser[] = s.guests.map((guest) => ({
@@ -80,6 +83,7 @@ function adminUserWithGuests(s: {
     guestOf: `${s.user.firstName} ${s.user.lastName}`,
     speaksSpanish: guest.speaksSpanish,
     isGuest: true,
+    comments: null,
   }));
 
   return [mainUser, ...guestUsers];

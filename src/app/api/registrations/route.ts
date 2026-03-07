@@ -15,7 +15,6 @@ interface GuestInput {
   phoneNumber?: string | null;
   relationship?: string | null;
   dateOfBirth?: string | null;
-  comments?: string | null;
 }
 
 const tz = "America/New_York";
@@ -245,7 +244,6 @@ export async function POST(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
-                comments: guest.comments || null,
               })),
             },
           },
@@ -280,7 +278,6 @@ export async function POST(req: NextRequest) {
               phoneNumber: guest.phoneNumber || null,
               relation: guest.relationship || null,
               dateOfBirth: guest.dateOfBirth || null,
-              comments: guest.comments || null,
             })),
           },
         },
@@ -419,7 +416,6 @@ export async function PUT(req: NextRequest) {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
-                  comments: guest.comments || null,
                 })),
               },
             },
@@ -472,7 +468,6 @@ export async function PUT(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
-                comments: guest.comments || null,
               })),
             },
           },
@@ -567,7 +562,6 @@ export async function PUT(req: NextRequest) {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
-                  comments: guest.comments || null,
                 })),
               },
             },
@@ -610,7 +604,6 @@ export async function PUT(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
-                comments: guest.comments || null,
               })),
             },
           },
@@ -668,7 +661,6 @@ export async function GET(req: NextRequest) {
           relationship: g.relation,
           // FIX: Ensure we read from DB
           dateOfBirth: g.dateOfBirth || "",
-          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -694,7 +686,6 @@ export async function GET(req: NextRequest) {
           relationship: g.relation,
           // FIX: Ensure we read from DB (Previously this was hardcoded "")
           dateOfBirth: g.dateOfBirth || "",
-          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -884,7 +875,6 @@ export async function DELETE(req: NextRequest) {
                     emailAddress: g.email,
                     relation: g.relation,
                     dateOfBirth: g.dateOfBirth,
-                    comments: g.comments,
                   })),
                 },
               },
