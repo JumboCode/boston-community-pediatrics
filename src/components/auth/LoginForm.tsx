@@ -11,7 +11,7 @@ const LoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  if(!isLoaded) return <Basic Skeleton/>;
+  if(!isLoaded) return <BasicSkeleton/>;
 
   // --- 1. EMAIL/PASSWORD LOGIN ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
