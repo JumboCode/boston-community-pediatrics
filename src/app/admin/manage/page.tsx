@@ -21,6 +21,17 @@ interface FrontEndUser {
   createdAt?: string;
 }
 
+interface ApiUser {
+  id?: string;
+  userId?: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  role: string;
+  createdAt?: string;
+}
+
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) {
@@ -59,7 +70,7 @@ const ManageRolesPage = () => {
   const router = useRouter();
 
   // Fetch signups for the position (volunteers)
-  const { data: allVols, isLoading: isLoadingVols } = useSWR<FrontEndUser[]>(
+  const { data: allVols, isLoading: isLoadingVols } = useSWR<ApiUser[]>(
     `/api/users`,
     fetcher
   );
@@ -67,16 +78,19 @@ const ManageRolesPage = () => {
   const frontEndUsers = useMemo(() => {
     if (!allVols) return [];
     return allVols
-      .map((v: FrontEndUser) => ({
-        userId: v.userId,
-        firstName: v.firstName,
-        lastName: v.lastName,
-        emailAddress: v.emailAddress,
-        phoneNumber: v.phoneNumber,
-        role: v.role,
-        selected: false,
-        createdAt: v.createdAt,
-      }))
+      .filter((v: ApiUser) => v.id || v.userId) // Filter out invalid users first
+      .map(
+        (v: ApiUser): FrontEndUser => ({
+          userId: (v.id || v.userId)!, 
+          firstName: v.firstName,
+          lastName: v.lastName,
+          emailAddress: v.emailAddress,
+          phoneNumber: v.phoneNumber,
+          role: v.role,
+          selected: false,
+          createdAt: v.createdAt,
+        })
+      )
       .sort((a, b) => {
         const firstNameCompare = a.firstName
           .toLowerCase()
