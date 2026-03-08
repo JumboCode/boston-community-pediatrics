@@ -48,6 +48,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [selectedUserData, setSelectedUserData] = useState<{
+    userId: string;
     name: string;
     email: string;
     phoneNumber: string;
@@ -143,6 +144,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     const guest = volunteers.find((v) => v.signUpId === signUpId && v.isGuest);
 
     setSelectedUserData({
+      userId: mainUser.userId,
       name: `${mainUser.firstName} ${mainUser.lastName}`,
       email: mainUser.emailAddress,
       phoneNumber: mainUser.phoneNumber,
@@ -162,6 +164,17 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     });
     setShowCommentModal(true);
   };
+
+  function handleSendMessage(userId: string) {
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify([userId])
+    );
+
+    sessionStorage.setItem("adminEmailSource", "event-admin");
+
+    router.push("/admin/email");
+  }
 
   // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {
@@ -475,7 +488,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <td className="py-3 px-4">{p.phoneNumber}</td>
                   <td className="py-3 px-4">
                     {p.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
                         S
                       </div>
                     )}
@@ -487,7 +500,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         onClick={() => handleViewComment(p.signUpId!)}
                         className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors"
                       >
-                        view comment
+                        View Comment
                       </button>
                     )}
                   </td>
@@ -695,7 +708,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     </h3>
 
                     {selectedUserData.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-full flex items-center justify-center border border-black text-sm font-bold">
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
                         S
                       </div>
                     )}
@@ -730,7 +743,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       </h3>
 
                       {selectedUserData.guestSpeaksSpanish && (
-                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-full flex items-center justify-center border border-black text-sm font-bold">
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
                           S
                         </div>
                       )}
@@ -763,10 +776,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           buttons={[
             {
               label: "Send message",
-              onClick: () => {
-                // TODO: Implement send message functionality
-                setShowCommentModal(false);
-              },
+              onClick: () => handleSendMessage(selectedUserData!.userId),
               variant: "secondary",
             },
             {

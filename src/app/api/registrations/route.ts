@@ -158,7 +158,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
 // ==========================================
 export async function POST(req: NextRequest) {
   try {
-    const { userId, positionId, guests } = await req.json();
+    const { userId, positionId, comments, guests } = await req.json();
 
     // 1. LIMIT CHECK
     if (guests && guests.length > MAX_GUESTS) {
@@ -268,6 +268,7 @@ export async function POST(req: NextRequest) {
           userId,
           positionId,
           eventId: position.eventId,
+          comments: comments || null,
           hasGuests: (guests?.length ?? 0) > 0,
           guests: {
             create: (guests ?? []).map((guest: GuestInput) => ({

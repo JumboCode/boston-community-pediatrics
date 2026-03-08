@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
+import { useRef } from "react";
 
 // --- Types ---
 interface Guest {
@@ -13,9 +14,13 @@ interface Guest {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
+
+  month: string;
+  day: string;
+  year: string;
+
   speaksSpanish: boolean;
   relationship: string;
-  comments: string;
 }
 
 interface EventSignUpFormProps {
@@ -62,6 +67,7 @@ export default function EventSignUpForm({
   const [waitlistMessage, setWaitlistMessage] = useState(
     "We'll keep you updated!"
   );
+  const [comment, setComment] = useState("");
 
   // Use the URL directly — no getPublicURL needed
   const profileImageSrc = userData.profileImage ?? blankProfile;
@@ -74,7 +80,6 @@ export default function EventSignUpForm({
         phoneNumber: g.phoneNumber ?? "",
         speaksSpanish: g.speaksSpanish ?? false,
         relationship: g.relationship ?? "",
-        comments: g.comments ?? "",
         dateOfBirth: g.dateOfBirth ?? "",
         firstName: g.firstName ?? "",
         lastName: g.lastName ?? "",
@@ -87,14 +92,19 @@ export default function EventSignUpForm({
   const addGuest = () => {
     const newGuest: Guest = {
       id: crypto.randomUUID(),
+
       firstName: "",
       lastName: "",
       email: "",
       phoneNumber: "",
       dateOfBirth: "",
+
+      month: "",
+      day: "",
+      year: "",
+
       relationship: "",
       speaksSpanish: false,
-      comments: "",
     };
     setGuests([...guests, newGuest]);
     setErrorMessage(null);
@@ -111,6 +121,37 @@ export default function EventSignUpForm({
     value: string | boolean
   ) => {
     setGuests(guests.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
+  };
+
+  const monthRef = useRef<HTMLInputElement | null>(null);
+  const dayRef = useRef<HTMLInputElement | null>(null);
+  const yearRef = useRef<HTMLInputElement | null>(null);
+
+  const updateDOBField = (
+    guestId: string,
+    field: "month" | "day" | "year",
+    value: string
+  ) => {
+    const numbersOnly = value.replace(/\D/g, "");
+
+    setGuests((prev) =>
+      prev.map((g) => {
+        if (g.id !== guestId) return g;
+
+        const updated = { ...g, [field]: numbersOnly };
+
+        if (updated.month && updated.day && updated.year.length === 4) {
+          updated.dateOfBirth = `${updated.year}-${updated.month.padStart(
+            2,
+            "0"
+          )}-${updated.day.padStart(2, "0")}`;
+        } else {
+          updated.dateOfBirth = "";
+        }
+
+        return updated;
+      })
+    );
   };
 
   const handleSignUp = async () => {
@@ -132,6 +173,7 @@ export default function EventSignUpForm({
     const payload = {
       userId: userData.id,
       positionId: positionData.id,
+      comments: comment.trim(),
       guests: guests.map(({ id, ...rest }) => rest),
     };
 
@@ -285,7 +327,6 @@ export default function EventSignUpForm({
         <h1 className="text-4xl font-semibold text-bcp-blue">{eventName}</h1>
         <p className="text-lg text-gray-700 mt-2">{positionData?.position}</p>
       </div>
-
       {errorMessage && (
         <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
           <svg
@@ -325,10 +366,8 @@ export default function EventSignUpForm({
           </button>
         </div>
       )}
-
       <p className="text-sm font-medium text-gray-900 mb-2">Your information</p>
-
-      <div className="border border-gray-300 rounded-lg p-6 mb-8">
+      <div className="border border-gray-700 rounded-lg p-6 mb-8">
         <div className="flex flex-col sm:flex-row gap-6 mb-6">
           <Image
             src={profileImageSrc}
@@ -357,7 +396,6 @@ export default function EventSignUpForm({
           </div>
         </div>
       </div>
-
       <div className="mb-8">
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Additional Comments
@@ -365,55 +403,71 @@ export default function EventSignUpForm({
 
         <textarea
           rows={4}
-          className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="w-full border border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none"
         />
       </div>
-
       <div className="mb-10 text-sm">
         <p className="mb-1">
           You are currently signing up for{" "}
           <span className="font-bold">{positionData?.position}</span>.
         </p>
       </div>
-
       <div className="space-y-10 mb-10">
-        {guests.map((guest, index) => (
-          <div
-            key={guest.id}
-            className="animate-in fade-in slide-in-from-bottom-4 duration-300"
-          >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="h-px bg-gray-300 flex-1"></div>
-              <span className="font-bold text-lg text-gray-900">
-                Guest {index + 1}
-              </span>
-              <div className="h-px bg-gray-300 flex-1"></div>
-            </div>
+        {guests.map((guest, index) => {
+          const [month = "", day = "", year = ""] = guest.dateOfBirth
+            .split("-")
+            .reverse();
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          const updateDOB = (m: string, d: string, y: string) => {
+            if (!m && !d && !y) {
+              updateGuest(guest.id, "dateOfBirth", "");
+              return;
+            }
+
+            const formatted = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+            updateGuest(guest.id, "dateOfBirth", formatted);
+          };
+
+          return (
+            <div key={guest.id} className="space-y-5">
+              {/* Guest Divider */}
+              <div className="flex items-center gap-4">
+                <div className="h-px bg-gray-700 flex-1"></div>
+                <span className="text-sm font-bold text-gray-700">
+                  Guest {index + 1}
+                </span>
+                <div className="h-px bg-gray-700 flex-1"></div>
+              </div>
+
+              {/* Full Name */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* First Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name <span className="text-red-500">*</span>
+                  <label className="block text-xs text-gray-700 mb-1">
+                    First Name
                   </label>
+
                   <input
                     type="text"
-                    required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                    className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
                     value={guest.firstName}
                     onChange={(e) =>
                       updateGuest(guest.id, "firstName", e.target.value)
                     }
                   />
                 </div>
+
+                {/* Last Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name <span className="text-red-500">*</span>
+                  <label className="block text-xs text-gray-700 mb-1">
+                    Last Name
                   </label>
+
                   <input
                     type="text"
-                    required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                    className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
                     value={guest.lastName}
                     onChange={(e) =>
                       updateGuest(guest.id, "lastName", e.target.value)
@@ -421,186 +475,193 @@ export default function EventSignUpForm({
                   />
                 </div>
               </div>
-
-              {/* REQUIRED DOB and RELATIONSHIP and SPEAKSPANISH */}
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Participant DOB <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none text-gray-700"
-                    value={guest.dateOfBirth}
-                    onChange={(e) =>
-                      updateGuest(guest.id, "dateOfBirth", e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="flex flex-row items-center gap-4 flex-wrap justify-between">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Does this person speak Spanish?{" "}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex flex-row text-right gap-6">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id={`speaksSpanish-yes-${guest.id}`}
-                        name={`speaksSpanish-${guest.id}`}
-                        value="true"
-                        className="accent-bcp-blue"
-                        checked={guest.speaksSpanish === true}
-                        onChange={() =>
-                          updateGuest(guest.id, "speaksSpanish", true)
-                        }
-                      />
-                      <label
-                        htmlFor={`speaksSpanish-yes-${guest.id}`}
-                        className="text-base font-normal text-medium-gray"
-                      >
-                        Yes
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id={`speaksSpanish-no-${guest.id}`}
-                        name={`speaksSpanish-${guest.id}`}
-                        value="false"
-                        className="accent-bcp-blue"
-                        checked={guest.speaksSpanish === false}
-                        onChange={() =>
-                          updateGuest(guest.id, "speaksSpanish", false)
-                        }
-                      />
-                      <label
-                        htmlFor={`speaksSpanish-no-${guest.id}`}
-                        className="text-base font-normal text-medium-gray"
-                      >
-                        No
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Relationship <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Spouse, Child"
-                    className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                    value={guest.relationship}
-                    onChange={(e) =>
-                      updateGuest(guest.id, "relationship", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-2">
                   Email (optional)
                 </label>
                 <input
                   type="email"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                  value={guest.email || ""}
+                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  value={guest.email}
                   onChange={(e) =>
                     updateGuest(guest.id, "email", e.target.value)
                   }
                 />
               </div>
 
+              {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-gray-700 mb-2">
                   Phone Number (optional)
                 </label>
                 <input
                   type="tel"
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none"
-                  value={guest.phoneNumber || ""}
+                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  value={guest.phoneNumber}
                   onChange={(e) =>
                     updateGuest(guest.id, "phoneNumber", e.target.value)
                   }
                 />
               </div>
 
+              {/* DOB */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Additional comments
+                <label className="block text-xs text-gray-700 mb-2">
+                  Participant’s Date of Birth
                 </label>
-                <textarea
-                  rows={4}
-                  className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-light-bcp-blue outline-none resize-none"
-                  value={guest.comments || ""}
+
+                <div className="grid grid-cols-3 gap-6">
+                  {/* Month */}
+                  <input
+                    ref={monthRef}
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm outline-none focus:ring-1 focus:ring-light-bcp-blue"
+                    value={guest.month}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      updateDOBField(guest.id, "month", value);
+
+                      if (value.length === 2) {
+                        dayRef.current?.focus();
+                      }
+                    }}
+                  />
+
+                  {/* Day */}
+                  <input
+                    ref={dayRef}
+                    inputMode="numeric"
+                    maxLength={2}
+                    className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm outline-none focus:ring-1 focus:ring-light-bcp-blue"
+                    value={guest.day}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      updateDOBField(guest.id, "day", value);
+
+                      if (value.length === 2) {
+                        yearRef.current?.focus();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Backspace" && guest.day === "") {
+                        monthRef.current?.focus();
+                      }
+                    }}
+                  />
+
+                  {/* Year */}
+                  <input
+                    ref={yearRef}
+                    inputMode="numeric"
+                    maxLength={4}
+                    className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm outline-none focus:ring-1 focus:ring-light-bcp-blue"
+                    value={guest.year}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      updateDOBField(guest.id, "year", value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Backspace" && guest.year === "") {
+                        dayRef.current?.focus();
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Spanish */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-700">
+                  Does this person speak Spanish?
+                </span>
+
+                <div className="flex gap-6 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={guest.speaksSpanish === true}
+                      onChange={() =>
+                        updateGuest(guest.id, "speaksSpanish", true)
+                      }
+                      className="accent-bcp-blue"
+                    />
+                    Yes
+                  </label>
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      checked={guest.speaksSpanish === false}
+                      onChange={() =>
+                        updateGuest(guest.id, "speaksSpanish", false)
+                      }
+                      className="accent-bcp-blue"
+                    />
+                    No
+                  </label>
+                </div>
+              </div>
+
+              {/* Relationship */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">
+                  Relationship to you
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  value={guest.relationship}
                   onChange={(e) =>
-                    updateGuest(guest.id, "comments", e.target.value)
+                    updateGuest(guest.id, "relationship", e.target.value)
                   }
                 />
               </div>
 
-              <div className="flex justify-end pt-2">
+              {/* Remove */}
+              <div className="flex justify-end pt-1">
                 <button
                   onClick={() => removeGuest(guest.id)}
-                  className="text-gray-500 text-sm hover:text-red-600 flex items-center gap-1 border border-gray-200 px-3 py-1 rounded hover:border-red-200 transition"
+                  className="text-sm text-gray-700 border border-gray-700 rounded-md px-4 py-1.5 hover:bg-gray-50 transition"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  </svg>
-                  Remove participant
+                  Remove guest
                 </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
       <button
         onClick={addGuest}
-        className="w-full py-3 mb-8 border border-gray-400 rounded text-gray-800 font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+        className="w-full py-3 mb-8 border border-gray-700 rounded text-gray-800 font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
       >
-        + Add a guest
+        + Add a Guest
       </button>
-
       <div className="flex items-center justify-between gap-4">
+        {" "}
         <button
           onClick={() => router.back()}
           className="w-full py-3 border border-gray-800 rounded text-gray-900 font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition-colors"
         >
-          Cancel
-        </button>
+          {" "}
+          Cancel{" "}
+        </button>{" "}
         <button
           onClick={handleSignUp}
           disabled={isSubmitting}
           className="w-full py-3 bg-light-bcp-blue text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#35566b] transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
         >
+          {" "}
           {isSubmitting
             ? registrationId
               ? "Updating..."
               : "Signing up..."
             : registrationId
               ? "Update Registration"
-              : "Sign Up"}
-        </button>
-      </div>
+              : "Sign Up"}{" "}
+        </button>{" "}
+      </div>{" "}
     </div>
   );
 }

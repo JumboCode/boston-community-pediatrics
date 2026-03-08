@@ -31,7 +31,8 @@ const Modal = ({
 
   const variantStyles = {
     primary: "bg-[#234254] text-white hover:bg-[#1b3443] disabled:opacity-50",
-    secondary: "bg-gray-300 text-black hover:bg-gray-400 disabled:opacity-50",
+    secondary:
+      "bg-white text-black border-2 border-black hover:bg-gray-50 disabled:opacity-50",
     danger: "bg-red-600 text-white hover:bg-red-700 disabled:opacity-50",
   };
 
