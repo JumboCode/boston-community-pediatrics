@@ -10,7 +10,7 @@ import {
   Img,
 } from "@react-email/components";
 
-const BASE_URL = "https://boston-community-pediatrics.vercel.app";
+const BASE_URL = "https://boston-community-pediatrics-5ntupemwm.vercel.app/";
 const PLACEHOLDER_EVENT_IMAGE_URL = `${BASE_URL}/event1.jpg`;
 
 interface SignedUpTemplateProps {
@@ -37,18 +37,18 @@ export function SignupConfirmedTemplate({
   return (
     <BaseLayoutTemplate>
       <Section className="py-6 px-8">
-
         {/* General Message */}
         <Text className="text-sm mt-0 mb-4">
           Dear <strong>{firstName}</strong>,
         </Text>
 
         <Text className="text-sm mt-0 mb-6" style={{ marginLeft: "10px" }}>
-          Thank you for signing up for the event! We look forward to seeing you
-          there. If there are any updates to this position we will send you an
-          email.
+          Thank you for signing up to support <strong>{eventName}</strong>. Please see below for
+          your confirmed volunteer shift details. If you have any questions,
+          please do not hesitate to reach out. We are grateful for your time and
+          support!
         </Text>
-        
+
         <Text className="text-base font-bold mt-6 mb-3">
           Your upcoming volunteering event
         </Text>

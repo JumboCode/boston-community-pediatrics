@@ -3,9 +3,12 @@ import React from "react";
 import { Resend } from "resend";
 import { SendEmailProps } from "./types";
 import { SignupConfirmedTemplate } from "./templates/SignupConfirmed";
-import { RemovedTemplate  } from "./templates/RemovedFromEvent";
+import { RemovedTemplate } from "./templates/RemovedFromEvent";
 import { WaitlistedTemplate } from "./templates/Waitlisted";
-import { Text as EmailText, Section as EmailSection } from "@react-email/components";
+import {
+  Text as EmailText,
+  Section as EmailSection,
+} from "@react-email/components";
 import { BaseLayoutTemplate } from "./templates/BaseLayout";
 
 const apiKey = process.env.RESEND_API_KEY;
@@ -20,7 +23,6 @@ if (!from) {
 
 const resend = new Resend(apiKey);
 
-
 // ── Admin broadcast email — matches SignupConfirmedTemplate styling ────────────
 function AdminMessageTemplate({ message }: { message: string }) {
   return React.createElement(
@@ -28,28 +30,34 @@ function AdminMessageTemplate({ message }: { message: string }) {
     null,
     React.createElement(
       EmailSection,
-      { className: "py-8 px-10", style: { minHeight: "220px" }},
-      
+      { className: "py-8 px-10", style: { minHeight: "220px" } },
+
       React.createElement(
         EmailText,
         { className: "text-sm mt-0 mb-4" },
-        "Dear Volunteer(s),"
+        "Dear ",
+        React.createElement("strong", null, "Volunteer(s)"),
+        ","
       ),
 
       React.createElement(
         EmailText,
         {
           className: "text-sm mt-0 mb-8",
-          style: { marginLeft: "10px", whiteSpace: "pre-line", lineHeight: "1.7"},
+          style: {
+            marginLeft: "10px",
+            whiteSpace: "pre-line",
+            lineHeight: "1.7",
+          },
         },
         message
-      ),
+      )
     )
   );
 }
 
 export async function sendEmail(props: SendEmailProps) {
-  const { recipients, subject, type, data, html} = props;
+  const { recipients, subject, type, data, html } = props;
   const d = data ?? {};
   let emailComponent: React.ReactElement;
 
@@ -78,10 +86,10 @@ export async function sendEmail(props: SendEmailProps) {
         filledSlots: d.filledSlots ?? 0,
         location: d.location ?? "TBD",
         waitlistPosition: d.waitlistPosition ?? 0,
-      }); 
+      });
       break;
 
-      case "removed":
+    case "removed":
       emailComponent = React.createElement(RemovedTemplate, {
         firstName: d.firstName ?? "Guest",
         eventName: d.eventName ?? "Event",
@@ -90,7 +98,7 @@ export async function sendEmail(props: SendEmailProps) {
         endTime: d.endTime ?? "TBD",
         date: d.eventDate ?? "TBD",
         location: d.location ?? "TBD",
-      }); 
+      });
       break;
 
     case "other":
@@ -101,7 +109,9 @@ export async function sendEmail(props: SendEmailProps) {
           .replace(/<div[^>]*>/gi, "")
           .replace(/<\/div>/gi, "")
           .trim();
-        emailComponent = React.createElement(AdminMessageTemplate, { message: stripped });
+        emailComponent = React.createElement(AdminMessageTemplate, {
+          message: stripped,
+        });
       }
       break;
 

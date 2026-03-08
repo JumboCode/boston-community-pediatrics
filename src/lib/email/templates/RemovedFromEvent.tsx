@@ -10,7 +10,7 @@ import {
   Img,
 } from "@react-email/components";
 
-const BASE_URL = "https://boston-community-pediatrics.vercel.app";
+const BASE_URL = "https://boston-community-pediatrics-5ntupemwm.vercel.app/";
 const PLACEHOLDER_EVENT_IMAGE_URL = `${BASE_URL}/event1.jpg`;
 
 interface RemovedTemplateProps {
@@ -35,23 +35,17 @@ export function RemovedTemplate({
   return (
     <BaseLayoutTemplate>
       <Section className="py-6 px-8">
-
         {/* General Message */}
         <Text className="text-sm mt-0 mb-4">
           Dear <strong>{firstName}</strong>,
         </Text>
 
-        <Text className="text-sm font-bold mt-0 mb-6" style={{ marginLeft: "10px" }}>
-          You were removed from the following event:
+        <Text
+          className="text-sm font-bold mt-0 mb-6"
+          style={{ marginLeft: "10px" }}
+        >
+          You were removed from <strong>{eventName}</strong> volunteer shift:
         </Text>
-        
-        {/* <Text className="text-base font-bold mt-6 mb-3">
-          Your upcoming volunteering event
-        </Text> 
-        
-        Trying to see what looks like before
-
-        */} 
 
         {/* Event Card */}
         <Container className="border border-gray-300 bg-white p-0 m-0">
@@ -81,7 +75,7 @@ export function RemovedTemplate({
               {/* <Text className="text-sm leading-4 m-1">
                 Participants: {filledSlots}
               </Text> */}
-              
+
               <Text
                 className="text-sm leading-4 mt-3 mb-1"
                 style={{ whiteSpace: "nowrap" }}

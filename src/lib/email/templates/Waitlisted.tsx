@@ -9,7 +9,7 @@ import {
   Img,
 } from "@react-email/components";
 
-const BASE_URL = "https://boston-community-pediatrics.vercel.app";
+const BASE_URL = "https://boston-community-pediatrics-5ntupemwm.vercel.app/";
 const PLACEHOLDER_EVENT_IMAGE_URL = `${BASE_URL}/event1.jpg`;
 
 interface WaitlistedProps {
@@ -42,16 +42,16 @@ export function WaitlistedTemplate({
   return (
     <BaseLayoutTemplate>
       <Section className="bg-white px-6 py-6">
-
         {/* General Message */}
         <Text className="text-sm mt-0 mb-4">
           Dear <strong>{firstName}</strong>,
         </Text>
 
         <Text className="text-sm mt-0 mb-6" style={{ marginLeft: "10px" }}>
-          Thank you for signing up for the event, but unfortunately all spots
-          were filled and you have been placed on the waitlist. If there is an
-          update to this position we will send you an email with further details.
+          Thank you for signing up to support <strong>{eventName}</strong>. Slots for this shift
+          are currently full, and you have been placed on a waitlist. Should
+          space become available, we will notify you as soon as possible. We are
+          grateful for your time and support!
         </Text>
 
         <Text
@@ -105,7 +105,6 @@ export function WaitlistedTemplate({
             </Column>
           </Row>
         </Container>
-        
       </Section>
     </BaseLayoutTemplate>
   );

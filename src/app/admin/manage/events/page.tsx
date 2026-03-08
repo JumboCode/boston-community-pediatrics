@@ -1,13 +1,11 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
 import { AdminUser } from "@/app/api/eventSignup/controller";
-import { deleteEvent } from "@/app/api/events/controller";
 
 interface EventProps {
   eventId: string;
@@ -18,6 +16,7 @@ interface EventProps {
   filledSlots: number;
   totalSlots: number;
   selected: boolean;
+  createdAt?: string;
 }
 
 const fetcher = async (url: string) => {
@@ -28,11 +27,7 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-const ManageEventsPage = (props: EventProps) => {
-  
-  const { positionId } = props;
-  const { user } = useUser();
-  const currenteventId = user?.id;
+const ManageEventsPage = () => {
   const [event, setEvent] = useState<EventProps[]>([]);
   const [modalTitle, setModalTitle] = useState<string | null>(null);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
@@ -42,31 +37,29 @@ const ManageEventsPage = (props: EventProps) => {
 
   const router = useRouter();
 
-  // Fetch event information 
+  // Fetch event information
   const { data: allVols } = useSWR<AdminUser[]>(`/api/events`, fetcher);
-
-  // Fetch eventSignup info for filled slots/total slots
-    const { data: signups } = useSWR<AdminUser[]>(
-    positionId ? `/api/eventSignup?positionId=${positionId}` : null,
-    fetcher
-  );
 
   const events = useMemo(() => {
     if (!allVols) return [];
     return allVols
       .map((v: any) => ({
         eventId: v.id || v.eventId,
+        positionId: v.positionId,
         eventName: v.name,
-        startDate: new Date(v.startTime), 
+        startDate: new Date(v.startTime),
         endDate: new Date(v.endTime),
-        filledSlots: 8, // inside eventposition
+        filledSlots: 8, // inside eventSingnups
         totalSlots: 9,
         selected: false,
+        createdAt: v.createdAt,
       }))
       .sort((a, b) => {
         const dateCompare = a.startDate.getTime() - b.startDate.getTime();
         if (dateCompare !== 0) return dateCompare;
-        return a.eventName.toLowerCase().localeCompare(b.eventName.toLowerCase());
+        return a.eventName
+          .toLowerCase()
+          .localeCompare(b.eventName.toLowerCase());
       });
   }, [allVols]);
 
@@ -76,22 +69,86 @@ const ManageEventsPage = (props: EventProps) => {
 
   // Event selection (toggle by `eventId`)
   const toggleSelect = (id?: string) => {
-    if (!id || id === currenteventId) return;
-
     setEvent((prev) =>
       prev.map((v) => (v.eventId === id ? { ...v, selected: !v.selected } : v))
     );
   };
 
+  // Search Bar and Sort, no dropdown
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  const [sortOption, setSortOption] = useState<
+    "OLDEST" | "MOST-RECENT" | "PAST" | "UPCOMING"
+  >("MOST-RECENT");
+
   const toggleSelectAll = () => {
-    const allSelected = event
-      .filter((v) => v.eventId !== currenteventId)
-      .every((v) => v.selected);
-    setEvent((prev) =>
-      prev.map((v) =>
-        v.eventId === currenteventId ? v : { ...v, selected: !allSelected }
+    const allSelected = event.every((v) => v.selected);
+    setEvent((prev) => prev.map((v) => ({ ...v, selected: !allSelected })));
+  };
+
+  // const seenEvents = event.filter((v) => {
+  //   const full = `${v.eventName}`.toLowerCase(); // whenever we figure out how the positions look like we can add that here too
+  //   return full.includes(searchQuery.toLowerCase());
+  // });
+
+  const sortedEvents = useMemo(() => {
+    let list = [...event];
+
+    // Curr Date
+    const now = new Date();
+
+    // Apply sorting
+    if (sortOption === "UPCOMING") {
+      list = list.filter((v) => v.startDate > now);
+    } else if (sortOption === "PAST") {
+      list = list.filter((v) => v.endDate < now);
+    } else if (sortOption === "MOST-RECENT") {
+      list.sort(
+        (a, b) =>
+          b.startDate.getTime() -
+          a.startDate.getTime()
+      );
+    } else if (sortOption === "OLDEST") {
+      list.sort(
+        (a, b) =>
+          a.startDate.getTime() -
+          b.startDate.getTime()
+      );
+    }
+
+    if (searchQuery) {
+      list = list.filter((v) => {
+        const full = `${v.eventName}`.toLowerCase(); // whenever we figure out how the positions look like we can add that here too
+        return full.includes(searchQuery.toLowerCase());
+      });
+    }
+
+    return list;
+  }, [event, sortOption, searchQuery]);
+
+  const handleSaveCSV = () => {
+    const header = "Event Name,Event ID,Start Date,End Date"; //Again positions and other parts of props can be added when we know what that looks like
+    const selected = event.filter((v) => v.selected);
+    const content = selected
+      .map(
+        (v) =>
+        `${v.eventName},${v.eventId},${v.startDate.toLocaleDateString("en-US")},${v.endDate.toLocaleDateString("en-US")}`
       )
-    );
+      .join("\n");
+
+    const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const filename =
+      selected.length === 1 ? `${selected[0].eventName}.csv` : `events.csv`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const selectedCount = event.filter((v) => v.selected).length;
@@ -110,9 +167,7 @@ const ManageEventsPage = (props: EventProps) => {
 
   const handleDeleteApproved = async () => {
     setIsLoading(true);
-    const eventToDel: EventProps[] = event.filter(
-      (v) => v.selected && v.eventId !== currenteventId
-    );
+    const eventToDel: EventProps[] = event.filter((v) => v.selected);
 
     if (eventToDel.length === 0) {
       setIsLoading(false);
@@ -121,7 +176,7 @@ const ManageEventsPage = (props: EventProps) => {
 
     try {
       const deletePromises = eventToDel.map(async (vol) => {
-        const res = await fetch(`/api/admin/events/${vol.eventId}`, {
+        const res = await fetch(`/api/events?id=${vol.eventId}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -132,7 +187,6 @@ const ManageEventsPage = (props: EventProps) => {
         if (!res.ok) {
           throw new Error(`Failed to delete event`);
         }
-
         return vol.eventId;
       });
 
@@ -154,67 +208,6 @@ const ManageEventsPage = (props: EventProps) => {
     }
   };
 
-//   // Edit roles - show confirmation first
-//   const handleEditConfirm = () => {
-//     setPendingCount(selectedCount);
-//     setShowEditConfirm(true);
-//   };
-
-//   const handleEditApproved = async () => {
-//     setIsLoading(true);
-//     const eventToEdit: EventProps[] = event.filter(
-//       (v) => v.selected && v.eventId !== currenteventId
-//     );
-
-//     if (eventToEdit.length === 0) {
-//       setIsLoading(false);
-//       return;
-//     }
-
-//     try {
-//       const editPromises = eventToEdit.map(async (vol) => {
-//         const res = await fetch(`/api/admin/users/${vol.eventId}/role`, {
-//           method: "PATCH",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({
-//             id: vol.eventId,
-//             role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN",
-//           }),
-//         });
-
-//         if (!res.ok) {
-//           throw new Error(`Failed to update role`);
-//         }
-
-//         return vol.eventId;
-//       });
-
-//       await Promise.all(editPromises);
-
-//       setEvent((prev) =>
-//         prev.map((v) => ({
-//           ...v,
-//           role: v.selected
-//             ? v.role === "ADMIN"
-//               ? "VOLUNTEER"
-//               : "ADMIN"
-//             : v.role,
-//         }))
-//       );
-
-//       // Show success modal
-//       setShowEditConfirm(false);
-//       setModalTitle("Roles Updated!");
-//       setModalMessage("Role successfully assigned!");
-//     } catch {
-//       setShowEditConfirm(false);
-//       setModalTitle("Error");
-//       setModalMessage("Failed to update roles. Please try again.");
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
   return (
     <>
       <div className="items-center justify-center p-6 ml-60 mr-60">
@@ -227,16 +220,68 @@ const ManageEventsPage = (props: EventProps) => {
             Manage Events
           </Link>
         </h1>
+
+        {/* Search Bar */}
+        <div className="mb-4 flex items-center gap-4 w-full">
+          <div className="flex flex-1 h-[44px] rounded-lg border overflow-hidden">
+            <input
+              type="text"
+              placeholder="Search by event name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 px-3 py-2 text-sm outline-none"
+            />
+          </div>
+
+          {/* Filter Dropdown*/}
+          <div ref={filterRef} className="relative w-44">
+            <button
+            onClick={() => setFilterOpen((o) => !o)}
+            className="h-[44px] w-full rounded-lg border px-4 py-2 text-sm flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
+          >
+            <span className="flex-1 text-center">
+              {sortOption === "MOST-RECENT" ? "Most Recent"
+                : sortOption === "OLDEST" ? "Oldest"
+                : sortOption === "PAST" ? "Past"
+                : "Upcoming"}
+            </span>
+            <svg
+              className={`w-4 h-4 ml-1 flex-shrink-0 transition-transform duration-200 ${filterOpen ? "rotate-180" : ""}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {filterOpen && (
+            <div className="absolute right-0 mt-1 w-full bg-white border rounded-lg shadow-lg z-20 overflow-hidden">
+              {(["MOST-RECENT", "OLDEST", "UPCOMING", "PAST"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => { setSortOption(opt); setFilterOpen(false); }}
+                  className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-gray-50
+                    ${sortOption === opt ? "bg-gray-100 font-medium" : ""}`}
+                >
+                  {opt === "MOST-RECENT" ? "Most Recent"
+                    : opt === "OLDEST" ? "Oldest"
+                    : opt === "PAST" ? "Past"
+                    : "Upcoming"}
+                </button>
+              ))}
+            </div>
+          )}
+          </div>
+        </div>
+
+        {/* Events Table */}
         <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
-          {/* Volunteer Table (populated by `/api/users`) */}
           <table className="w-full border-white-700 text-bcp-blue">
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
-
                 <th className="py-3 pl-8 px-4 font-normal">Events</th>
                 <th className="py-3 px-4 font-normal">Date</th>
                 <th className="py-3 px-4 font-normal">Capacity</th>
-          
+
                 <th className="py-3 px-4 pl-13 font-normal">
                   <button
                     onClick={toggleSelectAll}
@@ -248,9 +293,7 @@ const ManageEventsPage = (props: EventProps) => {
               </tr>
             </thead>
             <tbody>
-              {event.map((p, i) => {           
-                const rowNumber = i + 1;
-
+              {sortedEvents.map((p) => {
                 return (
                   <tr
                     key={p.eventId}
@@ -259,27 +302,28 @@ const ManageEventsPage = (props: EventProps) => {
                     } border-t border-gray-300`}
                   >
                     <td className="py-3 px-4 pl-8">
-                        <Link
-                            href={`/event/${p.eventId}`}
-                            className="hover:underline"
-                        >
-                            {p.eventName}
-                        </Link>
+                      <Link
+                        href={`/event/${p.eventId}`}
+                        className="hover:underline"
+                      >
+                        {p.eventName}
+                      </Link>
                     </td>
                     <td className="py-3 px-4">
-                        {p.startDate.getFullYear() === p.endDate.getFullYear() &&
-                        p.startDate.getMonth() === p.endDate.getMonth() &&
-                        p.startDate.getDate() === p.endDate.getDate()
-                            ? p.startDate.toLocaleDateString()
-                            : `${p.startDate.toLocaleDateString()} - ${p.endDate.toLocaleDateString()}`}
+                      {p.startDate.getFullYear() === p.endDate.getFullYear() &&
+                      p.startDate.getMonth() === p.endDate.getMonth() &&
+                      p.startDate.getDate() === p.endDate.getDate()
+                        ? p.startDate.toLocaleDateString()
+                        : `${p.startDate.toLocaleDateString()} - ${p.endDate.toLocaleDateString()}`}
                     </td>
-                    <td className="py-3 px-4">{8}/{9}</td>
+                    <td className="py-3 px-4">
+                      {8}/{9}
+                    </td>
                     <td className="py-3 px-4 text-center">
                       <input
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.eventId)}
-                        disabled={p.eventId === currenteventId}
                         className="w-5 h-5 accent-bcp-blue cursor-pointer"
                       />
                     </td>
@@ -295,13 +339,9 @@ const ManageEventsPage = (props: EventProps) => {
             <div className="flex justify-between gap-4">
               <Button
                 disabled={selectedCount <= 0}
-                label="Copy Event"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
-              />
-              <Button
-                disabled={selectedCount <= 0}
                 label="Save as CSV"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-gray-300 text-black px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                onClick={handleSaveCSV}
               />
             </div>
             <div className="flex justify-between gap-4">
@@ -316,36 +356,12 @@ const ManageEventsPage = (props: EventProps) => {
         </div>
       </div>
 
-      {/* Edit Confirmation Modal */}
-      {/* {showEditConfirm && (
-        <Modal
-          open={showEditConfirm}
-          title="Confirm Role Change"
-          message={`Are you sure you want to change roles for ${pendingCount} people?`}
-          onClose={() => setShowEditConfirm(false)}
-          buttons={[
-            {
-              label: "Cancel",
-              variant: "secondary",
-              onClick: () => setShowEditConfirm(false),
-              disabled: isLoading,
-            },
-            {
-              label: "Confirm",
-              variant: "primary",
-              onClick: handleEditApproved,
-              disabled: isLoading,
-            },
-          ]}
-        />
-      )} */}
-
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <Modal
           open={showDeleteConfirm}
           title={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
-        //   message={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
+          message={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
           onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {
