@@ -8,9 +8,16 @@ import { useRouter } from "next/navigation";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 
 export default function EditProfilePage() {
-  const { user, isLoaded } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Redirect if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/login');
+    }
+  }, [isLoaded, isSignedIn, router]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -1,6 +1,6 @@
 "use client";
 import ProfileEventCard from "@/components/events/ProfileEventCard";
-import { useUser, useClerk } from "@clerk/nextjs"; // <--- 1. Import useClerk
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -20,7 +20,7 @@ type MyRegistration = {
   notes: string | null;
   type: "signup" | "waitlist";
   status: "registered" | "waitlisted";
-  imageUrl?: string; // Added by frontend
+  imageUrl?: string;
   guests: Array<{
     id: string;
     positionId: string;
@@ -84,11 +84,20 @@ export default function ProfilePage() {
   const router = useRouter();
   const { signOut } = useClerk();
 
+  // Redirect if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push("/login");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("—");
   const [userRole, setUserRole] = useState<string>("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [dbFirstName, setDbFirstName] = useState<string>("");
+  const [dbLastName, setDbLastName] = useState<string>("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState<string | undefined>();
@@ -106,8 +115,10 @@ export default function ProfilePage() {
           const userData = await response.json();
           setPhoneNumber(userData.phoneNumber ?? "—");
           setUserRole(userData.role ?? "VOLUNTEER");
+          setDbFirstName(userData.firstName ?? "");
+          setDbLastName(userData.lastName ?? "");
           if (userData.profileImage) {
-            setProfileImageUrl(userData.profileImage); // use URL directly
+            setProfileImageUrl(userData.profileImage);
           }
         }
       } catch (err) {
@@ -128,7 +139,6 @@ export default function ProfilePage() {
         const response = await fetch(`/api/registrations?userId=${user.id}`);
         if (response.ok) {
           const rawData: MyRegistration[] = await response.json();
-          console.log(rawData);
 
           const enrichedData = await Promise.all(
             rawData.map(async (reg) => {
@@ -138,7 +148,6 @@ export default function ProfilePage() {
               if (images && images.length > 0) {
                 try {
                   const filename = images[0];
-                  // Call your image API
                   const imgRes = await fetch(
                     `/api/images?filename=${filename}`
                   );
@@ -241,81 +250,83 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  const handleDeleteEvent = (eventId: string, registrationId?: string) => {
-    setModalTitle("Delete Event?");
-    setModalMessage(
-      "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
-    );
+  // const handleDeleteEvent = (eventId: string, registrationId?: string) => {
+  //   setModalTitle("Delete Event?");
+  //   setModalMessage(
+  //     "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
+  //   );
 
-    setModalButtons([
-      {
-        label: "Cancel",
-        variant: "secondary",
-        onClick: () => setModalOpen(false),
-      },
-      {
-        label: "Delete",
-        variant: "danger",
-        loading: modalLoading,
-        onClick: async () => {
-          try {
-            setModalLoading(true);
+  //   setModalButtons([
+  //     {
+  //       label: "Cancel",
+  //       variant: "secondary",
+  //       onClick: () => setModalOpen(false),
+  //     },
+  //     {
+  //       label: "Delete",
+  //       variant: "danger",
+  //       loading: modalLoading,
+  //       onClick: async () => {
+  //         try {
+  //           setModalLoading(true);
 
-            if (eventId.startsWith("evt-") || eventId === "demo-event") {
-              setModalTitle("Demo Event Deleted");
-              setModalMessage("This was a demo event.");
-              setModalButtons([
-                { label: "Close", onClick: () => setModalOpen(false) },
-              ]);
-              return;
-            }
+  //           if (eventId.startsWith("evt-") || eventId === "demo-event") {
+  //             setModalTitle("Demo Event Deleted");
+  //             setModalMessage("This was a demo event.");
+  //             setModalButtons([
+  //               { label: "Close", onClick: () => setModalOpen(false) },
+  //             ]);
+  //             return;
+  //           }
 
-            const res = await fetch(`/api/events?id=${eventId}`, {
-              method: "DELETE",
-            });
+  //           const res = await fetch(`/api/events?id=${eventId}`, {
+  //             method: "DELETE",
+  //           });
 
-            if (res.ok) {
-              if (registrationId) {
-                setMyEvents((prev) =>
-                  prev.filter((evt) => evt.id !== registrationId)
-                );
-              }
+  //           if (res.ok) {
+  //             if (registrationId) {
+  //               setMyEvents((prev) =>
+  //                 prev.filter((evt) => evt.id !== registrationId)
+  //               );
+  //             }
 
-              setModalTitle("Event Deleted");
-              setModalMessage("Event successfully deleted.");
-              setModalButtons([
-                { label: "Close", onClick: () => setModalOpen(false) },
-              ]);
-            } else {
-              const err = await res.json();
-              setModalTitle("Error");
-              setModalMessage(err.error || "Failed to delete event.");
-              setModalButtons([
-                { label: "Close", onClick: () => setModalOpen(false) },
-              ]);
-            }
-          } catch {
-            setModalTitle("Error");
-            setModalMessage("An error occurred while deleting the event.");
-            setModalButtons([
-              { label: "Close", onClick: () => setModalOpen(false) },
-            ]);
-          } finally {
-            setModalLoading(false);
-          }
-        },
-      },
-    ]);
+  //             setModalTitle("Event Deleted");
+  //             setModalMessage("Event successfully deleted.");
+  //             setModalButtons([
+  //               { label: "Close", onClick: () => setModalOpen(false) },
+  //             ]);
+  //           } else {
+  //             const err = await res.json();
+  //             setModalTitle("Error");
+  //             setModalMessage(err.error || "Failed to delete event.");
+  //             setModalButtons([
+  //               { label: "Close", onClick: () => setModalOpen(false) },
+  //             ]);
+  //           }
+  //         } catch {
+  //           setModalTitle("Error");
+  //           setModalMessage("An error occurred while deleting the event.");
+  //           setModalButtons([
+  //             { label: "Close", onClick: () => setModalOpen(false) },
+  //           ]);
+  //         } finally {
+  //           setModalLoading(false);
+  //         }
+  //       },
+  //     },
+  //   ]);
 
-    setModalOpen(true);
-  };
+  //   setModalOpen(true);
+  // };
 
+  // Wait for Clerk, event data (loading), and the user's role from the DB
   if (!isLoaded || loading) {
     return <ProfilePageSkeleton />;
   }
 
-  const firstName = isSignedIn ? (user?.firstName ?? "") : "Guest";
-  const lastName = isSignedIn ? (user?.lastName ?? "") : "";
+  const firstName =
+    dbFirstName || (isSignedIn ? (user?.firstName ?? "") : "Guest");
+  const lastName = dbLastName || (isSignedIn ? (user?.lastName ?? "") : "");
   const emailAddress = isSignedIn
     ? (user?.primaryEmailAddress?.emailAddress ?? "—")
     : "—";
@@ -349,16 +360,65 @@ export default function ProfilePage() {
 
   const isAdmin = userRole === "ADMIN";
 
+  // --- ADMIN LAYOUT ---
+  if (isAdmin) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-8">
+        <div className="w-[850px] max-w-full rounded-md bg-light-bcp-blue py-16 px-10 shadow-lg flex flex-col items-center">
+          {/* Profile Image */}
+          <div className="mb-6">
+            <Image
+              src={profileImageUrl ?? blankProfile}
+              alt="Profile"
+              width={160}
+              height={160}
+              className="h-[160px] w-[160px] rounded-full object-cover bg-gray-200"
+              unoptimized={!!profileImageUrl}
+            />
+          </div>
+
+          {/* Name & Role */}
+          <div className="text-center text-white mb-10">
+            <h1 className="text-[32px] font-bold">
+              {firstName} {lastName} &bull; Admin
+            </h1>
+            <p className="text-[18px] mt-1">Member since {memberSince}</p>
+          </div>
+
+          {/* Contact Details */}
+          <div className="w-full max-w-[600px] flex flex-col gap-4 text-white text-[18px] mb-12">
+            <div className="flex justify-between items-center">
+              <span>Phone number</span>
+              <span>{phoneNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Email</span>
+              <span className="truncate ml-4">{emailAddress}</span>
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-center gap-6">
+            <Link href="/profile/edit">
+              <button className="px-8 py-3 rounded-md bg-white text-gray-800 font-medium hover:bg-gray-100 transition-colors">
+                Edit Details
+              </button>
+            </Link>
+            <button
+              className="px-8 py-3 rounded-md bg-slate-700 text-white font-medium hover:bg-slate-800 transition-colors"
+              onClick={() => signOut(() => router.push("/"))}
+            >
+              Log Out
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // --- VOLUNTEER LAYOUT (Original) ---
   return (
     <main className="min-h-screen p-8">
-      <div className="w-full flex justify-center mt-3">
-        <button
-          onClick={() => signOut(() => router.push("/"))}
-          className="text-black text-sm hover:text-red-200 transition-colors font-medium underline decoration-transparent hover:decoration-red-200"
-        >
-          Sign Out
-        </button>
-      </div>
       {/* UPCOMING EVENTS */}
       <div className="mt-[142px] ml-[120px] flex items-center gap-3">
         <div className="h-[36.19] w-[283px] text-[28px] font-bold">
@@ -391,22 +451,10 @@ export default function ProfilePage() {
                 totalSlots={reg.position.totalSlots}
                 userRole={userRole}
                 onEdit={() => {
-                  if (isAdmin) {
-                    // Admin -> Go to Event Details Page
-                    router.push(`/event/${event.id}`);
-                  } else {
-                    // User -> Go to Registration Page
-                    router.push(`/register/${reg.positionId}`);
-                  }
+                  router.push(`/register/${reg.positionId}`);
                 }}
                 onRemove={() => {
-                  if (isAdmin) {
-                    // Admin -> Delete Event API
-                    handleDeleteEvent(event.id, reg.id);
-                  } else {
-                    // User -> Cancel Signup API
-                    handleRemove(reg.id);
-                  }
+                  handleRemove(reg.id);
                 }}
                 onVolunteer={() => router.push(`/event/${event.id}`)}
               />
@@ -416,7 +464,7 @@ export default function ProfilePage() {
       </div>
 
       {/* PROFILE CARD */}
-      <div className="absolute top-[248px] right-[121px] h-[420px] w-[305px] rounded-lg bg-light-bcp-blue">
+      <div className="absolute top-[248px] right-[121px] h-[420px] w-[360px] rounded-2xl bg-light-bcp-blue">
         <div className="absolute top-[30px] left-1/2 -translate-x-1/2">
           <Image
             src={profileImageUrl ?? blankProfile}
@@ -445,43 +493,49 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex justify-between gap-31">
+          <div className="flex flex-row justify-between items-center gap-10">
             <div className="ml-[25px] text-[16px] text-white">Email</div>
-            <div className="flex-1 truncate">
+            <div className="flex items-center gap-2 mr-[25px] min-w-0">
               <div
                 title={emailAddress}
-                className="mr-[25px] text-[16px] truncate text-[16px] text-white"
+                className="text-[16px] text-white truncate"
               >
                 {emailAddress}
               </div>
-              <div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(emailAddress)}
-                  className="text-white/70 hover:text-white transition"
-                  aria-label="Copy email"
+              <button
+                onClick={() => navigator.clipboard.writeText(emailAddress)}
+                className="text-white/70 hover:text-white transition flex-shrink-0"
+                aria-label="Copy email"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                </button>
-              </div>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
 
-        <button className="ml-[99.62px] mt-[30.82px] h-[44px] w-[113px] rounded-lg border-[1px] bg-white text-black hover:bg-gray-300">
-          <div className="text-[16px]">
-            <Link href="/profile/edit">Edit details</Link>
-          </div>
-        </button>
+        <div className="flex justify-center gap-4 mt-[30.82px]">
+          <button className="h-[44px] w-[113px] rounded-lg bg-white text-black hover:bg-gray-300">
+            <div className="text-[16px]">
+              <Link href="/profile/edit">Edit details</Link>
+            </div>
+          </button>
+          <button
+            className="h-[44px] w-[113px] rounded-lg bg-bcp-blue text-white hover:bg-gray-600 cursor-pointer"
+            onClick={() => signOut(() => router.push("/"))}
+          >
+            Log Out
+          </button>
+        </div>
       </div>
 
       {/* PAST EVENTS */}
