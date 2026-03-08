@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 
 export default function EditProfilePage() {
   const { user, isLoaded } = useUser();
@@ -167,12 +168,9 @@ export default function EditProfilePage() {
     }
   }
 
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+  if (loading || !isLoaded) {
+    return <BasicSkeleton />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">

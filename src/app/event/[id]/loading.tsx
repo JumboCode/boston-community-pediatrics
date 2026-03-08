@@ -1,10 +1,19 @@
-
 import Skeleton from "@/components/ui/skeleton/Skeleton";
 import EventTableSkeleton from "@/components/ui/skeleton/EventTableSkeleton";
+import BackArrow from "@/assets/icons/arrow-left.svg";
+import Image from "next/image";
 
 export default function Loading() {
   return (
-   <div className="flex flex-col justify-center items-center">
+    <div className="relative flex flex-col justify-center items-center">
+      
+      {/* Back Arrow */}
+      <Image
+        src={BackArrow}
+        alt="Back"
+        className="absolute top-[49px] left-[64px]"
+      />
+
       <div className="pt-16 pb-12 flex flex-col items-center">
 
         {/* Carousel */}
