@@ -198,20 +198,19 @@ const Home: React.FC = () => {
         <div
           className={`text-bcp-blue text-lg font-normal ${isMobile ? "w-full order-2" : "w-[60%]"}`}
         >
-          <b>Lorem ipsum dolor</b> sit amet consectetur. At leo auctor nam metus
-          tincidunt phasellus volutpat id pulvinar. Accumsan amet id pulvinar
-          pellentesque sed vivamus ac. Id tortor sodales est aliquet nec
-          volutpat. Phasellus massa erat a nunc risus consequat sed. Porta nunc
-          convallis ultricies elit est cursus felis lacus consectetur. Rhoncus
-          quis quisque egestas porta sit. Mauris aliquam eget imperdiet
-          pellentesque. Nullam tristique arcu sit in in nulla viverra. Egestas
-          euismod platea pretium augue aliquam aliquam ac feugiat. Vulputate
-          massa gravida dui massa mi tellus sed. Vitae dui tincidunt a elementum
-          turpis nisl lobortis vulputate aliquam. Morbi tristique risus ornare
-          ridiculus massa vitae lacus a risus. Viverra lacus integer magna eget
-          facilisis nunc. Lobortis porttitor tempus est orci adipiscing nisl. A
-          parturient tellus nisi praesent posuere gravida sed. Aliquam elementum
-          nec id ipsum sit orci quis sem neque.
+          <b>Boston Community Pediatrics (BCP)</b> is changing the way we define
+          healthcare for our children. As the first nonprofit pediatric private
+          practice in the Commonwealth, and one of the first in the nation, BCP
+          is bringing income and racial equity to pediatrics by providing all
+          families–but especially those with low-income–with comprehensive,
+          high-quality, culturally competent care, regardless of their ability
+          to pay. BCP cares for its patients at the intersection of physical
+          health, mental health, and the social determinants of health that keep
+          children with low-income from reaching their full health potential.
+          That’s why BCP treats the whole patient. At BCP, patients receive,
+          providing fully-integrated, onsite medical and mental health care, as
+          well as robust care navigation and wellness programming to address
+          housing, food insecurity, early childcare, education needs, and more.
         </div>
         <div
           className={`flex justify-center ${isMobile ? "w-full order-1" : "w-[40%]"}`}

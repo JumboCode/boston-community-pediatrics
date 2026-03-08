@@ -5,13 +5,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu } from "@headlessui/react";
 import DropDownArrow from "@/assets/icons/drop-down-arrow.svg";
+import { useUser } from "@clerk/nextjs";
 
 interface UserNavBarProps {
   profileImageUrl: string | null;
+  firstName?: string;
 }
 
 function AdminNavBar(props: UserNavBarProps) {
-  const { profileImageUrl } = props;
+  const { profileImageUrl, firstName: dbFirstName } = props;
+  const { user } = useUser();
+  const firstName = (dbFirstName || user?.firstName) ?? "Admin";
   return (
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
@@ -78,10 +82,10 @@ function AdminNavBar(props: UserNavBarProps) {
               </Menu>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-white text-sm relative top-[1.5px]">
-                Admin
-              </span>
-              <Link href="/profile">
+              <Link className="flex items-center gap-2" href="/profile">
+                <span className="text-white text-sm relative top-[1.5px]">
+                  {firstName}
+                </span>
                 <Image
                   src={profileImageUrl || blankProfile}
                   alt="Placeholder User"
