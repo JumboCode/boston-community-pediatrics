@@ -40,7 +40,12 @@ const ManageRolesPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [sortOption, setSortOption] = useState<
-    "NAME_AZ" | "NAME_ZA" | "ADMIN" | "VOLUNTEER" | "DATE_NEWEST" | "DATE_OLDEST"
+    | "NAME_AZ"
+    | "NAME_ZA"
+    | "ADMIN"
+    | "VOLUNTEER"
+    | "DATE_NEWEST"
+    | "DATE_OLDEST"
   >("NAME_AZ");
 
   const [modalTitle, setModalTitle] = useState<string | null>(null);
@@ -175,37 +180,37 @@ const ManageRolesPage = () => {
     }
   }, [dropdownOpen]);
   const copyEmailString = volunteers
-  .filter((v) => v.selected)
-  .map((v) => v.emailAddress)
-  .join("\r\n");
-
-const handleCopy = async () => {
-  try {
-    await navigator.clipboard.writeText(copyEmailString);
-  } catch (err) {
-    console.error(err);
-  }
-  
-};
-const handleSaveCSV = () => {
-  const header = "Last Name,First Name,Email Address,Phone Number";
-  const content = volunteers
     .filter((v) => v.selected)
-    .map((v) => `${v.lastName},${v.firstName},${v.emailAddress},${v.phoneNumber}`)
-    .join("\n");
+    .map((v) => v.emailAddress)
+    .join("\r\n");
 
-  // const blob = new Blob([content], { type: "text/plain" });
-  const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "users.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(copyEmailString);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const handleSaveCSV = () => {
+    const header = "Last Name,First Name,Email Address,Phone Number";
+    const content = volunteers
+      .filter((v) => v.selected)
+      .map(
+        (v) => `${v.lastName},${v.firstName},${v.emailAddress},${v.phoneNumber}`
+      )
+      .join("\n");
 
+    // const blob = new Blob([content], { type: "text/plain" });
+    const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "users.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const closeModal = useCallback(() => {
     setModalTitle(null);
@@ -217,14 +222,13 @@ const handleSaveCSV = () => {
     const selectedIds = volunteers
       .filter((v) => v.selected)
       .map((v) => v.userId);
-      
-    
+
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(selectedIds)
     );
     sessionStorage.setItem("adminEmailSource", "manage");
-    
+
     router.push("/admin/email");
   };
 
@@ -286,8 +290,6 @@ const handleSaveCSV = () => {
     setShowEditConfirm(true);
   };
 
- 
-
   const handleEditApproved = async () => {
     setIsLoading(true);
     const volunteersToEdit: FrontEndUser[] = volunteers.filter(
@@ -343,8 +345,6 @@ const handleSaveCSV = () => {
     }
   };
 
-  
-
   return (
     <>
       <div className="items-center justify-center p-6 ml-60 mr-60">
@@ -394,8 +394,10 @@ const handleSaveCSV = () => {
             </div>
 
             {dropdownOpen && (
-              <div className="absolute z-50 left-0 right-0 bg-white border 
-                    border-medium-gray rounded-lg shadow-lg mt-1">
+              <div
+                className="absolute z-50 left-0 right-0 bg-white border 
+                    border-medium-gray rounded-lg shadow-lg mt-1"
+              >
                 <div className="p-2 border-b border-gray-100">
                   <input
                     ref={searchInputRef}
@@ -415,25 +417,29 @@ const handleSaveCSV = () => {
                 {seenVolunteers.length === 0 && searchQuery ? (
                   <div className="p-2 text-sm text-gray-500">No results</div>
                 ) : (
-                  seenVolunteers.map((u) => (
-                    <button
-                      key={u.userId}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        addVolunteer(u.userId);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-100 text-left text-sm"
-                    >
-                      {u.lastName}, {u.firstName}{" "}
-                      <span className="text-gray-500">({u.emailAddress})</span>
-                    </button>
-                  ))
+                  <div className="max-h-[320px] overflow-y-auto">
+                    {seenVolunteers.map((u) => (
+                      <button
+                        key={u.userId}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          addVolunteer(u.userId);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-100 text-left text-sm"
+                      >
+                        {u.lastName}, {u.firstName}{" "}
+                        <span className="text-gray-500">
+                          ({u.emailAddress})
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
           </div>
-          
+
           {/* sort-by dropdown */}
           <div className="w-40">
             <label htmlFor="sort" className="sr-only">
@@ -532,7 +538,7 @@ const handleSaveCSV = () => {
                 disabled={selectedCount <= 0}
                 label="Copy to Clipboard"
                 altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
-                 onClick={handleCopy}
+                onClick={handleCopy}
               />
               <Button
                 disabled={selectedCount <= 0}
