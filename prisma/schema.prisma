@@ -30,29 +30,30 @@ model User {
   waitlists     EventWaitlist[]
 
   @@index([clerkId])
+  @@index([clerkId], map: "users_clerkId")
   @@map("users")
 }
 
 model Event {
-  id           String          @id @default(cuid())
-  name         String
-  description  String
-  date         DateTime[]
-  startTime    DateTime
-  endTime      DateTime
-  city         String          @default("")
-  state        String          @default("")
-  country      String          @default("")
-  zipCode      String          @default("")
-  lat          Float?
-  lng          Float?
-  addressLine1 String          @default("")
-  addressLine2 String?
-  images       String[]
-  pinned       Boolean         @default(false)
-  positions    EventPosition[]
-  signups      EventSignup[]
-  imagesDeleted Boolean        @default(false)
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  date          DateTime[]
+  startTime     DateTime
+  endTime       DateTime
+  city          String          @default("")
+  state         String          @default("")
+  country       String          @default("")
+  zipCode       String          @default("")
+  lat           Float?
+  lng           Float?
+  addressLine1  String          @default("")
+  addressLine2  String?
+  images        String[]
+  pinned        Boolean         @default(false)
+  imagesDeleted Boolean         @default(false)
+  positions     EventPosition[]
+  signups       EventSignup[]
 }
 
 model EventSignup {
@@ -64,6 +65,7 @@ model EventSignup {
   date       DateTime?
   time       DateTime?
   notes      String?
+  comments   String?
   event      Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   position   EventPosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
   user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -101,7 +103,6 @@ model Guest {
   phoneNumber   String?
   signupId      String
   dateOfBirth   String?
-  comments      String?
   speaksSpanish Boolean?
   signup        EventSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
 }

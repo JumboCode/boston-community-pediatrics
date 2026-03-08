@@ -668,7 +668,6 @@ export async function GET(req: NextRequest) {
           relationship: g.relation,
           // FIX: Ensure we read from DB
           dateOfBirth: g.dateOfBirth || "",
-          comments: g.comments || "",
         }));
 
         return NextResponse.json(
