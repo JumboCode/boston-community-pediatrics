@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import { BaseLayoutTemplate } from "@/lib/email/templates/BaseLayout";
+import MessagingSkeleton from "@/components/ui/skeleton/MessagingSkeleton";
 
 interface UserProps {
   id: string;
@@ -154,7 +155,7 @@ export default function EmailPage() {
     }
   }, [dropdownOpen]);
 
-  if (isAdmin === null) return null;
+  if (isAdmin === null) return <MessagingSkeleton/>;
   if (isAdmin === false) {
     return (
       <main className="flex items-center justify-center min-h-screen">

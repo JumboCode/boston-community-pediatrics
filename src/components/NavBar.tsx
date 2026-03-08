@@ -3,20 +3,34 @@ import { useUser } from "@clerk/nextjs";
 import UserNavBar from "./UserNavBar";
 import AdminNavBar from "./AdminNavBar";
 import { useState, useEffect } from "react";
+import ProfilePageSkeleton from "./ui/skeleton/ProfilePageSkeleton";
+import { usePathname } from "next/navigation";
 
 function NavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
+  const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [dbFirstName, setDbFirstName] = useState<string>("");
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user?.id) return;
+    if (!isLoaded) return;
+
+    // Clear state when the user logs out
+    if (!isSignedIn || !user?.id) {
+      setIsAdmin(false);
+      setProfileImage(null);
+      setDbFirstName("");
+      return;
+    }
+    
     async function fetchUser() {
       try {
         const res = await fetch("/api/users?id=" + user?.id);
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setIsAdmin(data?.role == "ADMIN");
+        setDbFirstName(data?.firstName ?? "");
         if (data.profileImage) {
           setProfileImage(data.profileImage); // use URL directly
         }
@@ -25,16 +39,16 @@ function NavBar() {
       }
     }
     fetchUser();
-  }, [user?.id, isLoaded, isSignedIn]);
+  }, [user?.id, isLoaded, isSignedIn, pathname]);
 
-  if (isAdmin === null) return null;
+  if (isAdmin === null) return <ProfilePageSkeleton/>;
 
   return (
     <>
       {isAdmin ? (
-        <AdminNavBar profileImageUrl={profileImage} />
+        <AdminNavBar profileImageUrl={profileImage} firstName={dbFirstName} />
       ) : (
-        <UserNavBar profileImageUrl={profileImage} />
+        <UserNavBar profileImageUrl={profileImage} firstName={dbFirstName} />
       )}
     </>
   );

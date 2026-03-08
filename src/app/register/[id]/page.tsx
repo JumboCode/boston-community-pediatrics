@@ -2,7 +2,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState, use } from "react";
 import EventSignUpForm from "@/components/common/forms/EventSignUpForm";
-
+import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 interface RegisterPageProps {
   params: Promise<{ id: string }>;
 }
@@ -69,7 +69,7 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   }, [isLoaded, user?.id, positionId]);
 
   if (!isLoaded || loading)
-    return <div className="text-center p-10">Loading...</div>;
+    return <BasicSkeleton />;
   if (!data)
     return <div className="text-center p-10">Error loading details.</div>;
 
