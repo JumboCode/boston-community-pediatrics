@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const { positionId, userId, guests = [] } = data;
+    const { positionId, userId, comments, guests = [] } = data;
 
     // Get position and count current signups
     const [position] = await Promise.all([
@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           positionId,
+          comments: comments || null,
           eventId: position.eventId,
           hasGuests: guests.length > 0,
           guests: {

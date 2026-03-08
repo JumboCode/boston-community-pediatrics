@@ -15,7 +15,6 @@ interface GuestInput {
   phoneNumber?: string | null;
   relationship?: string | null;
   dateOfBirth?: string | null;
-  comments?: string | null;
 }
 
 const tz = "America/New_York";
@@ -159,7 +158,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
 // ==========================================
 export async function POST(req: NextRequest) {
   try {
-    const { userId, positionId, guests } = await req.json();
+    const { userId, positionId, comments, guests } = await req.json();
 
     // 1. LIMIT CHECK
     if (guests && guests.length > MAX_GUESTS) {
@@ -245,7 +244,6 @@ export async function POST(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
-                comments: guest.comments || null,
               })),
             },
           },
@@ -270,6 +268,7 @@ export async function POST(req: NextRequest) {
           userId,
           positionId,
           eventId: position.eventId,
+          comments: comments || null,
           hasGuests: (guests?.length ?? 0) > 0,
           guests: {
             create: (guests ?? []).map((guest: GuestInput) => ({
@@ -280,7 +279,6 @@ export async function POST(req: NextRequest) {
               phoneNumber: guest.phoneNumber || null,
               relation: guest.relationship || null,
               dateOfBirth: guest.dateOfBirth || null,
-              comments: guest.comments || null,
             })),
           },
         },
@@ -419,7 +417,6 @@ export async function PUT(req: NextRequest) {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
-                  comments: guest.comments || null,
                 })),
               },
             },
@@ -472,7 +469,6 @@ export async function PUT(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
-                comments: guest.comments || null,
               })),
             },
           },
@@ -567,7 +563,6 @@ export async function PUT(req: NextRequest) {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
-                  comments: guest.comments || null,
                 })),
               },
             },
@@ -610,7 +605,6 @@ export async function PUT(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
-                comments: guest.comments || null,
               })),
             },
           },
@@ -668,7 +662,6 @@ export async function GET(req: NextRequest) {
           relationship: g.relation,
           // FIX: Ensure we read from DB
           dateOfBirth: g.dateOfBirth || "",
-          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -694,7 +687,6 @@ export async function GET(req: NextRequest) {
           relationship: g.relation,
           // FIX: Ensure we read from DB (Previously this was hardcoded "")
           dateOfBirth: g.dateOfBirth || "",
-          comments: g.comments || "",
         }));
 
         return NextResponse.json(
@@ -884,7 +876,6 @@ export async function DELETE(req: NextRequest) {
                     emailAddress: g.email,
                     relation: g.relation,
                     dateOfBirth: g.dateOfBirth,
-                    comments: g.comments,
                   })),
                 },
               },

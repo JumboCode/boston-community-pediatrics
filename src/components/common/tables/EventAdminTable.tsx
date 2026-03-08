@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
+import Modal from "@/components/common/Modal";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
 
@@ -14,10 +15,12 @@ interface FrontEndUser {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
-  speaksSpanish: boolean; // Keep as boolean
+  speaksSpanish: boolean;
   selected: boolean;
   guestOf?: string;
   isGuest?: boolean;
+  comments?: string | null;
+  memberSince?: number;
 }
 
 interface EventAdminTableProps {
@@ -28,20 +31,35 @@ interface EventAdminTableProps {
   totalSlots: number;
   location: string;
   positionId: string;
-  isAdmin?: boolean; // Add this prop to control waitlist visibility
+  isAdmin?: boolean;
 }
 
 const EventAdminTable = (props: EventAdminTableProps) => {
   const {
-    position, //pos name
+    position,
     startTime,
     endTime,
     description,
     totalSlots,
     location,
     positionId,
-    isAdmin = false, // Default to false if not provided
+    isAdmin = false,
   } = props;
+
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedUserData, setSelectedUserData] = useState<{
+    userId: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    speaksSpanish: boolean;
+    comment: string;
+    memberSince?: number;
+    guestName?: string;
+    guestEmail?: string;
+    guestPhoneNumber?: string;
+    guestSpeaksSpanish?: boolean;
+  } | null>(null);
 
   const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -73,10 +91,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
-      speaksSpanish: s.speaksSpanish ?? false, // Convert null to false
+      speaksSpanish: s.speaksSpanish ?? false,
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
+      comments: s.comments,
+      memberSince: s.memberSince,
     }));
   }, [signups]);
 
@@ -91,10 +111,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
-      speaksSpanish: false, // Add missing property (waitlist doesn't track this)
+      speaksSpanish: false,
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
+      comments: s.comments,
     }));
   }, [waitlistSignups]);
 
@@ -111,27 +132,67 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     setWaitlist(frontEndWaitlistUsers);
   }, [frontEndWaitlistUsers]);
 
+  // Handle viewing comment
+  const handleViewComment = (signUpId: string) => {
+    // Find the main user with this signUpId
+    const mainUser = volunteers.find(
+      (v) => v.signUpId === signUpId && !v.isGuest
+    );
+    if (!mainUser || !mainUser.comments) return;
+
+    // Find if there's a guest with this signUpId
+    const guest = volunteers.find((v) => v.signUpId === signUpId && v.isGuest);
+
+    setSelectedUserData({
+      userId: mainUser.userId,
+      name: `${mainUser.firstName} ${mainUser.lastName}`,
+      email: mainUser.emailAddress,
+      phoneNumber: mainUser.phoneNumber,
+      speaksSpanish: mainUser.speaksSpanish,
+      comment: mainUser.comments,
+
+      ...(mainUser.memberSince && {
+        memberSince: mainUser.memberSince,
+      }),
+
+      ...(guest && {
+        guestName: `${guest.firstName} ${guest.lastName}`,
+        guestEmail: guest.emailAddress,
+        guestPhoneNumber: guest.phoneNumber,
+        guestSpeaksSpanish: guest.speaksSpanish,
+      }),
+    });
+    setShowCommentModal(true);
+  };
+
+  function handleSendMessage(userId: string) {
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify([userId])
+    );
+
+    sessionStorage.setItem("adminEmailSource", "event-admin");
+
+    router.push("/admin/email");
+  }
+
   // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {
     if (!id) return;
 
     setVolunteers((prev) => {
-      // Find the clicked item
       const clickedItem = prev.find((v) => v.signUpId === id);
       if (!clickedItem) return prev;
 
       const newSelectedState = !clickedItem.selected;
 
       return prev.map((v) => {
-        // If this is the clicked item, toggle it
         if (v.signUpId === id && !v.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // If this is a guest of the clicked item, also toggle it
         if (v.signUpId === id && v.isGuest && !clickedItem.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // Otherwise leave it unchanged
         return v;
       });
     });
@@ -146,25 +207,21 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anySelected = volunteers.some((v) => v.selected);
 
-  // Waitlist selection handlers - UPDATED to select guests with parent
+  // Waitlist selection handlers
   const toggleWaitlistSelect = (id: string) => {
     setWaitlist((prev) => {
-      // Find the clicked item
       const clickedItem = prev.find((v) => v.waitlistId === id);
       if (!clickedItem) return prev;
 
       const newSelectedState = !clickedItem.selected;
 
       return prev.map((v) => {
-        // If this is the clicked item, toggle it
         if (v.waitlistId === id && !v.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // If this is a guest of the clicked item, also toggle it
         if (v.waitlistId === id && v.isGuest && !clickedItem.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // Otherwise leave it unchanged
         return v;
       });
     });
@@ -177,7 +234,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anyWaitlistSelected = waitlist.some((v) => v.selected);
 
-  // Remove from event - FIXED to deduplicate signup IDs
+  // Remove from event
   const handleDelete = async () => {
     const volunteersToDel: FrontEndUser[] = volunteers.filter(
       (v) => v.selected === true
@@ -186,14 +243,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     if (volunteersToDel.length === 0) return;
 
     try {
-      // Get unique signup IDs (since guests share the same ID as their parent)
       const uniqueSignupIds = [
         ...new Set(volunteersToDel.map((vol) => vol.signUpId).filter(Boolean)),
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        // Changed from eventSignup/waitlist to registrations which worked for
-        // sending emails, but just in case something breaks here is a comment :D
         const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
         });
@@ -207,7 +261,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
       await Promise.all(deletePromises);
 
-      // Remove all selected entries from state (both parents and guests)
       setVolunteers((prev) => prev.filter((v) => !v.selected));
 
       router.refresh();
@@ -216,14 +269,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     }
   };
 
-  // Remove from waitlist frontend action - FIXED to deduplicate waitlist IDs
+  // Remove from waitlist
   const handleWaitlistDelete = async () => {
     const waitlistToDel: FrontEndUser[] = waitlist.filter((v) => v.selected);
 
     if (waitlistToDel.length === 0) return;
 
     try {
-      // Get unique waitlist IDs (since guests share the same ID as their parent)
       const uniqueWaitlistIds = [
         ...new Set(waitlistToDel.map((vol) => vol.waitlistId).filter(Boolean)),
       ];
@@ -242,7 +294,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
       await Promise.all(deletePromises);
 
-      // Remove all selected entries from state (both parents and guests)
       setWaitlist((prev) => prev.filter((v) => !v.selected));
 
       router.refresh();
@@ -251,7 +302,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     }
   };
 
-  // Add to Event (move selected waitlist users into volunteers)
+  // Add to Event
   const handleAddToEvent = async () => {
     const selectedWaitlist = waitlist.filter((w) => w.selected);
     if (selectedWaitlist.length === 0) return;
@@ -269,14 +320,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         throw new Error("Failed to promote waitlist users");
       }
 
-      // Optimistic UI update
       setVolunteers((prev) => [
         ...prev,
         ...selectedWaitlist.map((w) => ({
           ...w,
           selected: false,
           waitlistId: undefined,
-          signUpId: w.waitlistId, // Temporarily use waitlistId, will be replaced on refresh
+          signUpId: w.waitlistId,
         })),
       ]);
       setWaitlist((prev) => prev.filter((w) => !w.selected));
@@ -284,23 +334,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       router.refresh();
     } catch (error) {
       console.error("Error promoting waitlist users:", error);
-      // Revert optimistic update on error
       router.refresh();
     }
   };
 
   const handleSendVolunteerEmail = () => {
-    // TODO: Guest shi
     const selected = volunteers.filter((v) => v.selected && !v.isGuest);
     const userIds = Array.from(new Set(selected.map((v) => v.userId)));
 
     if (userIds.length === 0) return;
 
-    /* 
-    basically, if we want the data to go to the other page, we have two options:
-    - we can put them all in the URL, this is bad cuz it will get hella long
-    - we can put them in the session storage
-    */
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(userIds)
@@ -311,17 +354,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   const handleSendWaitlistEmail = () => {
-    // TODO: Guest shi
     const selected = waitlist.filter((v) => v.selected && !v.isGuest);
     const userIds = Array.from(new Set(selected.map((v) => v.userId)));
 
     if (userIds.length === 0) return;
 
-    /* 
-    basically, if we want the data to go to the other page, we have two options:
-    - we can put them all in the URL, this is bad cuz it will get hella long
-    - we can put them in the session storage
-    */
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(userIds)
@@ -392,7 +429,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <th className="py-3 px-4 font-normal">Email</th>
               <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
               <th className="py-3 px-4 font-normal"></th>
-              {/* Spanish column header */}
+              <th className="py-3 px-4 font-normal"></th>
               <th className="py-3 px-4 font-normal">
                 <button
                   onClick={toggleSelectAll}
@@ -405,12 +442,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </thead>
           <tbody>
             {volunteers.map((p, i) => {
-              // Check if next person is a guest of this person
               const nextPerson = volunteers[i + 1];
               const hasGuestBelow =
                 nextPerson && nextPerson.guestOf && !p.isGuest;
-
-              // Sequential numbering for ALL people (users + guests)
               const rowNumber = i + 1;
 
               return (
@@ -429,9 +463,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <div className="flex items-center gap-3">
                       {p.isGuest ? (
                         <div className="flex items-start relative">
-                          {/* Vertical connector line - 30px tall, 5px wide*/}
                           <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                          {/* Guest circle */}
                           <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                           <div className="ml-3">
                             <div>
@@ -442,7 +474,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       ) : (
                         <div className="flex items-center gap-3 relative">
                           <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
-                          {/* Vertical line extending down - 30px tall, 5px wide*/}
                           {hasGuestBelow && (
                             <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
@@ -457,14 +488,23 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <td className="py-3 px-4">{p.phoneNumber}</td>
                   <td className="py-3 px-4">
                     {p.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
                         S
                       </div>
                     )}
                   </td>
-
+                  <td className="py-3 px-4">
+                    {/* Show "view comment" button only if comments exist, user is not a guest, and comment is not null/empty */}
+                    {!p.isGuest && p.comments && p.comments.trim() !== "" && (
+                      <button
+                        onClick={() => handleViewComment(p.signUpId!)}
+                        className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors"
+                      >
+                        View Comment
+                      </button>
+                    )}
+                  </td>
                   <td className="py-3 px-4 text-center">
-                    {/* Only show checkbox for main users, not guests */}
                     {!p.isGuest && (
                       <input
                         type="checkbox"
@@ -479,7 +519,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             })}
             {volunteers.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-gray-400">
+                <td colSpan={7} className="py-8 text-center text-gray-400">
                   No one has signed up yet.
                 </td>
               </tr>
@@ -505,7 +545,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </div>
         )}
 
-        {/* WAITLIST SECTION - Only show if admin */}
+        {/* WAITLIST SECTION */}
         {isAdmin && (
           <>
             <div className="px-5 pt-10">
@@ -522,7 +562,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <th className="py-3 px-4 font-normal">Email</th>
                   <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
                   <th className="py-3 px-4 font-normal"></th>
-                  {/* Spanish column header */}
+                  <th className="py-3 px-4 font-normal"></th>
                   <th className="py-3 px-4 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
@@ -535,12 +575,9 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </thead>
               <tbody>
                 {waitlist.map((p, i) => {
-                  // Check if next person is a guest of this person
                   const nextPerson = waitlist[i + 1];
                   const hasGuestBelow =
                     nextPerson && nextPerson.guestOf && !p.isGuest;
-
-                  // Sequential numbering for ALL people (users + guests)
                   const rowNumber = i + 1;
 
                   return (
@@ -561,9 +598,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         <div className="flex items-center gap-3">
                           {p.isGuest ? (
                             <div className="flex items-start relative">
-                              {/* Vertical connector line - 30px tall, 5px wide,*/}
                               <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                              {/* Guest circle */}
                               <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
                               <div className="ml-3">
                                 <div>
@@ -579,7 +614,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           ) : (
                             <div className="flex items-center gap-3 relative">
                               <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
-                              {/* Vertical line extending down - 30px tall, 5px wide */}
                               {hasGuestBelow && (
                                 <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
@@ -599,8 +633,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           </div>
                         )}
                       </td>
+                      <td className="py-3 px-4">
+                        {/* Waitlist comments if needed */}
+                      </td>
                       <td className="py-3 px-4 text-center">
-                        {/* Only show checkbox for main users */}
                         {!p.isGuest && (
                           <input
                             type="checkbox"
@@ -615,7 +651,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 })}
                 {waitlist.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                    <td colSpan={7} className="py-8 text-center text-gray-400">
                       No one is on the waitlist.
                     </td>
                   </tr>
@@ -623,7 +659,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </tbody>
             </table>
 
-            {/* WAITLIST BUTTONS (includes Add to Event) */}
             {anyWaitlistSelected && (
               <div className="border-t border-gray-200 bg-gray-50 w-full">
                 <div className="flex justify-between px-6 py-4">
@@ -651,6 +686,107 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </>
         )}
       </div>
+
+      {/* Comment Modal */}
+      {showCommentModal && selectedUserData && (
+        <Modal
+          open={showCommentModal}
+          onClose={() => setShowCommentModal(false)}
+          layout="custom"
+          description={
+            <div className="w-full px-10 py-6 text-left text-bcp-blue">
+              {/* USER CARD */}
+              <div className="flex items-start gap-6 mb-8">
+                {/* Avatar */}
+                <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0" />
+
+                {/* Name + Member */}
+                <div className="min-w-[220px]">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold">
+                      {selectedUserData.name}
+                    </h3>
+
+                    {selectedUserData.speaksSpanish && (
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                        S
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedUserData.memberSince && (
+                    <p className="text-sm text-gray-500">
+                      Member since {selectedUserData.memberSince}
+                    </p>
+                  )}
+                </div>
+
+                {/* Contact Info */}
+                <div className="grid grid-cols-2 gap-x-6 text-sm">
+                  <span className="text-gray-600">Phone number</span>
+                  <span>{selectedUserData.phoneNumber}</span>
+
+                  <span className="text-gray-600">Email</span>
+                  <span>{selectedUserData.email}</span>
+                </div>
+              </div>
+
+              {/* GUEST SECTION */}
+              {selectedUserData.guestName && (
+                <div className="flex items-start gap-6 mb-8">
+                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0" />
+
+                  <div className="min-w-[220px]">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-bold">
+                        {selectedUserData.guestName}
+                      </h3>
+
+                      {selectedUserData.guestSpeaksSpanish && (
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                          S
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-gray-500">
+                      Guest of {selectedUserData.name.split(" ")[0]}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-6 text-sm">
+                    <span className="text-gray-600">Phone number</span>
+                    <span>{selectedUserData.guestPhoneNumber}</span>
+
+                    <span className="text-gray-600">Email</span>
+                    <span>{selectedUserData.guestEmail}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* COMMENT */}
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold mb-2">Comment</h4>
+                <p className="text-sm leading-relaxed text-gray-700">
+                  {selectedUserData.comment}
+                </p>
+              </div>
+            </div>
+          }
+          buttons={[
+            {
+              label: "Send message",
+              onClick: () => handleSendMessage(selectedUserData!.userId),
+              variant: "secondary",
+            },
+            {
+              label: "Go back",
+              onClick: () => setShowCommentModal(false),
+              variant: "primary",
+            },
+          ]}
+        />
+      )}
     </div>
   );
 };

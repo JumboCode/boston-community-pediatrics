@@ -12,6 +12,7 @@ export type WaitlistEntry = {
   phoneNumber: string;
   guestOf?: string;
   isGuest: boolean;
+  comments?: string | null
 };
 
 export async function GET(req: Request) {
