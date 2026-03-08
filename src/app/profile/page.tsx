@@ -1,12 +1,13 @@
 "use client";
 import ProfileEventCard from "@/components/events/ProfileEventCard";
-import { useUser, useClerk } from "@clerk/nextjs"; 
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
 import Link from "next/link";
 import Modal from "@/components/common/Modal";
+import ProfilePageSkeleton from "@/components/ui/skeleton/ProfilePageSkeleton";
 
 type MyRegistration = {
   id: string;
@@ -19,7 +20,7 @@ type MyRegistration = {
   notes: string | null;
   type: "signup" | "waitlist";
   status: "registered" | "waitlisted";
-  imageUrl?: string; 
+  imageUrl?: string;
   guests: Array<{
     id: string;
     positionId: string;
@@ -319,12 +320,8 @@ export default function ProfilePage() {
   // };
 
   // Wait for Clerk, event data (loading), and the user's role from the DB
-  if (!isLoaded || loading || userRole === "") {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-8">
-        <p className="text-xl text-gray-500 font-medium animate-pulse">Loading...</p>
-      </main>
-    );
+  if (!isLoaded || loading) {
+    return <ProfilePageSkeleton />;
   }
 
   const firstName =
@@ -368,7 +365,6 @@ export default function ProfilePage() {
     return (
       <main className="min-h-screen flex items-center justify-center p-8">
         <div className="w-[850px] max-w-full rounded-md bg-light-bcp-blue py-16 px-10 shadow-lg flex flex-col items-center">
-          
           {/* Profile Image */}
           <div className="mb-6">
             <Image

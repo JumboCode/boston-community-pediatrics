@@ -10,6 +10,7 @@ import { mutate } from "swr";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { getPublicURL } from "@/lib/r2";
+import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 
 // API shapes used by this component
 type APIPosition = Partial<{
@@ -94,6 +95,8 @@ const EventForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("id");
+  const [isLoading, setIsLoading] = useState(!!eventIdParam);
+
 
   const inputBase =
     "rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
@@ -691,7 +694,10 @@ const EventForm = () => {
         city: result.city ?? "",
         state: result.state ?? "",
         zip: result.zipCode ?? "",
+
+        
       });
+      setIsLoading(false);
 
       // Try to fetch positions from the eventPosition API; fall back to embedded positions
       try {
@@ -731,6 +737,8 @@ const EventForm = () => {
 
     load();
   }, [eventIdParam]);
+
+  if(isLoading) return <BasicSkeleton />;
 
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">

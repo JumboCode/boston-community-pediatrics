@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
+import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
 
 type SignupFormData = {
   firstName: string;
@@ -38,6 +39,7 @@ const SignupForm = () => {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
+  if (!isLoaded) return <BasicSkeleton />;
 
   // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
