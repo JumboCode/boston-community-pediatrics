@@ -70,6 +70,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   // Fetch signups for the position (volunteers)
+  //took out isLoading...no use client here so no need
   const { data: signups } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher

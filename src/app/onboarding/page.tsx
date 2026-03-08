@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { UserRole } from "@prisma/client";
+import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 
 function OnboardingPage() {
   const { user, isLoaded } = useUser();
@@ -84,11 +85,7 @@ function OnboardingPage() {
   };
 
   if (!isLoaded || checkingDb) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-xl text-bcp-blue">Checking profile...</p>
-      </div>
-    );
+    return <BasicSkeleton />;
   }
 
   return (
