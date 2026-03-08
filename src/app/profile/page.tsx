@@ -7,6 +7,7 @@ import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
 import Link from "next/link";
 import Modal from "@/components/common/Modal";
+import ProfilePageSkeleton from "@/components/ui/skeleton/ProfilePageSkeleton";
 
 type MyRegistration = {
   id: string;
@@ -310,7 +311,7 @@ export default function ProfilePage() {
   };
 
   if (!isLoaded || loading) {
-    return <main className="min-h-screen p-8" />;
+    return <ProfilePageSkeleton />;
   }
 
   const firstName = isSignedIn ? (user?.firstName ?? "") : "Guest";
