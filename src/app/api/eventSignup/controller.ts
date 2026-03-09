@@ -52,8 +52,9 @@ export interface AdminUser {
   speaksSpanish: boolean | null;
   guestOf?: string; // For displaying "Guest of X"
   isGuest?: boolean; // To mark if this row is a guest
-  comments?: string | null
+  comments?: string | null;
   memberSince?: number;
+  profileImage?: string | null;
 }
 
 function adminUserWithGuests(s: {
@@ -72,6 +73,7 @@ function adminUserWithGuests(s: {
     speaksSpanish: s.user.speaksSpanish ?? false,
     comments: s.comments || null,
     memberSince: s.user.createdAt.getFullYear(),
+    profileImage: s.user.profileImage ?? null,
   };
 
   const guestUsers: AdminUser[] = s.guests.map((guest) => ({

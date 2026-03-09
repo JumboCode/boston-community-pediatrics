@@ -6,6 +6,7 @@ import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
+import Image from "next/image";
 
 interface FrontEndUser {
   userId: string;
@@ -21,6 +22,7 @@ interface FrontEndUser {
   isGuest?: boolean;
   comments?: string | null;
   memberSince?: number;
+  profileImage?: string | null;
 }
 
 interface EventAdminTableProps {
@@ -59,6 +61,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     guestEmail?: string;
     guestPhoneNumber?: string;
     guestSpeaksSpanish?: boolean;
+    profileImage?: string;
   } | null>(null);
 
   const fetcher = async (url: string) => {
@@ -85,7 +88,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const frontEndUsers = useMemo(() => {
     if (!signups) return [];
 
-    return signups.map((s) => ({
+    const mapped = signups.map((s) => ({
       signUpId: s.signupId,
       userId: s.id,
       firstName: s.firstName,
@@ -98,26 +101,56 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       isGuest: s.isGuest ?? false,
       comments: s.comments,
       memberSince: s.memberSince,
+      profileImage: s.profileImage,
     }));
+
+    return mapped.map((user) => {
+      if (user.isGuest && user.guestOf) {
+        const host = mapped.find((u) => {
+          const fullName = `${u.firstName} ${u.lastName}`;
+          return fullName === user.guestOf && !u.isGuest;
+        });
+
+        if (host?.profileImage) {
+          return { ...user, profileImage: host.profileImage };
+        }
+      }
+      return user;
+    });
   }, [signups]);
 
   // Convert waitlistSignups -> FrontEndUser[]
   const frontEndWaitlistUsers = useMemo(() => {
     if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
 
-    return waitlistSignups.map((s) => ({
+    const mapped = waitlistSignups.map((s) => ({
       userId: s.userId,
       waitlistId: s.waitlistId,
       firstName: s.firstName,
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
-      speaksSpanish: false,
+      speaksSpanish: s.speaksSpanish ?? false,
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
       comments: s.comments,
+      profileImage: s.profileImage,
     }));
+
+    return mapped.map((user) => {
+      if (user.isGuest && user.guestOf) {
+        const host = mapped.find((u) => {
+          const fullName = `${u.firstName} ${u.lastName}`;
+          return fullName === user.guestOf && !u.isGuest;
+        });
+
+        if (host?.profileImage) {
+          return { ...user, profileImage: host.profileImage };
+        }
+      }
+      return user;
+    });
   }, [waitlistSignups]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
@@ -151,6 +184,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       phoneNumber: mainUser.phoneNumber,
       speaksSpanish: mainUser.speaksSpanish,
       comment: mainUser.comments,
+      profileImage: mainUser.profileImage,
 
       ...(mainUser.memberSince && {
         memberSince: mainUser.memberSince,
@@ -161,6 +195,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         guestEmail: guest.emailAddress,
         guestPhoneNumber: guest.phoneNumber,
         guestSpeaksSpanish: guest.speaksSpanish,
+        profileImage: mainUser.profileImage,
       }),
     });
     setShowCommentModal(true);
@@ -447,7 +482,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               const hasGuestBelow =
                 nextPerson && nextPerson.guestOf && !p.isGuest;
               const rowNumber = i + 1;
-
+              const profileImage = p.profileImage;
               return (
                 <tr
                   key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : "")}
@@ -465,7 +500,21 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       {p.isGuest ? (
                         <div className="flex items-start relative">
                           <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                            {profileImage && (
+                              <Image
+                                width={40}
+                                height={40}
+                                src={profileImage}
+                                alt="Profile"
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={
+                                  typeof profileImage === "string" &&
+                                  profileImage.startsWith("http")
+                                }
+                              />
+                            )}
+                          </div>
                           <div className="ml-3">
                             <div>
                               {p.firstName} {p.lastName}
@@ -474,7 +523,21 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3 relative">
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                            {profileImage && (
+                              <Image
+                                width={40}
+                                height={40}
+                                src={profileImage}
+                                alt="Profile"
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={
+                                  typeof profileImage === "string" &&
+                                  profileImage.startsWith("http")
+                                }
+                              />
+                            )}
+                          </div>
                           {hasGuestBelow && (
                             <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
@@ -580,6 +643,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   const hasGuestBelow =
                     nextPerson && nextPerson.guestOf && !p.isGuest;
                   const rowNumber = i + 1;
+                  const profileImage = p.profileImage;
 
                   return (
                     <tr
@@ -600,21 +664,44 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           {p.isGuest ? (
                             <div className="flex items-start relative">
                               <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                                {profileImage && (
+                                  <Image
+                                    width={40}
+                                    height={40}
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-full h-full rounded-full object-cover"
+                                    unoptimized={
+                                      typeof profileImage === "string" &&
+                                      profileImage.startsWith("http")
+                                    }
+                                  />
+                                )}
+                              </div>
                               <div className="ml-3">
                                 <div>
                                   {p.firstName} {p.lastName}
                                 </div>
-                                {p.guestOf && (
-                                  <div className="text-sm text-gray-500 italic">
-                                    Guest of {p.guestOf}
-                                  </div>
-                                )}
                               </div>
                             </div>
                           ) : (
                             <div className="flex items-center gap-3 relative">
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                                {profileImage && (
+                                  <Image
+                                    width={40}
+                                    height={40}
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-full h-full rounded-full object-cover"
+                                    unoptimized={
+                                      typeof profileImage === "string" &&
+                                      profileImage.startsWith("http")
+                                    }
+                                  />
+                                )}
+                              </div>
                               {hasGuestBelow && (
                                 <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
@@ -635,7 +722,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {/* Waitlist comments if needed */}
+                        {!p.isGuest &&
+                          p.comments &&
+                          p.comments.trim() !== "" && (
+                            <button
+                              onClick={() => handleViewComment(p.signUpId!)}
+                              className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors"
+                            >
+                              View Comment
+                            </button>
+                          )}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {!p.isGuest && (
@@ -699,7 +795,23 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               {/* USER CARD */}
               <div className="flex items-start gap-6 mb-8">
                 {/* Avatar */}
-                <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0" />
+                <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                  {selectedUserData.profileImage ? (
+                    <Image
+                      width={64}
+                      height={64}
+                      src={selectedUserData.profileImage}
+                      alt="Profile"
+                      className="w-full h-full rounded-full object-cover"
+                      unoptimized={
+                        typeof selectedUserData.profileImage === "string" &&
+                        selectedUserData.profileImage.startsWith("http")
+                      }
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-300 rounded-full" />
+                  )}
+                </div>
 
                 {/* Name + Member */}
                 <div className="min-w-[220px]">
@@ -735,7 +847,23 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               {/* GUEST SECTION */}
               {selectedUserData.guestName && (
                 <div className="flex items-start gap-6 mb-8">
-                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0" />
+                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                    {selectedUserData.profileImage ? (
+                      <Image
+                        width={64}
+                        height={64}
+                        src={selectedUserData.profileImage}
+                        alt="Profile"
+                        className="w-full h-full rounded-full object-cover"
+                        unoptimized={
+                          typeof selectedUserData.profileImage === "string" &&
+                          selectedUserData.profileImage.startsWith("http")
+                        }
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-300 rounded-full" />
+                    )}
+                  </div>
 
                   <div className="min-w-[220px]">
                     <div className="flex items-center gap-2">
@@ -744,15 +872,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                       </h3>
 
                       {selectedUserData.guestSpeaksSpanish && (
-                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
                           S
                         </div>
                       )}
                     </div>
-
-                    <p className="text-sm text-gray-500">
-                      Guest of {selectedUserData.name.split(" ")[0]}
-                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-6 text-sm">
