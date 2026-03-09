@@ -54,6 +54,7 @@ export async function GET(req: Request) {
         isGuest: false,
         speaksSpanish: row.user.speaksSpanish,
         profileImage: row.user.profileImage,
+        comments: row.comments || null, 
       });
 
       // Add their guests

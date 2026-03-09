@@ -72,14 +72,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     return res.json();
   };
 
-  // Fetch signups for the position (volunteers)
-  //took out isLoading...no use client here so no need
   const { data: signups } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
 
-  // Fetch waitlist ONLY if user is admin
   const { data: waitlistSignups } = useSWR<WaitlistEntry[]>(
     positionId && isAdmin ? `/api/waitlist?positionId=${positionId}` : null,
     fetcher
@@ -119,7 +116,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     });
   }, [signups]);
 
-  // Convert waitlistSignups -> FrontEndUser[]
   const frontEndWaitlistUsers = useMemo(() => {
     if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
 
@@ -166,16 +162,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     setWaitlist(frontEndWaitlistUsers);
   }, [frontEndWaitlistUsers]);
 
-  // Handle viewing comment
-  const handleViewComment = (signUpId: string) => {
-    // Find the main user with this signUpId
-    const mainUser = volunteers.find(
-      (v) => v.signUpId === signUpId && !v.isGuest
-    );
-    if (!mainUser || !mainUser.comments) return;
+  const handleViewComment = (id: string) => {
+    // Try to find in volunteers first
+    let mainUser = volunteers.find((v) => v.signUpId === id && !v.isGuest);
+    let guest = volunteers.find((v) => v.signUpId === id && v.isGuest);
 
-    // Find if there's a guest with this signUpId
-    const guest = volunteers.find((v) => v.signUpId === signUpId && v.isGuest);
+    // If not found in volunteers, try waitlist
+    if (!mainUser) {
+      mainUser = waitlist.find((v) => v.waitlistId === id && !v.isGuest);
+      guest = waitlist.find((v) => v.waitlistId === id && v.isGuest);
+    }
+
+    if (!mainUser || !mainUser.comments) return;
 
     setSelectedUserData({
       userId: mainUser.userId,
@@ -206,13 +204,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       "adminEmailRecipientUserIds",
       JSON.stringify([userId])
     );
-
     sessionStorage.setItem("adminEmailSource", "event-admin");
-
     router.push("/admin/email");
   }
 
-  // Volunteer selection - UPDATED to select guests with parent
   const toggleSelect = (id?: string) => {
     if (!id) return;
 
@@ -243,7 +238,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anySelected = volunteers.some((v) => v.selected);
 
-  // Waitlist selection handlers
   const toggleWaitlistSelect = (id: string) => {
     setWaitlist((prev) => {
       const clickedItem = prev.find((v) => v.waitlistId === id);
@@ -270,7 +264,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anyWaitlistSelected = waitlist.some((v) => v.selected);
 
-  // Remove from event
   const handleDelete = async () => {
     const volunteersToDel: FrontEndUser[] = volunteers.filter(
       (v) => v.selected === true
@@ -296,16 +289,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       });
 
       await Promise.all(deletePromises);
-
       setVolunteers((prev) => prev.filter((v) => !v.selected));
-
       router.refresh();
     } catch {
       alert(`Error: Failed to remove from event`);
     }
   };
 
-  // Remove from waitlist
   const handleWaitlistDelete = async () => {
     const waitlistToDel: FrontEndUser[] = waitlist.filter((v) => v.selected);
 
@@ -329,16 +319,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       });
 
       await Promise.all(deletePromises);
-
       setWaitlist((prev) => prev.filter((v) => !v.selected));
-
       router.refresh();
     } catch {
       alert(`Error: Failed to delete from waitlist`);
     }
   };
 
-  // Add to Event
   const handleAddToEvent = async () => {
     const selectedWaitlist = waitlist.filter((w) => w.selected);
     if (selectedWaitlist.length === 0) return;
@@ -366,7 +353,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         })),
       ]);
       setWaitlist((prev) => prev.filter((w) => !w.selected));
-
       router.refresh();
     } catch (error) {
       console.error("Error promoting waitlist users:", error);
@@ -385,7 +371,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       JSON.stringify(userIds)
     );
     sessionStorage.setItem("adminEmailSource", "volunteers");
-
     router.push("/admin/email");
   };
 
@@ -400,7 +385,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       JSON.stringify(userIds)
     );
     sessionStorage.setItem("adminEmailSource", "waitlist");
-
     router.push("/admin/email");
   };
 
@@ -410,7 +394,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         {/* Header */}
         <div className="flex flex-col">
           <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
-            {/* Left Section */}
             <div
               className="text-bcp-blue flex-shrink-0"
               style={{ width: "280px" }}
@@ -434,7 +417,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </p>
             </div>
 
-            {/* Right Section */}
             <div className="text-bcp-blue flex-1 flex flex-col justify-between mb-2">
               <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
             </div>
@@ -457,7 +439,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         </div>
 
         {/* Volunteer Table */}
-        <table className="w-full border-white-700 text-bcp-blue">
+        <table className="w-full table-fixed border-white-700 text-bcp-blue">
+          <colgroup>
+            <col style={{ width: "60px" }} />
+            <col style={{ width: "200px" }} />
+            <col style={{ width: "220px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "50px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "100px" }} />
+          </colgroup>
           <thead className="bg-white sticky top-0 z-10">
             <tr className="text-left">
               <th className="py-3 px-5 font-normal"></th>
@@ -469,7 +460,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <th className="py-3 px-4 font-normal">
                 <button
                   onClick={toggleSelectAll}
-                  className="hover:underline transition-all duration-200 "
+                  className="hover:underline transition-all duration-200"
                 >
                   Select All
                 </button>
@@ -496,9 +487,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 >
                   <td className="py-3 px-6">{rowNumber}</td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {p.isGuest ? (
-                        <div className="flex items-start relative">
+                        <div className="flex items-center relative min-w-0">
+                          {" "}
+                          {/* Changed from items-start to items-center */}
                           <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
                           <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
                             {profileImage && (
@@ -515,14 +508,15 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                               />
                             )}
                           </div>
-                          <div className="ml-3">
-                            <div>
-                              {p.firstName} {p.lastName}
-                            </div>
+                          <div
+                            className="ml-3 min-w-0 truncate"
+                            title={`${p.firstName} ${p.lastName}`}
+                          >
+                            {p.firstName} {p.lastName}
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-3 relative">
+                        <div className="flex items-center gap-3 relative min-w-0">
                           <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
                             {profileImage && (
                               <Image
@@ -541,15 +535,27 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           {hasGuestBelow && (
                             <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
-                          <div>
+                          <div
+                            className="truncate"
+                            title={`${p.firstName} ${p.lastName}`}
+                          >
                             {p.firstName} {p.lastName}
                           </div>
                         </div>
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4">{p.emailAddress}</td>
-                  <td className="py-3 px-4">{p.phoneNumber}</td>
+
+                  <td className="py-3 px-4">
+                    <div className="truncate" title={p.emailAddress}>
+                      {p.emailAddress}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="truncate" title={p.phoneNumber}>
+                      {p.phoneNumber}
+                    </div>
+                  </td>
                   <td className="py-3 px-4">
                     {p.speaksSpanish && (
                       <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
@@ -558,11 +564,10 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    {/* Show "view comment" button only if comments exist, user is not a guest, and comment is not null/empty */}
                     {!p.isGuest && p.comments && p.comments.trim() !== "" && (
                       <button
                         onClick={() => handleViewComment(p.signUpId!)}
-                        className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors"
+                        className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
                       >
                         View Comment
                       </button>
@@ -591,7 +596,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </tbody>
         </table>
 
-        {/* Selection Buttons */}
         {anySelected && (
           <div className="border-t border-gray-200 bg-gray-50 w-full">
             <div className="flex justify-between px-6 py-4">
@@ -618,7 +622,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </h1>
             </div>
 
-            <table className="w-full border-white-700 text-bcp-blue">
+            <table className="w-full table-fixed border-white-700 text-bcp-blue">
+              <colgroup>
+                <col style={{ width: "60px" }} />
+                <col style={{ width: "200px" }} />
+                <col style={{ width: "220px" }} />
+                <col style={{ width: "140px" }} />
+                <col style={{ width: "50px" }} />
+                <col style={{ width: "120px" }} />
+                <col style={{ width: "100px" }} />
+              </colgroup>
               <thead className="bg-white sticky top-0 z-10">
                 <tr className="text-left">
                   <th className="py-3 px-5 font-normal"></th>
@@ -630,7 +643,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <th className="py-3 px-4 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
-                      className="hover:underline transition-all duration-200 "
+                      className="hover:underline transition-all duration-200"
                     >
                       Select All
                     </button>
@@ -660,9 +673,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     >
                       <td className="py-3 px-6">{rowNumber}</td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           {p.isGuest ? (
-                            <div className="flex items-start relative">
+                            <div className="flex items-center relative min-w-0">
+                              {" "}
+                              {/* Changed from items-start to items-center */}
                               <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
                               <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
                                 {profileImage && (
@@ -679,14 +694,15 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                                   />
                                 )}
                               </div>
-                              <div className="ml-3">
-                                <div>
-                                  {p.firstName} {p.lastName}
-                                </div>
+                              <div
+                                className="ml-3 min-w-0 truncate"
+                                title={`${p.firstName} ${p.lastName}`}
+                              >
+                                {p.firstName} {p.lastName}
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-3 relative">
+                            <div className="flex items-center gap-3 relative min-w-0">
                               <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
                                 {profileImage && (
                                   <Image
@@ -705,18 +721,29 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                               {hasGuestBelow && (
                                 <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
-                              <div>
+                              <div
+                                className="truncate"
+                                title={`${p.firstName} ${p.lastName}`}
+                              >
                                 {p.firstName} {p.lastName}
                               </div>
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4">{p.emailAddress}</td>
-                      <td className="py-3 px-4">{p.phoneNumber}</td>
+                      <td className="py-3 px-4">
+                        <div className="truncate" title={p.emailAddress}>
+                          {p.emailAddress}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="truncate" title={p.phoneNumber}>
+                          {p.phoneNumber}
+                        </div>
+                      </td>
                       <td className="py-3 px-4">
                         {p.speaksSpanish && (
-                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
                             S
                           </div>
                         )}
@@ -726,8 +753,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           p.comments &&
                           p.comments.trim() !== "" && (
                             <button
-                              onClick={() => handleViewComment(p.signUpId!)}
-                              className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors"
+                              onClick={() => handleViewComment(p.waitlistId!)}
+                              className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
                             >
                               View Comment
                             </button>
@@ -792,9 +819,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           layout="custom"
           description={
             <div className="w-full px-10 py-6 text-left text-bcp-blue">
-              {/* USER CARD */}
+              {/* Main User */}
               <div className="flex items-start gap-6 mb-8">
-                {/* Avatar */}
                 <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
                   {selectedUserData.profileImage ? (
                     <Image
@@ -813,15 +839,20 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   )}
                 </div>
 
-                {/* Name + Member */}
-                <div className="min-w-[220px]">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold">
+                <div
+                  className="flex-shrink-0"
+                  style={{ minWidth: "240px", maxWidth: "240px" }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3
+                      className="text-xl font-bold truncate"
+                      title={selectedUserData.name}
+                    >
                       {selectedUserData.name}
                     </h3>
 
                     {selectedUserData.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold flex-shrink-0">
                         S
                       </div>
                     )}
@@ -834,17 +865,28 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   )}
                 </div>
 
-                {/* Contact Info */}
-                <div className="grid grid-cols-2 gap-x-6 text-sm">
-                  <span className="text-gray-600">Phone number</span>
-                  <span>{selectedUserData.phoneNumber}</span>
+                <div
+                  className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
+                  style={{ minWidth: "320px" }}
+                >
+                  <span className="text-gray-600 whitespace-nowrap">
+                    Phone number
+                  </span>
+                  <span
+                    className="truncate"
+                    title={selectedUserData.phoneNumber}
+                  >
+                    {selectedUserData.phoneNumber}
+                  </span>
 
-                  <span className="text-gray-600">Email</span>
-                  <span>{selectedUserData.email}</span>
+                  <span className="text-gray-600 whitespace-nowrap">Email</span>
+                  <span className="truncate" title={selectedUserData.email}>
+                    {selectedUserData.email}
+                  </span>
                 </div>
               </div>
 
-              {/* GUEST SECTION */}
+              {/* Guest Section */}
               {selectedUserData.guestName && (
                 <div className="flex items-start gap-6 mb-8">
                   <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
@@ -865,34 +907,61 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     )}
                   </div>
 
-                  <div className="min-w-[220px]">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-bold">
+                  <div
+                    className="flex-shrink-0"
+                    style={{ minWidth: "240px", maxWidth: "240px" }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3
+                        className="text-xl font-bold truncate"
+                        title={selectedUserData.guestName}
+                      >
                         {selectedUserData.guestName}
                       </h3>
 
                       {selectedUserData.guestSpeaksSpanish && (
-                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black flex-shrink-0">
                           S
                         </div>
                       )}
                     </div>
+
+                    <p className="text-sm text-gray-500">
+                      Guest of {selectedUserData.name.split(" ")[0]}
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-6 text-sm">
-                    <span className="text-gray-600">Phone number</span>
-                    <span>{selectedUserData.guestPhoneNumber}</span>
+                  <div
+                    className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
+                    style={{ minWidth: "320px" }}
+                  >
+                    <span className="text-gray-600 whitespace-nowrap">
+                      Phone number
+                    </span>
+                    <span
+                      className="truncate"
+                      title={selectedUserData.guestPhoneNumber || "N/A"}
+                    >
+                      {selectedUserData.guestPhoneNumber || "N/A"}
+                    </span>
 
-                    <span className="text-gray-600">Email</span>
-                    <span>{selectedUserData.guestEmail}</span>
+                    <span className="text-gray-600 whitespace-nowrap">
+                      Email
+                    </span>
+                    <span
+                      className="truncate"
+                      title={selectedUserData.guestEmail || "N/A"}
+                    >
+                      {selectedUserData.guestEmail || "N/A"}
+                    </span>
                   </div>
                 </div>
               )}
 
-              {/* COMMENT */}
+              {/* Comment */}
               <div className="mt-4">
                 <h4 className="text-lg font-semibold mb-2">Comment</h4>
-                <p className="text-sm leading-relaxed text-gray-700">
+                <p className="text-sm leading-relaxed text-gray-700 break-words">
                   {selectedUserData.comment}
                 </p>
               </div>

@@ -111,6 +111,7 @@ model EventWaitlist {
   id         String          @id @default(cuid())
   userId     String?
   positionId String
+  comments   String?
   isGuest    Boolean         @default(false)
   createdAt  DateTime?       @db.Timestamp(6)
   position   EventPosition   @relation(fields: [positionId], references: [id], onDelete: Cascade)
@@ -126,7 +127,6 @@ model WaitlistGuest {
   relation      String?
   waitlistId    String
   dateOfBirth   String?
-  comments      String?
   speaksSpanish Boolean?
   waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }

@@ -237,6 +237,7 @@ export async function POST(req: NextRequest) {
           data: {
             userId,
             positionId,
+            comments: comments || null,
             guests: {
               create: (guests ?? []).map((guest: GuestInput) => ({
                 firstName: guest.firstName,
@@ -345,7 +346,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const { guests } = await req.json();
+    const { guests, comments } = await req.json();
 
     // 1. LIMIT CHECK
     if (guests && guests.length > MAX_GUESTS) {
@@ -462,6 +463,7 @@ export async function PUT(req: NextRequest) {
           data: {
             userId: currentSignup.userId,
             positionId: currentSignup.positionId,
+            comments: comments || null,
             guests: {
               create: (guests ?? []).map((guest: GuestInput) => ({
                 firstName: guest.firstName,
@@ -598,6 +600,7 @@ export async function PUT(req: NextRequest) {
         const updatedWaitlist = await tx.eventWaitlist.update({
           where: { id },
           data: {
+            comments: comments || null,
             guests: {
               create: (guests ?? []).map((guest: GuestInput) => ({
                 firstName: guest.firstName,
