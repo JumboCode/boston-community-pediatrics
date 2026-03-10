@@ -29,7 +29,6 @@ model User {
   signups       EventSignup[]
   waitlists     EventWaitlist[]
 
-  @@index([clerkId])
   @@index([clerkId], map: "users_clerkId")
   @@map("users")
 }
