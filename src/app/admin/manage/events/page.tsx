@@ -361,7 +361,7 @@ const ManageEventsPage = () => {
         <Modal
           open={showDeleteConfirm}
           title={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
-          message={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
+          // message={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
           onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {
