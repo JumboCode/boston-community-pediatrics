@@ -68,7 +68,7 @@ export default async function EventsPage() {
       {/* Hero */}
       <div className="w-full overflow-hidden">
         <Image
-          src="/event-page-image-low.jpg"
+          src="/high-res-stock-photo.jpg"
           alt="Event Image"
           width={1920}
           height={600}

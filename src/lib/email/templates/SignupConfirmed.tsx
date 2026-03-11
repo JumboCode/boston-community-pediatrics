@@ -43,10 +43,10 @@ export function SignupConfirmedTemplate({
         </Text>
 
         <Text className="text-sm mt-0 mb-6" style={{ marginLeft: "10px" }}>
-          Thank you for signing up to support <strong>{eventName}</strong>. Please see below for
-          your confirmed volunteer shift details. If you have any questions,
-          please do not hesitate to reach out. We are grateful for your time and
-          support!
+          Thank you for signing up to support <b>{eventName}</b>. Please see
+          below for your confirmed volunteer shift details. If you have any
+          questions, please do not hesitate to reach out. We are grateful for
+          your time and support!
         </Text>
 
         <Text className="text-base font-bold mt-6 mb-3">

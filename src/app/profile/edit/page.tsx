@@ -5,11 +5,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 
 export default function EditProfilePage() {
-  const { user, isLoaded } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Redirect if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/login');
+    }
+  }, [isLoaded, isSignedIn, router]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -167,12 +175,9 @@ export default function EditProfilePage() {
     }
   }
 
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+  if (loading || !isLoaded) {
+    return <BasicSkeleton />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">

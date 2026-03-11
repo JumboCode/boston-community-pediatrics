@@ -48,10 +48,10 @@ export function WaitlistedTemplate({
         </Text>
 
         <Text className="text-sm mt-0 mb-6" style={{ marginLeft: "10px" }}>
-          Thank you for signing up to support <strong>{eventName}</strong>. Slots for this shift
-          are currently full, and you have been placed on a waitlist. Should
-          space become available, we will notify you as soon as possible. We are
-          grateful for your time and support!
+          Thank you for signing up to support <b>{eventName}</b>. Slots for this
+          shift are currently full, and you have been placed on a waitlist.
+          Should space become available, we will notify you as soon as possible.
+          We are grateful for your time and support!
         </Text>
 
         <Text
