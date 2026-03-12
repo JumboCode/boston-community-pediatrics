@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -30,6 +29,7 @@ model User {
   waitlists     EventWaitlist[]
 
   @@index([clerkId], map: "users_clerkId")
+  @@index([clerkId])
   @@map("users")
 }
 
@@ -110,9 +110,9 @@ model EventWaitlist {
   id         String          @id @default(cuid())
   userId     String?
   positionId String
-  comments   String?
   isGuest    Boolean         @default(false)
   createdAt  DateTime?       @db.Timestamp(6)
+  comments   String?
   position   EventPosition   @relation(fields: [positionId], references: [id], onDelete: Cascade)
   user       User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   guests     WaitlistGuest[]
