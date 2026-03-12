@@ -14,7 +14,7 @@
     "@clerk/backend": "^2.33.0",
     "@clerk/nextjs": "^6.36.1",
     "@headlessui/react": "^2.2.9",
-    "@prisma/client": "^7.5.0",
+    "@prisma/client": "^6.19.0",
     "@react-email/components": "^1.0.8",
     "@react-email/render": "^2.0.4",
     "@react-email/tailwind": "^2.0.3",
@@ -42,7 +42,7 @@
     "eslint-config-next": "15.5.4",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.6.2",
-    "prisma": "^7.5.0",
+    "prisma": "^6.19.0",
     "tailwindcss": "^4",
     "typescript": "5.9.3"
   }
