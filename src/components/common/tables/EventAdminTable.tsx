@@ -3,8 +3,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
+import Modal from "@/components/common/Modal";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
+import Image from "next/image";
 
 interface FrontEndUser {
   userId: string;
@@ -14,10 +16,13 @@ interface FrontEndUser {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
-  speaksSpanish: boolean; // Keep as boolean
+  speaksSpanish: boolean;
   selected: boolean;
   guestOf?: string;
   isGuest?: boolean;
+  comments?: string | null;
+  memberSince?: number;
+  profileImage?: string | null;
 }
 
 interface EventAdminTableProps {
@@ -28,20 +33,36 @@ interface EventAdminTableProps {
   totalSlots: number;
   location: string;
   positionId: string;
-  isAdmin?: boolean; // Add this prop to control waitlist visibility
+  isAdmin?: boolean;
 }
 
 const EventAdminTable = (props: EventAdminTableProps) => {
   const {
-    position, //pos name
+    position,
     startTime,
     endTime,
     description,
     totalSlots,
     location,
     positionId,
-    isAdmin = false, // Default to false if not provided
+    isAdmin = false,
   } = props;
+
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedUserData, setSelectedUserData] = useState<{
+    userId: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    speaksSpanish: boolean;
+    comment: string;
+    memberSince?: number;
+    guestName?: string;
+    guestEmail?: string;
+    guestPhoneNumber?: string;
+    guestSpeaksSpanish?: boolean;
+    profileImage?: string;
+  } | null>(null);
 
   const fetcher = async (url: string) => {
     const res = await fetch(url);
@@ -51,15 +72,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     return res.json();
   };
 
-  // Fetch signups for the position (volunteers)
-  //took out isLoading...no use client here so no need
   const { data: signups } = useSWR<AdminUser[]>(
     positionId ? `/api/eventSignup?positionId=${positionId}` : null,
     fetcher
   );
-  
 
-  // Fetch waitlist ONLY if user is admin
   const { data: waitlistSignups } = useSWR<WaitlistEntry[]>(
     positionId && isAdmin ? `/api/waitlist?positionId=${positionId}` : null,
     fetcher
@@ -68,42 +85,72 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const frontEndUsers = useMemo(() => {
     if (!signups) return [];
 
-    return signups.map((s) => ({
+    const mapped = signups.map((s) => ({
       signUpId: s.signupId,
       userId: s.id,
       firstName: s.firstName,
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
-      speaksSpanish: s.speaksSpanish ?? false, // Convert null to false
+      speaksSpanish: s.speaksSpanish ?? false,
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
+      comments: s.comments,
+      memberSince: s.memberSince,
+      profileImage: s.profileImage,
     }));
+
+    return mapped.map((user) => {
+      if (user.isGuest && user.guestOf) {
+        const host = mapped.find((u) => {
+          const fullName = `${u.firstName} ${u.lastName}`;
+          return fullName === user.guestOf && !u.isGuest;
+        });
+
+        if (host?.profileImage) {
+          return { ...user, profileImage: host.profileImage };
+        }
+      }
+      return user;
+    });
   }, [signups]);
 
-  // Convert waitlistSignups -> FrontEndUser[]
   const frontEndWaitlistUsers = useMemo(() => {
     if (!waitlistSignups || !Array.isArray(waitlistSignups)) return [];
 
-    return waitlistSignups.map((s) => ({
+    const mapped = waitlistSignups.map((s) => ({
       userId: s.userId,
       waitlistId: s.waitlistId,
       firstName: s.firstName,
       lastName: s.lastName,
       emailAddress: s.emailAddress,
       phoneNumber: s.phoneNumber,
-      speaksSpanish: false, // Add missing property (waitlist doesn't track this)
+      speaksSpanish: s.speaksSpanish ?? false,
       selected: false,
       guestOf: s.guestOf,
       isGuest: s.isGuest ?? false,
+      comments: s.comments,
+      profileImage: s.profileImage,
     }));
+
+    return mapped.map((user) => {
+      if (user.isGuest && user.guestOf) {
+        const host = mapped.find((u) => {
+          const fullName = `${u.firstName} ${u.lastName}`;
+          return fullName === user.guestOf && !u.isGuest;
+        });
+
+        if (host?.profileImage) {
+          return { ...user, profileImage: host.profileImage };
+        }
+      }
+      return user;
+    });
   }, [waitlistSignups]);
 
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
   const [waitlist, setWaitlist] = useState<FrontEndUser[]>([]);
-
-  
 
   const router = useRouter();
 
@@ -115,31 +162,68 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     setWaitlist(frontEndWaitlistUsers);
   }, [frontEndWaitlistUsers]);
 
-  // if(isLoading){
-  //   return <EventAdminTableSkeleton showWaitlist={isAdmin} />;
-  // }
+  const handleViewComment = (id: string) => {
+    // Try to find in volunteers first
+    let mainUser = volunteers.find((v) => v.signUpId === id && !v.isGuest);
+    let guest = volunteers.find((v) => v.signUpId === id && v.isGuest);
 
-  // Volunteer selection - UPDATED to select guests with parent
+    // If not found in volunteers, try waitlist
+    if (!mainUser) {
+      mainUser = waitlist.find((v) => v.waitlistId === id && !v.isGuest);
+      guest = waitlist.find((v) => v.waitlistId === id && v.isGuest);
+    }
+
+    if (!mainUser || !mainUser.comments) return;
+
+    setSelectedUserData({
+      userId: mainUser.userId,
+      name: `${mainUser.firstName} ${mainUser.lastName}`,
+      email: mainUser.emailAddress,
+      phoneNumber: mainUser.phoneNumber,
+      speaksSpanish: mainUser.speaksSpanish,
+      comment: mainUser.comments,
+      profileImage: mainUser.profileImage,
+
+      ...(mainUser.memberSince && {
+        memberSince: mainUser.memberSince,
+      }),
+
+      ...(guest && {
+        guestName: `${guest.firstName} ${guest.lastName}`,
+        guestEmail: guest.emailAddress,
+        guestPhoneNumber: guest.phoneNumber,
+        guestSpeaksSpanish: guest.speaksSpanish,
+        profileImage: mainUser.profileImage,
+      }),
+    });
+    setShowCommentModal(true);
+  };
+
+  function handleSendMessage(userId: string) {
+    sessionStorage.setItem(
+      "adminEmailRecipientUserIds",
+      JSON.stringify([userId])
+    );
+    sessionStorage.setItem("adminEmailSource", "event-admin");
+    router.push("/admin/email");
+  }
+
   const toggleSelect = (id?: string) => {
     if (!id) return;
 
     setVolunteers((prev) => {
-      // Find the clicked item
       const clickedItem = prev.find((v) => v.signUpId === id);
       if (!clickedItem) return prev;
 
       const newSelectedState = !clickedItem.selected;
 
       return prev.map((v) => {
-        // If this is the clicked item, toggle it
         if (v.signUpId === id && !v.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // If this is a guest of the clicked item, also toggle it
         if (v.signUpId === id && v.isGuest && !clickedItem.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // Otherwise leave it unchanged
         return v;
       });
     });
@@ -154,25 +238,20 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anySelected = volunteers.some((v) => v.selected);
 
-  // Waitlist selection handlers - UPDATED to select guests with parent
   const toggleWaitlistSelect = (id: string) => {
     setWaitlist((prev) => {
-      // Find the clicked item
       const clickedItem = prev.find((v) => v.waitlistId === id);
       if (!clickedItem) return prev;
 
       const newSelectedState = !clickedItem.selected;
 
       return prev.map((v) => {
-        // If this is the clicked item, toggle it
         if (v.waitlistId === id && !v.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // If this is a guest of the clicked item, also toggle it
         if (v.waitlistId === id && v.isGuest && !clickedItem.isGuest) {
           return { ...v, selected: newSelectedState };
         }
-        // Otherwise leave it unchanged
         return v;
       });
     });
@@ -185,7 +264,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const anyWaitlistSelected = waitlist.some((v) => v.selected);
 
-  // Remove from event - FIXED to deduplicate signup IDs
   const handleDelete = async () => {
     const volunteersToDel: FrontEndUser[] = volunteers.filter(
       (v) => v.selected === true
@@ -194,14 +272,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     if (volunteersToDel.length === 0) return;
 
     try {
-      // Get unique signup IDs (since guests share the same ID as their parent)
       const uniqueSignupIds = [
         ...new Set(volunteersToDel.map((vol) => vol.signUpId).filter(Boolean)),
       ];
 
       const deletePromises = uniqueSignupIds.map(async (signUpId) => {
-        // Changed from eventSignup/waitlist to registrations which worked for
-        // sending emails, but just in case something breaks here is a comment :D
         const res = await fetch(`/api/registrations?id=${signUpId}`, {
           method: "DELETE",
         });
@@ -214,24 +289,19 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       });
 
       await Promise.all(deletePromises);
-
-      // Remove all selected entries from state (both parents and guests)
       setVolunteers((prev) => prev.filter((v) => !v.selected));
-
       router.refresh();
     } catch {
       alert(`Error: Failed to remove from event`);
     }
   };
 
-  // Remove from waitlist frontend action - FIXED to deduplicate waitlist IDs
   const handleWaitlistDelete = async () => {
     const waitlistToDel: FrontEndUser[] = waitlist.filter((v) => v.selected);
 
     if (waitlistToDel.length === 0) return;
 
     try {
-      // Get unique waitlist IDs (since guests share the same ID as their parent)
       const uniqueWaitlistIds = [
         ...new Set(waitlistToDel.map((vol) => vol.waitlistId).filter(Boolean)),
       ];
@@ -249,17 +319,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       });
 
       await Promise.all(deletePromises);
-
-      // Remove all selected entries from state (both parents and guests)
       setWaitlist((prev) => prev.filter((v) => !v.selected));
-
       router.refresh();
     } catch {
       alert(`Error: Failed to delete from waitlist`);
     }
   };
 
-  // Add to Event (move selected waitlist users into volunteers)
   const handleAddToEvent = async () => {
     const selectedWaitlist = waitlist.filter((w) => w.selected);
     if (selectedWaitlist.length === 0) return;
@@ -277,65 +343,48 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         throw new Error("Failed to promote waitlist users");
       }
 
-      // Optimistic UI update
       setVolunteers((prev) => [
         ...prev,
         ...selectedWaitlist.map((w) => ({
           ...w,
           selected: false,
           waitlistId: undefined,
-          signUpId: w.waitlistId, // Temporarily use waitlistId, will be replaced on refresh
+          signUpId: w.waitlistId,
         })),
       ]);
       setWaitlist((prev) => prev.filter((w) => !w.selected));
-
       router.refresh();
     } catch (error) {
       console.error("Error promoting waitlist users:", error);
-      // Revert optimistic update on error
       router.refresh();
     }
   };
 
   const handleSendVolunteerEmail = () => {
-    // TODO: Guest shi
     const selected = volunteers.filter((v) => v.selected && !v.isGuest);
     const userIds = Array.from(new Set(selected.map((v) => v.userId)));
 
     if (userIds.length === 0) return;
 
-    /* 
-    basically, if we want the data to go to the other page, we have two options:
-    - we can put them all in the URL, this is bad cuz it will get hella long
-    - we can put them in the session storage
-    */
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(userIds)
     );
     sessionStorage.setItem("adminEmailSource", "volunteers");
-
     router.push("/admin/email");
   };
 
   const handleSendWaitlistEmail = () => {
-    // TODO: Guest shi
     const selected = waitlist.filter((v) => v.selected && !v.isGuest);
     const userIds = Array.from(new Set(selected.map((v) => v.userId)));
 
     if (userIds.length === 0) return;
 
-    /* 
-    basically, if we want the data to go to the other page, we have two options:
-    - we can put them all in the URL, this is bad cuz it will get hella long
-    - we can put them in the session storage
-    */
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(userIds)
     );
     sessionStorage.setItem("adminEmailSource", "waitlist");
-
     router.push("/admin/email");
   };
 
@@ -345,7 +394,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         {/* Header */}
         <div className="flex flex-col">
           <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
-            {/* Left Section */}
             <div
               className="text-bcp-blue flex-shrink-0"
               style={{ width: "280px" }}
@@ -369,7 +417,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </p>
             </div>
 
-            {/* Right Section */}
             <div className="text-bcp-blue flex-1 flex flex-col justify-between mb-2">
               <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
             </div>
@@ -392,7 +439,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         </div>
 
         {/* Volunteer Table */}
-        <table className="w-full border-white-700 text-bcp-blue">
+        <table className="w-full table-fixed border-white-700 text-bcp-blue">
+          <colgroup>
+            <col style={{ width: "60px" }} />
+            <col style={{ width: "200px" }} />
+            <col style={{ width: "220px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "50px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "100px" }} />
+          </colgroup>
           <thead className="bg-white sticky top-0 z-10">
             <tr className="text-left">
               <th className="py-3 px-5 font-normal"></th>
@@ -400,11 +456,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               <th className="py-3 px-4 font-normal">Email</th>
               <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
               <th className="py-3 px-4 font-normal"></th>
-              {/* Spanish column header */}
+              <th className="py-3 px-4 font-normal"></th>
               <th className="py-3 px-4 font-normal">
                 <button
                   onClick={toggleSelectAll}
-                  className="hover:underline transition-all duration-200 "
+                  className="hover:underline transition-all duration-200"
                 >
                   Select All
                 </button>
@@ -413,14 +469,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </thead>
           <tbody>
             {volunteers.map((p, i) => {
-              // Check if next person is a guest of this person
               const nextPerson = volunteers[i + 1];
               const hasGuestBelow =
                 nextPerson && nextPerson.guestOf && !p.isGuest;
-
-              // Sequential numbering for ALL people (users + guests)
               const rowNumber = i + 1;
-
+              const profileImage = p.profileImage;
               return (
                 <tr
                   key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : "")}
@@ -434,45 +487,93 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 >
                   <td className="py-3 px-6">{rowNumber}</td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {p.isGuest ? (
-                        <div className="flex items-start relative">
-                          {/* Vertical connector line - 30px tall, 5px wide*/}
+                        <div className="flex items-center relative min-w-0">
+                          {" "}
+                          {/* Changed from items-start to items-center */}
                           <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                          {/* Guest circle */}
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
-                          <div className="ml-3">
-                            <div>
-                              {p.firstName} {p.lastName}
-                            </div>
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                            {profileImage && (
+                              <Image
+                                width={40}
+                                height={40}
+                                src={profileImage}
+                                alt="Profile"
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={
+                                  typeof profileImage === "string" &&
+                                  profileImage.startsWith("http")
+                                }
+                              />
+                            )}
+                          </div>
+                          <div
+                            className="ml-3 min-w-0 truncate"
+                            title={`${p.firstName} ${p.lastName}`}
+                          >
+                            {p.firstName} {p.lastName}
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-3 relative">
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
-                          {/* Vertical line extending down - 30px tall, 5px wide*/}
+                        <div className="flex items-center gap-3 relative min-w-0">
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                            {profileImage && (
+                              <Image
+                                width={40}
+                                height={40}
+                                src={profileImage}
+                                alt="Profile"
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={
+                                  typeof profileImage === "string" &&
+                                  profileImage.startsWith("http")
+                                }
+                              />
+                            )}
+                          </div>
                           {hasGuestBelow && (
                             <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                           )}
-                          <div>
+                          <div
+                            className="truncate"
+                            title={`${p.firstName} ${p.lastName}`}
+                          >
                             {p.firstName} {p.lastName}
                           </div>
                         </div>
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4">{p.emailAddress}</td>
-                  <td className="py-3 px-4">{p.phoneNumber}</td>
+
+                  <td className="py-3 px-4">
+                    <div className="truncate" title={p.emailAddress}>
+                      {p.emailAddress}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="truncate" title={p.phoneNumber}>
+                      {p.phoneNumber}
+                    </div>
+                  </td>
                   <td className="py-3 px-4">
                     {p.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
                         S
                       </div>
                     )}
                   </td>
-
+                  <td className="py-3 px-4">
+                    {!p.isGuest && p.comments && p.comments.trim() !== "" && (
+                      <button
+                        onClick={() => handleViewComment(p.signUpId!)}
+                        className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
+                      >
+                        View Comment
+                      </button>
+                    )}
+                  </td>
                   <td className="py-3 px-4 text-center">
-                    {/* Only show checkbox for main users, not guests */}
                     {!p.isGuest && (
                       <input
                         type="checkbox"
@@ -487,7 +588,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             })}
             {volunteers.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-gray-400">
+                <td colSpan={7} className="py-8 text-center text-gray-400">
                   No one has signed up yet.
                 </td>
               </tr>
@@ -495,7 +596,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </tbody>
         </table>
 
-        {/* Selection Buttons */}
         {anySelected && (
           <div className="border-t border-gray-200 bg-gray-50 w-full">
             <div className="flex justify-between px-6 py-4">
@@ -513,7 +613,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </div>
         )}
 
-        {/* WAITLIST SECTION - Only show if admin */}
+        {/* WAITLIST SECTION */}
         {isAdmin && (
           <>
             <div className="px-5 pt-10">
@@ -522,7 +622,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </h1>
             </div>
 
-            <table className="w-full border-white-700 text-bcp-blue">
+            <table className="w-full table-fixed border-white-700 text-bcp-blue">
+              <colgroup>
+                <col style={{ width: "60px" }} />
+                <col style={{ width: "200px" }} />
+                <col style={{ width: "220px" }} />
+                <col style={{ width: "140px" }} />
+                <col style={{ width: "50px" }} />
+                <col style={{ width: "120px" }} />
+                <col style={{ width: "100px" }} />
+              </colgroup>
               <thead className="bg-white sticky top-0 z-10">
                 <tr className="text-left">
                   <th className="py-3 px-5 font-normal"></th>
@@ -530,11 +639,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <th className="py-3 px-4 font-normal">Email</th>
                   <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
                   <th className="py-3 px-4 font-normal"></th>
-                  {/* Spanish column header */}
+                  <th className="py-3 px-4 font-normal"></th>
                   <th className="py-3 px-4 font-normal">
                     <button
                       onClick={toggleWaitlistSelectAll}
-                      className="hover:underline transition-all duration-200 "
+                      className="hover:underline transition-all duration-200"
                     >
                       Select All
                     </button>
@@ -543,13 +652,11 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </thead>
               <tbody>
                 {waitlist.map((p, i) => {
-                  // Check if next person is a guest of this person
                   const nextPerson = waitlist[i + 1];
                   const hasGuestBelow =
                     nextPerson && nextPerson.guestOf && !p.isGuest;
-
-                  // Sequential numbering for ALL people (users + guests)
                   const rowNumber = i + 1;
+                  const profileImage = p.profileImage;
 
                   return (
                     <tr
@@ -566,49 +673,94 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     >
                       <td className="py-3 px-6">{rowNumber}</td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           {p.isGuest ? (
-                            <div className="flex items-start relative">
-                              {/* Vertical connector line - 30px tall, 5px wide,*/}
+                            <div className="flex items-center relative min-w-0">
+                              {" "}
+                              {/* Changed from items-start to items-center */}
                               <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                              {/* Guest circle */}
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
-                              <div className="ml-3">
-                                <div>
-                                  {p.firstName} {p.lastName}
-                                </div>
-                                {p.guestOf && (
-                                  <div className="text-sm text-gray-500 italic">
-                                    Guest of {p.guestOf}
-                                  </div>
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                                {profileImage && (
+                                  <Image
+                                    width={40}
+                                    height={40}
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-full h-full rounded-full object-cover"
+                                    unoptimized={
+                                      typeof profileImage === "string" &&
+                                      profileImage.startsWith("http")
+                                    }
+                                  />
                                 )}
+                              </div>
+                              <div
+                                className="ml-3 min-w-0 truncate"
+                                title={`${p.firstName} ${p.lastName}`}
+                              >
+                                {p.firstName} {p.lastName}
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-3 relative">
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border"></div>
-                              {/* Vertical line extending down - 30px tall, 5px wide */}
+                            <div className="flex items-center gap-3 relative min-w-0">
+                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                                {profileImage && (
+                                  <Image
+                                    width={40}
+                                    height={40}
+                                    src={profileImage}
+                                    alt="Profile"
+                                    className="w-full h-full rounded-full object-cover"
+                                    unoptimized={
+                                      typeof profileImage === "string" &&
+                                      profileImage.startsWith("http")
+                                    }
+                                  />
+                                )}
+                              </div>
                               {hasGuestBelow && (
                                 <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                               )}
-                              <div>
+                              <div
+                                className="truncate"
+                                title={`${p.firstName} ${p.lastName}`}
+                              >
                                 {p.firstName} {p.lastName}
                               </div>
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4">{p.emailAddress}</td>
-                      <td className="py-3 px-4">{p.phoneNumber}</td>
+                      <td className="py-3 px-4">
+                        <div className="truncate" title={p.emailAddress}>
+                          {p.emailAddress}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="truncate" title={p.phoneNumber}>
+                          {p.phoneNumber}
+                        </div>
+                      </td>
                       <td className="py-3 px-4">
                         {p.speaksSpanish && (
-                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-xl flex items-center justify-center border border-black">
+                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
                             S
                           </div>
                         )}
                       </td>
+                      <td className="py-3 px-4">
+                        {!p.isGuest &&
+                          p.comments &&
+                          p.comments.trim() !== "" && (
+                            <button
+                              onClick={() => handleViewComment(p.waitlistId!)}
+                              className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
+                            >
+                              View Comment
+                            </button>
+                          )}
+                      </td>
                       <td className="py-3 px-4 text-center">
-                        {/* Only show checkbox for main users */}
                         {!p.isGuest && (
                           <input
                             type="checkbox"
@@ -623,7 +775,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 })}
                 {waitlist.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                    <td colSpan={7} className="py-8 text-center text-gray-400">
                       No one is on the waitlist.
                     </td>
                   </tr>
@@ -631,7 +783,6 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </tbody>
             </table>
 
-            {/* WAITLIST BUTTONS (includes Add to Event) */}
             {anyWaitlistSelected && (
               <div className="border-t border-gray-200 bg-gray-50 w-full">
                 <div className="flex justify-between px-6 py-4">
@@ -659,6 +810,177 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           </>
         )}
       </div>
+
+      {/* Comment Modal */}
+      {showCommentModal && selectedUserData && (
+        <Modal
+          open={showCommentModal}
+          onClose={() => setShowCommentModal(false)}
+          layout="custom"
+          description={
+            <div className="w-full px-10 py-6 text-left text-bcp-blue">
+              {/* Main User */}
+              <div className="flex items-start gap-6 mb-8">
+                <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                  {selectedUserData.profileImage ? (
+                    <Image
+                      width={64}
+                      height={64}
+                      src={selectedUserData.profileImage}
+                      alt="Profile"
+                      className="w-full h-full rounded-full object-cover"
+                      unoptimized={
+                        typeof selectedUserData.profileImage === "string" &&
+                        selectedUserData.profileImage.startsWith("http")
+                      }
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-300 rounded-full" />
+                  )}
+                </div>
+
+                <div
+                  className="flex-shrink-0"
+                  style={{ minWidth: "240px", maxWidth: "240px" }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3
+                      className="text-xl font-bold truncate"
+                      title={selectedUserData.name}
+                    >
+                      {selectedUserData.name}
+                    </h3>
+
+                    {selectedUserData.speaksSpanish && (
+                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold flex-shrink-0">
+                        S
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedUserData.memberSince && (
+                    <p className="text-sm text-gray-500">
+                      Member since {selectedUserData.memberSince}
+                    </p>
+                  )}
+                </div>
+
+                <div
+                  className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
+                  style={{ minWidth: "320px" }}
+                >
+                  <span className="text-gray-600 whitespace-nowrap">
+                    Phone number
+                  </span>
+                  <span
+                    className="truncate"
+                    title={selectedUserData.phoneNumber}
+                  >
+                    {selectedUserData.phoneNumber}
+                  </span>
+
+                  <span className="text-gray-600 whitespace-nowrap">Email</span>
+                  <span className="truncate" title={selectedUserData.email}>
+                    {selectedUserData.email}
+                  </span>
+                </div>
+              </div>
+
+              {/* Guest Section */}
+              {selectedUserData.guestName && (
+                <div className="flex items-start gap-6 mb-8">
+                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                    {selectedUserData.profileImage ? (
+                      <Image
+                        width={64}
+                        height={64}
+                        src={selectedUserData.profileImage}
+                        alt="Profile"
+                        className="w-full h-full rounded-full object-cover"
+                        unoptimized={
+                          typeof selectedUserData.profileImage === "string" &&
+                          selectedUserData.profileImage.startsWith("http")
+                        }
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-300 rounded-full" />
+                    )}
+                  </div>
+
+                  <div
+                    className="flex-shrink-0"
+                    style={{ minWidth: "240px", maxWidth: "240px" }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3
+                        className="text-xl font-bold truncate"
+                        title={selectedUserData.guestName}
+                      >
+                        {selectedUserData.guestName}
+                      </h3>
+
+                      {selectedUserData.guestSpeaksSpanish && (
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black flex-shrink-0">
+                          S
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-gray-500">
+                      Guest of {selectedUserData.name.split(" ")[0]}
+                    </p>
+                  </div>
+
+                  <div
+                    className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
+                    style={{ minWidth: "320px" }}
+                  >
+                    <span className="text-gray-600 whitespace-nowrap">
+                      Phone number
+                    </span>
+                    <span
+                      className="truncate"
+                      title={selectedUserData.guestPhoneNumber || "N/A"}
+                    >
+                      {selectedUserData.guestPhoneNumber || "N/A"}
+                    </span>
+
+                    <span className="text-gray-600 whitespace-nowrap">
+                      Email
+                    </span>
+                    <span
+                      className="truncate"
+                      title={selectedUserData.guestEmail || "N/A"}
+                    >
+                      {selectedUserData.guestEmail || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Comment */}
+              <div className="mt-4">
+                <h4 className="text-lg font-semibold mb-2">Comment</h4>
+                <p className="text-sm leading-relaxed text-gray-700 break-words">
+                  {selectedUserData.comment}
+                </p>
+              </div>
+            </div>
+          }
+          buttons={[
+            {
+              label: "Send message",
+              onClick: () => handleSendMessage(selectedUserData!.userId),
+              variant: "secondary",
+            },
+            {
+              label: "Go back",
+              onClick: () => setShowCommentModal(false),
+              variant: "primary",
+            },
+          ]}
+        />
+      )}
     </div>
   );
 };

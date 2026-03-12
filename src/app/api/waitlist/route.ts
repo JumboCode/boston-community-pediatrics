@@ -10,8 +10,11 @@ export type WaitlistEntry = {
   lastName: string;
   emailAddress: string;
   phoneNumber: string;
+  speaksSpanish?: boolean | null;
   guestOf?: string;
   isGuest: boolean;
+  comments?: string | null;
+  profileImage?: string | null;
 };
 
 export async function GET(req: Request) {
@@ -49,6 +52,9 @@ export async function GET(req: Request) {
         emailAddress: row.user.emailAddress,
         phoneNumber: row.user.phoneNumber,
         isGuest: false,
+        speaksSpanish: row.user.speaksSpanish,
+        profileImage: row.user.profileImage,
+        comments: row.comments || null, 
       });
 
       // Add their guests
@@ -59,6 +65,7 @@ export async function GET(req: Request) {
           firstName: guest.firstName,
           lastName: guest.lastName,
           emailAddress: guest.email || "",
+          speaksSpanish: guest.speaksSpanish,
           phoneNumber: "", // WaitlistGuest doesn't have phone
           guestOf: `${row.user.firstName} ${row.user.lastName}`,
           isGuest: true,

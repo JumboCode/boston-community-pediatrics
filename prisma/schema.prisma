@@ -29,8 +29,8 @@ model User {
   signups       EventSignup[]
   waitlists     EventWaitlist[]
 
-  @@index([clerkId])
   @@index([clerkId], map: "users_clerkId")
+  @@index([clerkId])
   @@map("users")
 }
 
@@ -113,6 +113,7 @@ model EventWaitlist {
   positionId String
   isGuest    Boolean         @default(false)
   createdAt  DateTime?       @db.Timestamp(6)
+  comments   String?
   position   EventPosition   @relation(fields: [positionId], references: [id], onDelete: Cascade)
   user       User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   guests     WaitlistGuest[]
@@ -126,7 +127,6 @@ model WaitlistGuest {
   relation      String?
   waitlistId    String
   dateOfBirth   String?
-  comments      String?
   speaksSpanish Boolean?
   waitlist      EventWaitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 }
