@@ -182,18 +182,16 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       phoneNumber: mainUser.phoneNumber,
       speaksSpanish: mainUser.speaksSpanish,
       comment: mainUser.comments,
-      profileImage: mainUser.profileImage,
-
+      profileImage: mainUser.profileImage ?? undefined,
       ...(mainUser.memberSince && {
         memberSince: mainUser.memberSince,
       }),
-
       ...(guest && {
         guestName: `${guest.firstName} ${guest.lastName}`,
         guestEmail: guest.emailAddress,
         guestPhoneNumber: guest.phoneNumber,
         guestSpeaksSpanish: guest.speaksSpanish,
-        profileImage: mainUser.profileImage,
+        profileImage: mainUser.profileImage ?? undefined,
       }),
     });
     setShowCommentModal(true);
