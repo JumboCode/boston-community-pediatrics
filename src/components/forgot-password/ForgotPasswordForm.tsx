@@ -16,7 +16,9 @@ export default function ForgotPasswordForm() {
   };
 
   return !sentEmail ? (
-    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-[792px] pt-[50px] px-[48px] pb-[60px] box-border">
+    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg md:w-[792px] pt-[50px] px-6 md:px-[102px] pb-[60px] box-border">
+      {/*<div className="w-full md:w-[792px] pt-[50px] px-6 md:px-[102px]">*/}
+      
       <div className="flex flex-col items-center w-full gap-6">
         <div className="relative flex items-center w-full justify-center">
           <Link href="/login">
