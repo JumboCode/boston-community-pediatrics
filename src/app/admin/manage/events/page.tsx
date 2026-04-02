@@ -1,22 +1,32 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Fragment,
+} from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
-import { AdminUser } from "@/app/api/eventSignup/controller";
 
 interface EventProps {
   eventId: string;
-  positionId: string;
   eventName: string;
   startDate: Date;
   endDate: Date;
-  filledSlots: number;
-  totalSlots: number;
   selected: boolean;
   createdAt?: string;
+  positions: {
+    positionId: string;
+    positionName: string;
+    filledSlots: number;
+    totalSlots: number;
+    waitlistCount: number;
+  }[];
 }
 
 const fetcher = async (url: string) => {
@@ -38,31 +48,45 @@ const ManageEventsPage = () => {
   const router = useRouter();
 
   // Fetch event information
-  const { data: allVols } = useSWR<AdminUser[]>(`/api/events`, fetcher);
+  const { data: allPositions } = useSWR<PositionData[]>(`/api/eventPosition`, fetcher);
+
+  const { data: allVols } = useSWR<any[]>(`/api/events`, fetcher);
+  const { data: allPositions } = useSWR<any[]>(`/api/eventPosition`, fetcher);
+  const { data: allSignups } = useSWR<any[]>(`/api/eventSignup`, fetcher);
+  const { data: allWaitlist } = useSWR<any[]>(`/api/waitlist`, fetcher);
+  useEffect(() => {
+  console.log("positions:", allPositions);
+  console.log("signups:", allSignups);
+  console.log("waitlist:", allWaitlist);
+}, [allPositions, allSignups, allWaitlist]);
 
   const events = useMemo(() => {
     if (!allVols) return [];
-    return allVols
-      .map((v: any) => ({
-        eventId: v.id || v.eventId,
-        positionId: v.positionId,
+    return allVols.map((v: any) => {
+      const positions = (allPositions ?? [])
+        .filter((p) => p.eventId === v.id)
+        .map((p) => ({
+          positionId: p.id,
+          positionName: p.name,
+          filledSlots: (allSignups ?? []).filter((s) => s.positionId === p.id)
+            .length,
+          totalSlots: p.totalSlots ?? 0,
+          waitlistCount: (allWaitlist ?? []).filter(
+            (w) => w.positionId === p.id
+          ).length,
+        }));
+
+      return {
+        eventId: v.id,
         eventName: v.name,
         startDate: new Date(v.startTime),
         endDate: new Date(v.endTime),
-        filledSlots: 8, // inside eventSingnups
-        totalSlots: 9,
         selected: false,
         createdAt: v.createdAt,
-      }))
-      .sort((a, b) => {
-        const dateCompare = a.startDate.getTime() - b.startDate.getTime();
-        if (dateCompare !== 0) return dateCompare;
-        return a.eventName
-          .toLowerCase()
-          .localeCompare(b.eventName.toLowerCase());
-      });
-  }, [allVols]);
-
+        positions,
+      };
+    });
+  }, [allVols, allPositions, allSignups, allWaitlist]);
   useEffect(() => {
     setEvent(events);
   }, [events]);
@@ -72,6 +96,18 @@ const ManageEventsPage = () => {
     setEvent((prev) =>
       prev.map((v) => (v.eventId === id ? { ...v, selected: !v.selected } : v))
     );
+  };
+
+  // Expanded view
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (eventId: string) => {
+    setExpandedEvents((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) newSet.delete(eventId);
+      else newSet.add(eventId);
+      return newSet;
+    });
   };
 
   // Search Bar and Sort, no dropdown
@@ -88,11 +124,6 @@ const ManageEventsPage = () => {
     setEvent((prev) => prev.map((v) => ({ ...v, selected: !allSelected })));
   };
 
-  // const seenEvents = event.filter((v) => {
-  //   const full = `${v.eventName}`.toLowerCase(); // whenever we figure out how the positions look like we can add that here too
-  //   return full.includes(searchQuery.toLowerCase());
-  // });
-
   const sortedEvents = useMemo(() => {
     let list = [...event];
 
@@ -101,21 +132,15 @@ const ManageEventsPage = () => {
 
     // Apply sorting
     if (sortOption === "UPCOMING") {
-      list = list.filter((v) => v.startDate > now);
+      list = list
+        .filter((v) => v.startDate > now)
+        .sort((a, b) => a.startDate.getTime() - b.startDate.getTime()); // soonest event displayed first
     } else if (sortOption === "PAST") {
       list = list.filter((v) => v.endDate < now);
     } else if (sortOption === "MOST-RECENT") {
-      list.sort(
-        (a, b) =>
-          b.startDate.getTime() -
-          a.startDate.getTime()
-      );
+      list.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
     } else if (sortOption === "OLDEST") {
-      list.sort(
-        (a, b) =>
-          a.startDate.getTime() -
-          b.startDate.getTime()
-      );
+      list.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
     }
 
     if (searchQuery) {
@@ -129,22 +154,49 @@ const ManageEventsPage = () => {
   }, [event, sortOption, searchQuery]);
 
   const handleSaveCSV = () => {
-    const header = "Event Name,Event ID,Start Date,End Date"; //Again positions and other parts of props can be added when we know what that looks like
-    const selected = event.filter((v) => v.selected);
-    const content = selected
-      .map(
-        (v) =>
-        `${v.eventName},${v.eventId},${v.startDate.toLocaleDateString("en-US")},${v.endDate.toLocaleDateString("en-US")}`
-      )
-      .join("\n");
+    const header =
+      "Event Name,Start Date,End Date,Volunteer Role,Volunteer Name";
+    const selectedEvents = event.filter((v) => v.selected);
 
-    const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
+    const rows: string[] = [];
+
+    selectedEvents.forEach((ev) => {
+      // Find all positions for this event
+      const positions =
+        allPositions?.filter((pos) => pos.eventId === ev.eventId) || [];
+
+      positions.forEach((pos) => {
+        // Find all volunteers signed up for this position
+        const volunteers =
+          allSignups?.filter((s) => s.positionId === pos.id) || [];
+
+        volunteers.forEach((vol) => {
+          const volunteerName = `${vol.firstName} ${vol.lastName}`;
+          const row = [
+            ev.eventName,
+            ev.startDate.toLocaleDateString("en-US"),
+            ev.endDate.toLocaleDateString("en-US"),
+            pos.name,
+            volunteerName,
+          ]
+            .map((value) => `"${value}"`)
+            .join(",");
+          rows.push(row);
+        });
+      });
+    });
+
+    const csvContent = [header, ...rows].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
-    const filename =
-      selected.length === 1 ? `${selected[0].eventName}.csv` : `events.csv`;
-    a.download = filename;
+    a.download =
+      selectedEvents.length === 1
+        ? `${selectedEvents[0].eventName}.csv`
+        : "events.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -236,100 +288,152 @@ const ManageEventsPage = () => {
           {/* Filter Dropdown*/}
           <div ref={filterRef} className="relative w-44">
             <button
-            onClick={() => setFilterOpen((o) => !o)}
-            className="h-[44px] w-full rounded-lg border px-4 py-2 text-sm flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
-          >
-            <span className="flex-1 text-center">
-              {sortOption === "MOST-RECENT" ? "Most Recent"
-                : sortOption === "OLDEST" ? "Oldest"
-                : sortOption === "PAST" ? "Past"
-                : "Upcoming"}
-            </span>
-            <svg
-              className={`w-4 h-4 ml-1 flex-shrink-0 transition-transform duration-200 ${filterOpen ? "rotate-180" : ""}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              onClick={() => setFilterOpen((o) => !o)}
+              className="h-[44px] w-full rounded-lg border px-4 py-2 text-sm flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              <span className="flex-1 text-center">
+                {sortOption === "MOST-RECENT"
+                  ? "Most Recent"
+                  : sortOption === "OLDEST"
+                    ? "Oldest"
+                    : sortOption === "PAST"
+                      ? "Past"
+                      : "Upcoming"}
+              </span>
+              <svg
+                className={`w-4 h-4 ml-1 flex-shrink-0 transition-transform duration-200 ${filterOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
 
-          {filterOpen && (
-            <div className="absolute right-0 mt-1 w-full bg-white border rounded-lg shadow-lg z-20 overflow-hidden">
-              {(["MOST-RECENT", "OLDEST", "UPCOMING", "PAST"] as const).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => { setSortOption(opt); setFilterOpen(false); }}
-                  className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-gray-50
+            {filterOpen && (
+              <div className="absolute right-0 mt-1 w-full bg-white border rounded-lg shadow-lg z-20 overflow-hidden">
+                {(["MOST-RECENT", "OLDEST", "UPCOMING", "PAST"] as const).map(
+                  (opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => {
+                        setSortOption(opt);
+                        setFilterOpen(false);
+                      }}
+                      className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-gray-50
                     ${sortOption === opt ? "bg-gray-100 font-medium" : ""}`}
-                >
-                  {opt === "MOST-RECENT" ? "Most Recent"
-                    : opt === "OLDEST" ? "Oldest"
-                    : opt === "PAST" ? "Past"
-                    : "Upcoming"}
-                </button>
-              ))}
-            </div>
-          )}
+                    >
+                      {opt === "MOST-RECENT"
+                        ? "Most Recent"
+                        : opt === "OLDEST"
+                          ? "Oldest"
+                          : opt === "PAST"
+                            ? "Past"
+                            : "Upcoming"}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Events Table */}
         <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
-          <table className="w-full border-white-700 text-bcp-blue">
+          <table className="w-full table-fixed border-white-700 text-bcp-blue">
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
-                <th className="py-3 pl-8 px-4 font-normal">Events</th>
-                <th className="py-3 px-4 font-normal">Date</th>
-                <th className="py-3 px-4 font-normal">Capacity</th>
-
-                <th className="py-3 px-4 pl-13 font-normal">
-                  <button
-                    onClick={toggleSelectAll}
-                    className="hover:underline transition-all duration-200 "
-                  >
+                <th className="py-3 pl-8 px-4 font-normal w-[40%]">Events</th>
+                <th className="py-3 px-4 font-normal w-[25%]">Date</th>
+                <th className="py-3 px-4 font-normal w-[20%]">Capacity</th>
+                <th className="py-3 px-4 pl-13 font-normal w-[15%]">
+                  <button onClick={toggleSelectAll} className="hover:underline">
                     Select All
                   </button>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {sortedEvents.map((p) => {
-                return (
+              {sortedEvents.map((p) => (
+                <Fragment key={p.eventId}>
+
+                  {/* Main Row */}
                   <tr
-                    key={p.eventId}
                     className={`transition-colors duration-200 ${
                       p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
                     } border-t border-gray-300`}
                   >
                     <td className="py-3 px-4 pl-8">
-                      <Link
-                        href={`/event/${p.eventId}`}
-                        className="hover:underline"
-                      >
-                        {p.eventName}
-                      </Link>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          onClick={() => toggleExpand(p.eventId)}
+                          className="flex-shrink-0 text-sm transition-transform"
+                        >
+                          <svg
+                            className={`w-4 h-4 transition-transform ${
+                              expandedEvents.has(p.eventId) ? "rotate-90" : ""
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                        <Link
+                          href={`/event/${p.eventId}`}
+                          className="hover:underline truncate"
+                        >
+                          {p.eventName}
+                        </Link>
+                      </div>
                     </td>
                     <td className="py-3 px-4">
-                      {p.startDate.getFullYear() === p.endDate.getFullYear() &&
-                      p.startDate.getMonth() === p.endDate.getMonth() &&
-                      p.startDate.getDate() === p.endDate.getDate()
-                        ? p.startDate.toLocaleDateString()
-                        : `${p.startDate.toLocaleDateString()} - ${p.endDate.toLocaleDateString()}`}
+                      {p.startDate.toLocaleDateString()}
                     </td>
+                    <td className="py-3 px-4">{p.positions.length}</td>
                     <td className="py-3 px-4">
-                      {8}/{9}
-                    </td>
-                    <td className="py-3 px-4 text-center">
                       <input
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.eventId)}
-                        className="w-5 h-5 accent-bcp-blue cursor-pointer"
                       />
                     </td>
                   </tr>
-                );
-              })}
+
+                  {/* Expanded Row */}
+                  {expandedEvents.has(p.eventId) && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={4} className="px-12 py-3 w-full">
+                        <div className="w-full max-w-full">
+                          {p.positions.map((pos) => (
+                            <div
+                              key={pos.positionId}
+                              className="flex justify-between text-sm border rounded px-3 py-2 bg-white"
+                            >
+                              <span>{pos.positionName}</span>
+                              <span>
+                                {pos.filledSlots}/{pos.totalSlots} • WL:{" "}
+                                {pos.waitlistCount}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
             </tbody>
           </table>
         </div>
