@@ -161,6 +161,14 @@ export async function PUT(req: NextRequest) {
 // DELETE handler
 export async function DELETE(req: NextRequest) {
   try {
+    // Make sure only admins can send emails
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (currentUser.role !== UserRole.ADMIN) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
