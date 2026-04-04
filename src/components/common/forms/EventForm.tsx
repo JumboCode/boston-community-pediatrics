@@ -15,7 +15,7 @@ import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 // API shapes used by this component
 type APIPosition = Partial<{
   id: string;
-  position: string;
+  position: string;  
   date: string | Date;
   startTime: string | Date;
   endTime: string | Date;
@@ -599,7 +599,7 @@ const EventForm = () => {
     onClearError?: () => void;
   }) => (
     <div className="flex flex-col">
-      <div className="mt-10 flex items-center justify-between">
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-2">
         <label
           htmlFor={id}
           className="mb-1 text-base font-normal text-medium-gray"
@@ -631,7 +631,7 @@ const EventForm = () => {
         }}
         className={
           className ||
-          `w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+          `w-full md:w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
            ${
              error
                ? "border-red-500 focus:ring-red-500/30"
@@ -741,7 +741,7 @@ const EventForm = () => {
   if(isLoading) return <BasicSkeleton />;
 
   return (
-    <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">
+    <div className="relative mt-[120px] mb-[138px] flex w-full max-w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
         <Link href="/event" className="cursor-pointer">
@@ -758,7 +758,7 @@ const EventForm = () => {
       </h1>
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
-        <div className="mt-[26px] flex h-[212px] justify-center origin-top scale-[0.588]">
+        <div className="mt-[26px] flex h-[212px] justify-center origin-top scale-[0.588] overflow-hidden w-full">
           <Carousel images={carouselImages} />
         </div>
         <input
@@ -779,7 +779,7 @@ const EventForm = () => {
       </div>
 
       {/* event form fields */}
-      <div className="mx-[102px] flex flex-col">
+      <div className="px-4 md:px-0 md:mx-[102px] flex flex-col w-full md:w-auto">
         {/* event title */}
         <div className="flex flex-col items-start">
           <label
@@ -796,7 +796,7 @@ const EventForm = () => {
               setEvent((prev) => ({ ...prev, title: e.target.value }));
               clearError("title");
             }}
-            className={`w-[588px] h-[43px] ${inputClass("title")}`}
+            className={`w-full md:w-[588px] h-[43px] ${inputClass("title")}`}
           />
           <ErrorText k="title" />
         </div>
@@ -817,7 +817,7 @@ const EventForm = () => {
               setEvent((prev) => ({ ...prev, date: v }));
               clearError("date");
             }}
-            className={`w-[588px] h-[43px] rounded-lg border p-3 text-base
+            className={`w-full md:w-[588px] h-[43px] rounded-lg border p-3 text-base
             ${
               errors["date"]
                 ? "border-red-500 focus:ring-red-500"
@@ -834,7 +834,7 @@ const EventForm = () => {
             Event time
           </label>
 
-          <div className="flex w-[588px] gap-[60px]">
+          <div className="flex w-full md:w-[588px] gap-4 md:gap-[60px]">
             <input
               id="event-start-time"
               type="time"
@@ -844,7 +844,7 @@ const EventForm = () => {
                 setEvent((prev) => ({ ...prev, startTime: v }));
                 clearError("startTime");
               }}
-              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
+              className={`w-full md:w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
               ${
                 errors["startTime"]
                   ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
@@ -861,7 +861,7 @@ const EventForm = () => {
                 setEvent((prev) => ({ ...prev, endTime: v }));
                 clearError("endTime");
               }}
-              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
+              className={`w-full md:w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
               ${
                 errors["endTime"]
                   ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
@@ -891,7 +891,7 @@ const EventForm = () => {
               setEvent((prev) => ({ ...prev, description: e.target.value }));
               clearError("description");
             }}
-            className={`w-[588px] h-[175px] ${textareaClass("description")}`}
+            className={`w-full md:w-[588px] h-[175px] ${textareaClass("description")}`}
           />
           <ErrorText k="description" />
         </div>
@@ -910,7 +910,7 @@ const EventForm = () => {
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }))
             }
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
         {/* event street */}
@@ -928,7 +928,7 @@ const EventForm = () => {
               setEvent((prev) => ({ ...prev, address: e.target.value }));
               clearError("address");
             }}
-            className={`w-[588px] h-[43px] ${inputClass("address")}`}
+            className={`w-full md:w-[588px] h-[43px] ${inputClass("address")}`}
           />
           <ErrorText k="address" />
         </div>
@@ -946,7 +946,7 @@ const EventForm = () => {
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, apt: e.target.value }))
             }
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
         {/* event city */}
@@ -964,12 +964,12 @@ const EventForm = () => {
               setEvent((prev) => ({ ...prev, city: e.target.value }));
               clearError("city");
             }}
-            className={`w-[588px] h-[43px] ${inputClass("city")}`}
+            className={`w-full md:w-[588px] h-[43px] ${inputClass("city")}`}
           />
           <ErrorText k="city" />
         </div>
         {/* event state / zip */}
-        <div className="flex flex-row gap-[60px]">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
           <div className="flex flex-col items-start">
             <label
               htmlFor="event-state"
@@ -984,7 +984,7 @@ const EventForm = () => {
                 setEvent((prev) => ({ ...prev, state: e.target.value }));
                 clearError("state");
               }}
-              className={`w-[264px] h-[43px] ${inputClass("state")}`}
+              className={`w-full md:w-[264px] h-[43px] ${inputClass("state")}`}
             />
             <ErrorText k="state" />
           </div>
@@ -1003,7 +1003,7 @@ const EventForm = () => {
                 setEvent((prev) => ({ ...prev, zip: e.target.value }));
                 clearError("zip");
               }}
-              className={`w-[264px] h-[43px] ${inputClass("zip")}`}
+              className={`w-full md:w-[264px] h-[43px] ${inputClass("zip")}`}
             />
             <ErrorText k="zip" />
           </div>
@@ -1030,7 +1030,7 @@ const EventForm = () => {
                   handlePositionChange(index, "name", e.target.value);
                   clearError(`positions.${index}.name`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
               />
               <ErrorText k={`positions.${index}.name`} />
             </div>
@@ -1049,7 +1049,7 @@ const EventForm = () => {
             />
             {/* position time */}
             <div className="flex flex-col">
-              <div className="mt-10 flex items-center justify-between">
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-2">
                 <label className="mb-1 text-base font-normal text-medium-gray">
                   Position time
                 </label>
@@ -1069,7 +1069,7 @@ const EventForm = () => {
                 </div>
               </div>
 
-              <div className="flex w-[588px] gap-[60px]">
+              <div className="flex w-full md:w-[588px] gap-4 md:gap-[60px]">
                 <input
                   id={`position-start-time-${index}`}
                   type="time"
@@ -1081,7 +1081,7 @@ const EventForm = () => {
                     handlePositionChange(index, "startTime", e.target.value);
                     clearError(`positions.${index}.startTime`);
                   }}
-                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+                  className={`w-full md:w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
                   ${
                     errors[`positions.${index}.startTime`]
                       ? "border-red-500 focus:ring-red-500/30"
@@ -1099,7 +1099,7 @@ const EventForm = () => {
                     handlePositionChange(index, "endTime", e.target.value);
                     clearError(`positions.${index}.endTime`);
                   }}
-                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+                  className={`w-full md:w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
                   ${
                     errors[`positions.${index}.endTime`]
                       ? "border-red-500 focus:ring-red-500/30"
@@ -1131,7 +1131,7 @@ const EventForm = () => {
                   handlePositionChange(index, "description", e.target.value);
                   clearError(`positions.${index}.description`);
                 }}
-                className={`w-[588px] h-[175px] ${textareaClass(`positions.${index}.description`)}`}
+                className={`w-full md:w-[588px] h-[175px] ${textareaClass(`positions.${index}.description`)}`}
               />
               <ErrorText k={`positions.${index}.description`} />
             </div>
@@ -1166,7 +1166,7 @@ const EventForm = () => {
                 onChange={(e) =>
                   handlePositionChange(index, "apt", e.target.value)
                 }
-                className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
+                className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
               />
             </div>
             {/* position city */}
@@ -1186,15 +1186,14 @@ const EventForm = () => {
                   handlePositionChange(index, "city", e.target.value);
                   clearError(`positions.${index}.city`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(
-                  `positions.${index}.city`,
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.city`,
                   "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                 )}`}
               />
               <ErrorText k={`positions.${index}.city`} />
             </div>
             {/* position state / zip */}
-            <div className="flex flex-row gap-[60px]">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
               <div className="flex flex-col items-start">
                 <label
                   htmlFor={`position-state-${index}`}
@@ -1211,8 +1210,7 @@ const EventForm = () => {
                     handlePositionChange(index, "state", e.target.value);
                     clearError(`positions.${index}.state`);
                   }}
-                  className={`w-[264px] h-[43px] ${inputClass(
-                    `positions.${index}.state`,
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.state`,
                     "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
@@ -1234,8 +1232,7 @@ const EventForm = () => {
                     handlePositionChange(index, "zip", e.target.value);
                     clearError(`positions.${index}.zip`);
                   }}
-                  className={`w-[264px] h-[43px] ${inputClass(
-                    `positions.${index}.zip`,
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.zip`,
                     "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
@@ -1258,7 +1255,7 @@ const EventForm = () => {
                   handlePositionChange(index, "participants", e.target.value);
                   clearError(`positions.${index}.participants`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.participants`)}`}
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.participants`)}`}
               />
               <ErrorText k={`positions.${index}.participants`} />
             </div>
@@ -1267,16 +1264,16 @@ const EventForm = () => {
       </div>
 
       {/* position buttons */}
-      <div className="mt-[56px] mb-[71px] flex flex-col items-center">
-        <div className="flex flex-row items-center">
+      <div className="mt-[56px] mb-[71px] flex flex-col items-center w-full px-4 md:px-0">
+        <div className="flex flex-col md:flex-row items-center gap-3">
           <Button
             label="Remove position"
-            altStyle="bg-white text-bcp-blue text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2] mr-[11px]"
+            altStyle="bg-white text-bcp-blue text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2]"
             onClick={removePosition}
           />
           <Button
             label="+ Add another position"
-            altStyle="bg-[#CAD1D4] text-black text-[16px] w-[201px] h-[44px] font-medium rounded-lg hover:bg-[#b9c0c3] ml-[11px]"
+            altStyle="bg-[#CAD1D4] text-black text-[16px] w-[201px] h-[44px] font-medium rounded-lg hover:bg-[#b9c0c3]"
             onClick={addPosition}
           />
         </div>
@@ -1287,15 +1284,15 @@ const EventForm = () => {
 
       {/* bottom buttons */}
       <div className="mt-[56px] mb-[71px] flex flex-col items-center">
-        <div className="flex flex-row items-center">
+        <div className="flex flex-col md:flex-row items-center gap-3">
           <Button
             label="Save as draft"
-            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2] mr-[15px]"
+            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2]"
           />
           <Button
             onClick={handleCreateEvent}
             label="Submit"
-            altStyle="bg-bcp-blue text-white text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
+            altStyle="bg-bcp-blue text-white text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80]"
           />
         </div>
       </div>

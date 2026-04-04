@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react"; // Added useRef
-import { useSignUp } from "@clerk/nextjs"; 
+import { useState, useRef } from "react";
+import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,13 +15,13 @@ type SignupFormData = {
   email: string;
   phone: string;
   dob: string;
-  speaksSpanish: boolean,
+  speaksSpanish: boolean;
   street?: string;
   apt?: string;
   city?: string;
   state?: string;
   zip?: string;
-  profileImageUrl?: string; // <--- ADDED
+  profileImageUrl?: string;
 };
 
 const SignupForm = () => {
@@ -31,7 +31,6 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // --- NEW: Image State ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -39,14 +38,14 @@ const SignupForm = () => {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
+
   if (!isLoaded) return <BasicSkeleton />;
 
-  // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Immediate local preview
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -56,7 +55,7 @@ const SignupForm = () => {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/onboarding", 
+        redirectUrlComplete: "/onboarding",
       });
     } catch {
       console.error("Google sign up error");
@@ -84,20 +83,17 @@ const SignupForm = () => {
     }
 
     try {
-      // --- 1. NEW: Upload Image to R2 (if selected) ---
       let uploadedImageUrl = "";
-      
+
       if (selectedFile) {
-        // A. Get the presigned URL
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
           body: JSON.stringify({ fileType: selectedFile.type }),
         });
-        
+
         if (!uploadRes.ok) throw new Error("Failed to initialize upload");
         const { uploadUrl, publicUrl } = await uploadRes.json();
 
-        // B. Upload the file directly to R2
         const r2Res = await fetch(uploadUrl, {
           method: "PUT",
           body: selectedFile,
@@ -108,7 +104,6 @@ const SignupForm = () => {
         uploadedImageUrl = publicUrl;
       }
 
-      // --- 2. Create Clerk Account ---
       await signUp.create({
         emailAddress: email,
         password,
@@ -118,7 +113,6 @@ const SignupForm = () => {
 
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // --- 3. Save Data (include the new image URL) ---
       setSavedFormData({
         firstName,
         lastName,
@@ -131,7 +125,7 @@ const SignupForm = () => {
         city: formData.get("city") as string,
         state: formData.get("state") as string,
         zip: formData.get("zip") as string,
-        profileImageUrl: uploadedImageUrl, // <--- SAVED HERE
+        profileImageUrl: uploadedImageUrl,
       });
 
       setPendingVerification(true);
@@ -162,7 +156,6 @@ const SignupForm = () => {
       const clerkUserId = completeSignUp.createdUserId;
 
       if (clerkUserId && savedFormData) {
-        // --- 4. Sync to DB (Send profileImage) ---
         const dbResponse = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -179,7 +172,7 @@ const SignupForm = () => {
               city: savedFormData.city,
               state: savedFormData.state,
               zipCode: savedFormData.zip,
-              profileImage: savedFormData.profileImageUrl, // <--- SENT TO DB
+              profileImage: savedFormData.profileImageUrl,
               role: "VOLUNTEER",
               clerkId: clerkUserId,
             },
@@ -201,19 +194,16 @@ const SignupForm = () => {
   // --- RENDER: VERIFICATION FORM ---
   if (pendingVerification) {
     return (
-      <div className="flex flex-col items-center border border-medium-gray rounded-lg mt-[220px] mb-[220px] w-[600px] p-10 relative">
-        <h1 className="text-bcp-blue text-[36px] font-medium mb-6 text-center">
+      <div className="flex flex-col items-center border border-medium-gray rounded-lg my-12 sm:my-[220px] w-[calc(100%-32px)] sm:w-[600px] mx-auto p-6 sm:p-10 relative">
+        <h1 className="text-bcp-blue text-[28px] sm:text-[36px] font-medium mb-6 text-center">
           Verify your Email
         </h1>
-        <p className="text-black text-xl mb-10 text-center">
+        <p className="text-black text-lg sm:text-xl mb-10 text-center">
           We sent a code to{" "}
           <span className="font-bold">{savedFormData?.email}</span>
         </p>
 
-        <form
-          onSubmit={handleVerify}
-          className="flex flex-col gap-6 w-full px-10"
-        >
+        <form onSubmit={handleVerify} className="flex flex-col gap-6 w-full">
           <div className="flex flex-col items-start">
             <label
               htmlFor="code"
@@ -245,28 +235,29 @@ const SignupForm = () => {
     );
   }
 
-  // --- RENDER: SIGN UP FORM (Original) ---
+  // --- RENDER: SIGN UP FORM ---
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col items-center border border-medium-gray rounded-lg mt-[220px] mb-[220px] w-[792px] relative"
+      className="flex flex-col items-center border border-medium-gray rounded-lg my-12 sm:my-[220px] w-[calc(100%-32px)] sm:w-[792px] mx-auto relative"
     >
       {/* Back arrow */}
-      <div className="w-full flex justify-start mt-7 pl-[30px] cursor-pointer">
+      <div className="w-full flex justify-start mt-7 pl-4 sm:pl-[30px] cursor-pointer">
         <Link href="/login">
           <Image src={BackArrow} alt="Back arrow" className="w-[30.86px] h-6" />
         </Link>
       </div>
 
       {/* Heading */}
-      <h1 className="text-bcp-blue text-[36px] font-medium mt-[74px] mb-6 text-center leading-tight">
+      <h1 className="text-bcp-blue text-[26px] sm:text-[36px] font-medium mt-10 sm:mt-[74px] mb-4 sm:mb-6 text-center leading-tight px-4">
         Welcome to <br /> Boston Community Pediatrics!
       </h1>
-      <p className="text-black text-2xl font-normal text-center mb-16">
+      <p className="text-black text-lg sm:text-2xl font-normal text-center mb-10 sm:mb-16 px-4">
         Create an account to start volunteering
       </p>
 
-      <div className="w-[588px] mb-8">
+      {/* Google button */}
+      <div className="w-full px-4 sm:px-[102px] mb-8">
         <button
           onClick={handleGoogleSignUp}
           className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-medium-gray rounded text-black hover:bg-gray-50 transition-colors font-medium"
@@ -305,10 +296,11 @@ const SignupForm = () => {
       </div>
 
       {/* Form fields */}
-      <div className="flex flex-col gap-10 mx-[102px]">
+      <div className="flex flex-col gap-8 sm:gap-10 w-full px-4 sm:px-[102px]">
+
         {/* First / Last */}
-        <div className="flex flex-row gap-[60px]">
-          <div className="flex flex-col items-start">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-[60px]">
+          <div className="flex flex-col items-start flex-1">
             <label
               htmlFor="first-name"
               className="text-base font-normal text-medium-gray mb-1"
@@ -319,11 +311,11 @@ const SignupForm = () => {
               name="first-name"
               id="first-name"
               required
-              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
-          <div className="flex flex-col items-start">
+          <div className="flex flex-col items-start flex-1">
             <label
               htmlFor="last-name"
               className="text-base font-normal text-medium-gray mb-1"
@@ -334,7 +326,7 @@ const SignupForm = () => {
               name="last-name"
               id="last-name"
               required
-              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
         </div>
@@ -352,7 +344,7 @@ const SignupForm = () => {
             id="email"
             type="email"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -369,7 +361,7 @@ const SignupForm = () => {
             id="phone"
             type="tel"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -386,22 +378,21 @@ const SignupForm = () => {
             id="dob"
             type="date"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
         {/* Languages */}
-        <div className="flex flex-row items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <label
             htmlFor="speakSpanish"
-            className="text-base font-normal text-medium-gray mb-1"
+            className="text-base font-normal text-medium-gray"
           >
             Do you speak Spanish?
           </label>
-          <div className="flex flex-row items-center justify-between gap-[48px]">
+          <div className="flex flex-row items-center gap-8 sm:gap-[48px]">
             <div className="flex flex-row items-center gap-[14px]">
               <input
-                // type="checkbox"
                 type="radio"
                 name="speaksSpanish"
                 value="true"
@@ -410,22 +401,21 @@ const SignupForm = () => {
               />
               <label
                 htmlFor="speaksSpanish"
-                className="flex flex-row text-base font-normal text-medium-gray mb-1"
+                className="text-base font-normal text-medium-gray"
               >
                 Yes
               </label>
             </div>
             <div className="flex flex-row items-center gap-[14px]">
               <input
-                  type="radio"
-                  // type="checkbox"
-                  className="accent-bcp-blue rounded-md"
-                  name="speaksSpanish"
-                  value="false"
-                />
+                type="radio"
+                className="accent-bcp-blue rounded-md"
+                name="speaksSpanish"
+                value="false"
+              />
               <label
                 htmlFor="speaksSpanish"
-                className="text-base font-normal text-medium-gray mb-1 gap-14"
+                className="text-base font-normal text-medium-gray"
               >
                 No
               </label>
@@ -444,7 +434,7 @@ const SignupForm = () => {
           <input
             name="street"
             id="street"
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -459,7 +449,7 @@ const SignupForm = () => {
           <input
             name="apt"
             id="apt"
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -474,13 +464,13 @@ const SignupForm = () => {
           <input
             name="city"
             id="city"
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
         {/* State / Zip */}
-        <div className="flex flex-row gap-[60px]">
-          <div className="flex flex-col items-start">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-[60px]">
+          <div className="flex flex-col items-start flex-1">
             <label
               htmlFor="state"
               className="text-base font-normal text-medium-gray mb-1"
@@ -490,11 +480,11 @@ const SignupForm = () => {
             <input
               name="state"
               id="state"
-              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
 
-          <div className="flex flex-col items-start">
+          <div className="flex flex-col items-start flex-1">
             <label
               htmlFor="zip"
               className="text-base font-normal text-medium-gray mb-1"
@@ -505,34 +495,44 @@ const SignupForm = () => {
               name="zip"
               id="zip"
               inputMode="numeric"
-              className="w-[264px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
         </div>
 
-        {/* --- NEW: Image Upload UI --- */}
-        <div className="flex items-center gap-[60px]">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
+        {/* Image Upload */}
+        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-[60px]">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
             accept="image/*"
-            className="hidden" // Hide the ugly default input
+            className="hidden"
           />
-          
-          {/* Clickable Circle Image */}
-          <div 
+
+          <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-[264px] h-[264px] relative cursor-pointer  overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
+            className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-200 flex-shrink-0"
           >
             {previewUrl ? (
-              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <Image src={ProfilePlaceholder} alt="Placeholder" className="w-full h-full object-cover" />
+              <Image
+                src={ProfilePlaceholder}
+                alt="Placeholder"
+                className="w-full h-full object-cover"
+              />
             )}
           </div>
 
-          <span className="text-[20px] text-medium-gray cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <span
+            className="text-base sm:text-[20px] text-medium-gray cursor-pointer text-center sm:text-left"
+            onClick={() => fileInputRef.current?.click()}
+          >
             Upload a profile photo <br /> (optional)
           </span>
         </div>
@@ -550,7 +550,7 @@ const SignupForm = () => {
             id="password"
             type="password"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
 
@@ -566,21 +566,21 @@ const SignupForm = () => {
             id="confirm-password"
             type="password"
             required
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
       </div>
 
       {/* Error Message */}
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+      {error && <p className="text-red-500 mt-4 px-4 text-center">{error}</p>}
 
-      {/* Button */}
-      <div className="mt-[90px] mb-[70px]">
+      {/* Submit Button */}
+      <div className="mt-16 sm:mt-[90px] mb-10 sm:mb-[70px] w-full px-4 sm:px-[102px] flex justify-center">
         <div id="clerk-captcha" />
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors"
+          className="w-full sm:w-auto px-6 py-3 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors"
         >
           {loading ? "Please wait..." : "Create Account"}
         </button>
