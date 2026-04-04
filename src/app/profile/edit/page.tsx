@@ -15,7 +15,7 @@ export default function EditProfilePage() {
   // Redirect if not signed in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isLoaded, isSignedIn, router]);
 
