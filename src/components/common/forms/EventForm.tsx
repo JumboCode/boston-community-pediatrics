@@ -631,13 +631,18 @@ const EventForm = () => {
         }}
         className={
           className ||
-          `w-full md:w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-           ${
-             error
-               ? "border-red-500 focus:ring-red-500/30"
-               : "border-medium-gray focus:ring-bcp-blue/30"
-           }
-           disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+          `block w-full min-w-0 md:w-[588px] h-[43px] appearance-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+          ${
+            error
+              ? "border-red-500 focus:ring-red-500/30"
+              : "border-medium-gray focus:ring-bcp-blue/30"
+          }
+          disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+        }
+        style={
+          type === "date"
+            ? { WebkitAppearance: "none", appearance: "none" }
+            : undefined
         }
       />
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
@@ -809,27 +814,28 @@ const EventForm = () => {
             Event date
           </label>
           <input
-            id="event-date"
-            type="date"
-            value={event.date}
-            onChange={(e) => {
-              const v = e.target.value;
-              setEvent((prev) => ({ ...prev, date: v }));
-              clearError("date");
-            }}
-            className={`w-full md:w-[588px] h-[43px] rounded-lg border p-3 text-base focus:outline-none focus:ring-2
-            ${
-              errors["date"]
-                ? "border-red-500 focus:ring-red-500"
-                : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            }`}
-          />
+  id="event-date"
+  type="date"
+  value={event.date}
+  onChange={(e) => {
+    const v = e.target.value;
+    setEvent((prev) => ({ ...prev, date: v }));
+    clearError("date");
+  }}
+  className={`block w-full min-w-0 md:w-[588px] h-[43px] appearance-none rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2
+    ${
+      errors["date"]
+        ? "border-red-500 focus:ring-red-500/30"
+        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
+    }`}
+  style={{ WebkitAppearance: "none" }}
+/>
           {errors["date"] && (
             <p className="mt-1 text-sm text-red-500">{errors["date"]}</p>
           )}
         </div>
         {/* event time */}
-        <div className="flex flex-col items-start w-full">
+        <div className="flex flex-col items-start w-full overflow-hidden">
           <label className="mb-1 mt-[40px] text-base font-normal text-medium-gray">
             Event time
           </label>
