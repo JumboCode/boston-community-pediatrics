@@ -598,7 +598,7 @@ const EventForm = () => {
     error?: string;
     onClearError?: () => void;
   }) => (
-    <div className="flex flex-col">
+    <div className="flex flex-col w-full">
       <div className="mt-10 flex flex-wrap items-center justify-between gap-2">
         <label
           htmlFor={id}
@@ -741,7 +741,7 @@ const EventForm = () => {
   if(isLoading) return <BasicSkeleton />;
 
   return (
-    <div className="relative mt-[120px] mb-[138px] flex w-full max-w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">
+    <div className="relative mt-[120px] mb-[138px] flex w-full max-w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white overflow-hidden">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
         <Link href="/event" className="cursor-pointer">
@@ -758,9 +758,9 @@ const EventForm = () => {
       </h1>
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
-        <div className="mt-[26px] flex h-[212px] justify-center origin-top scale-[0.588] overflow-hidden w-full">
-          <Carousel images={carouselImages} />
-        </div>
+        <div className="mt-[26px] w-full px-[30px]">
+  <Carousel images={carouselImages} />
+</div>
         <input
           ref={fileInputRef}
           type="file"
@@ -779,9 +779,9 @@ const EventForm = () => {
       </div>
 
       {/* event form fields */}
-      <div className="px-4 md:px-0 md:mx-[102px] flex flex-col w-full md:w-auto">
+      <div className="px-4 md:px-0 md:mx-[102px] flex flex-col w-full md:w-[588px] min-w-0">
         {/* event title */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-title"
             className="mt-[24px] mb-1 text-base font-normal text-medium-gray"
@@ -801,7 +801,7 @@ const EventForm = () => {
           <ErrorText k="title" />
         </div>
         {/* event date */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-date"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -817,7 +817,7 @@ const EventForm = () => {
               setEvent((prev) => ({ ...prev, date: v }));
               clearError("date");
             }}
-            className={`w-full md:w-[588px] h-[43px] rounded-lg border p-3 text-base
+            className={`w-full md:w-[588px] h-[43px] rounded-lg border p-3 text-base focus:outline-none focus:ring-2
             ${
               errors["date"]
                 ? "border-red-500 focus:ring-red-500"
@@ -829,7 +829,7 @@ const EventForm = () => {
           )}
         </div>
         {/* event time */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label className="mb-1 mt-[40px] text-base font-normal text-medium-gray">
             Event time
           </label>
@@ -877,7 +877,7 @@ const EventForm = () => {
           )}
         </div>
         {/* event description */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-description"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -896,7 +896,7 @@ const EventForm = () => {
           <ErrorText k="description" />
         </div>
         {/* link to resources */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-resources"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -914,7 +914,7 @@ const EventForm = () => {
           />
         </div>
         {/* event street */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-street"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -933,7 +933,7 @@ const EventForm = () => {
           <ErrorText k="address" />
         </div>
         {/* event apt */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-apt"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -950,7 +950,7 @@ const EventForm = () => {
           />
         </div>
         {/* event city */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-city"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -970,7 +970,7 @@ const EventForm = () => {
         </div>
         {/* event state / zip */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
-          <div className="flex flex-col items-start">
+          <div className="flex flex-col items-start w-full">
             <label
               htmlFor="event-state"
               className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -988,7 +988,7 @@ const EventForm = () => {
             />
             <ErrorText k="state" />
           </div>
-          <div className="flex flex-col items-start">
+          <div className="flex flex-col items-start w-full">
             <label
               htmlFor="event-zip"
               className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -1015,7 +1015,7 @@ const EventForm = () => {
             {/* horizontal line */}
             <div className="mt-[40px] mb-[40px] w-full border-t border-[#D7D7D7]" />
             {/* position name */}
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start w-full">
               <label
                 htmlFor={`position-name-${index}`}
                 className="mb-1 text-[16px] text-base font-normal text-medium-gray"
@@ -1194,7 +1194,7 @@ const EventForm = () => {
             </div>
             {/* position state / zip */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start w-full">
                 <label
                   htmlFor={`position-state-${index}`}
                   className="mb-1 mt-10 text-base font-normal text-medium-gray"
@@ -1216,7 +1216,7 @@ const EventForm = () => {
                 />
                 <ErrorText k={`positions.${index}.state`} />
               </div>
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start w-full">
                 <label
                   htmlFor={`position-zip-${index}`}
                   className="mb-1 mt-10 text-base font-normal text-medium-gray"
