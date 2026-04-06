@@ -22,8 +22,6 @@ export default function EditProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  const [dob, setDob] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Form State
@@ -125,7 +123,6 @@ export default function EditProfilePage() {
     const day = String(date.getUTCDate()).padStart(2, "0");
     const formattedDate = `${year}-${month}-${day}`; // YYYY-MM-DD
     setForm((prev) => ({ ...prev, dob: formattedDate }));
-    setDob(formattedDate);
     setShowDatePicker(false);
   }
 
@@ -269,20 +266,15 @@ export default function EditProfilePage() {
               />
             </div>
 
-            <div className="relative flex flex-col items-start">
-              <label
-                htmlFor="dob"
-                className="text-base font-normal text-medium-gray mb-1"
-              >
-                Date of Birth
-              </label>
-
+            {/* DOB with Custom DatePicker */}
+            <div className="relative">
+              <label className="block text-sm mb-1">Date of Birth</label>
               <button
                 type="button"
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className="w-full h-[43px] rounded-lg border border-medium-gray px-3 text-left text-base text-medium-gray bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+                className="w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
               >
-                {dob ? formatDateForDisplay(dob) : "Select date"}
+                {form.dob ? formatDateForDisplay(form.dob) : "Select date"}
               </button>
 
               {showDatePicker && (
@@ -292,14 +284,13 @@ export default function EditProfilePage() {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowDatePicker(false)}
                   />
-
-                  {/* DatePicker */}
+                  {/* DatePicker Dropdown */}
                   <div className="absolute top-full left-0 mt-2 z-50">
                     <DatePicker
                       selectedDate={
-                        dob
+                        form.dob
                           ? (() => {
-                              const [year, month, day] = dob
+                              const [year, month, day] = form.dob
                                 .split("-")
                                 .map(Number);
                               return new Date(Date.UTC(year, month - 1, day));
@@ -311,9 +302,6 @@ export default function EditProfilePage() {
                   </div>
                 </>
               )}
-
-              {/* Hidden input so FormData still works */}
-              <input type="hidden" name="dob" value={dob} required />
             </div>
 
             {/* Spanish */}
