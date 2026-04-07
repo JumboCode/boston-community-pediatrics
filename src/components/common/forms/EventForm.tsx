@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { getPublicURL } from "@/lib/r2";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import DatePicker from "@/components/DatePicker";
 
 // API shapes used by this component
 type APIPosition = Partial<{
@@ -88,6 +89,33 @@ const createStaticImageData = (url: string): StaticImageData =>
     blurHeight: 0,
   }) as StaticImageData;
 
+const formatDateForInput = (date: Date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseInputDate = (value: string): Date | null => {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+const formatDateForDisplay = (value: string) => {
+  if (!value) return "Select date";
+  const date = parseInputDate(value);
+  if (!date) return "Select date";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,6 +124,10 @@ const EventForm = () => {
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("id");
   const [isLoading, setIsLoading] = useState(!!eventIdParam);
+  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
+  const [openPositionDatePicker, setOpenPositionDatePicker] = useState<
+    number | null
+  >(null);
 
 
   const inputBase =
@@ -585,6 +617,9 @@ const EventForm = () => {
     className,
     error,
     onClearError,
+    isDatePickerOpen = false,
+    onToggleDatePicker,
+    onCloseDatePicker,
   }: {
     id: string;
     label: string;
@@ -597,6 +632,9 @@ const EventForm = () => {
     className?: string;
     error?: string;
     onClearError?: () => void;
+    isDatePickerOpen?: boolean;
+    onToggleDatePicker?: () => void;
+    onCloseDatePicker?: () => void;
   }) => (
     <div className="flex flex-col">
       <div className="mt-10 flex items-center justify-between">
@@ -620,26 +658,64 @@ const EventForm = () => {
           />
         </div>
       </div>
-      <input
-        id={id}
-        type={type}
-        value={disabled ? fallbackValue : value}
-        disabled={disabled}
-        onChange={(e) => {
-          onChange(e.target.value);
-          onClearError?.();
-        }}
-        className={
-          className ||
-          `w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-           ${
-             error
-               ? "border-red-500 focus:ring-red-500/30"
-               : "border-medium-gray focus:ring-bcp-blue/30"
-           }
-           disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
-        }
-      />
+      {type === "date" ? (
+        <div className="relative">
+          <button
+            id={id}
+            type="button"
+            disabled={disabled}
+            onClick={onToggleDatePicker}
+            className={
+              className ||
+              `w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+               ${
+                 error
+                   ? "border-red-500 focus:ring-red-500/30"
+                   : "border-medium-gray focus:ring-bcp-blue/30"
+               }
+               disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+            }
+          >
+            {formatDateForDisplay(disabled ? fallbackValue : value)}
+          </button>
+          {isDatePickerOpen && !disabled && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={onCloseDatePicker} />
+              <div className="absolute top-full left-0 mt-2 z-50">
+                <DatePicker
+                  selectedDate={parseInputDate(value)}
+                  onDateChange={(date) => {
+                    onChange(formatDateForInput(date));
+                    onClearError?.();
+                    onCloseDatePicker?.();
+                  }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <input
+          id={id}
+          type={type}
+          value={disabled ? fallbackValue : value}
+          disabled={disabled}
+          onChange={(e) => {
+            onChange(e.target.value);
+            onClearError?.();
+          }}
+          className={
+            className ||
+            `w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+             ${
+               error
+                 ? "border-red-500 focus:ring-red-500/30"
+                 : "border-medium-gray focus:ring-bcp-blue/30"
+             }
+             disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+          }
+        />
+      )}
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
     </div>
   );
@@ -808,22 +884,42 @@ const EventForm = () => {
           >
             Event date
           </label>
-          <input
-            id="event-date"
-            type="date"
-            value={event.date}
-            onChange={(e) => {
-              const v = e.target.value;
-              setEvent((prev) => ({ ...prev, date: v }));
-              clearError("date");
-            }}
-            className={`w-[588px] h-[43px] rounded-lg border p-3 text-base
-            ${
-              errors["date"]
-                ? "border-red-500 focus:ring-red-500"
-                : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            }`}
-          />
+          <div className="relative">
+            <button
+              id="event-date"
+              type="button"
+              onClick={() => setShowEventDatePicker((prev) => !prev)}
+              className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base
+              ${
+                errors["date"]
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              }`}
+            >
+              {formatDateForDisplay(event.date)}
+            </button>
+            {showEventDatePicker && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowEventDatePicker(false)}
+                />
+                <div className="absolute top-full left-0 mt-2 z-50">
+                  <DatePicker
+                    selectedDate={parseInputDate(event.date)}
+                    onDateChange={(date) => {
+                      setEvent((prev) => ({
+                        ...prev,
+                        date: formatDateForInput(date),
+                      }));
+                      clearError("date");
+                      setShowEventDatePicker(false);
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
           {errors["date"] && (
             <p className="mt-1 text-sm text-red-500">{errors["date"]}</p>
           )}
@@ -1046,6 +1142,13 @@ const EventForm = () => {
               onChange={(val) => handlePositionChange(index, "date", val)}
               error={errors[`positions.${index}.date`]}
               onClearError={() => clearError(`positions.${index}.date`)}
+              isDatePickerOpen={openPositionDatePicker === index}
+              onToggleDatePicker={() =>
+                setOpenPositionDatePicker((current) =>
+                  current === index ? null : index
+                )
+              }
+              onCloseDatePicker={() => setOpenPositionDatePicker(null)}
             />
             {/* position time */}
             <div className="flex flex-col">
