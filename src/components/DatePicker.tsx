@@ -14,11 +14,13 @@ export default function DatePicker({
   className = "",
 }: DatePickerProps) {
   const today = new Date();
+  const currentUtcYear = today.getUTCFullYear();
+  // Keep month/year/grid/selection in UTC so they match Date.UTC(...) on day click
   const [currentMonth, setCurrentMonth] = useState(
-    initialDate ? initialDate.getUTCMonth() : today.getMonth()
+    initialDate ? initialDate.getUTCMonth() : today.getUTCMonth()
   );
   const [currentYear, setCurrentYear] = useState(
-    initialDate ? initialDate.getUTCFullYear() : today.getFullYear()
+    initialDate ? initialDate.getUTCFullYear() : today.getUTCFullYear()
   );
   const [selectedDate, setSelectedDate] = useState<Date | null>(initialDate);
 
@@ -39,21 +41,22 @@ export default function DatePicker({
 
   const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  // Update internal state when prop changes
+  // Sync when the selected date value changes (use timestamp — parent passes a new Date each render)
+  const initialTime = initialDate?.getTime() ?? null;
   useEffect(() => {
-    if (initialDate) {
-      setSelectedDate(initialDate);
-      setCurrentMonth(initialDate.getUTCMonth());
-      setCurrentYear(initialDate.getUTCFullYear());
-    }
-  }, [initialDate]);
+    if (initialTime == null) return;
+    const d = new Date(initialTime);
+    setSelectedDate(d);
+    setCurrentMonth(d.getUTCMonth());
+    setCurrentYear(d.getUTCFullYear());
+  }, [initialTime]);
 
   const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
+    return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   };
 
   const getFirstDayOfMonth = (month: number, year: number) => {
-    return new Date(year, month, 1).getDay();
+    return new Date(Date.UTC(year, month, 1)).getUTCDay();
   };
 
   const generateCalendarDays = () => {
@@ -86,6 +89,8 @@ export default function DatePicker({
     // Use UTC to avoid timezone offset issues
     const clickedDate = new Date(Date.UTC(currentYear, currentMonth, day));
     setSelectedDate(clickedDate);
+    setCurrentMonth(clickedDate.getUTCMonth());
+    setCurrentYear(clickedDate.getUTCFullYear());
     onDateChange?.(clickedDate);
   };
 
@@ -120,6 +125,12 @@ export default function DatePicker({
       setCurrentMonth(currentMonth + 1);
     }
   };
+
+  const yearOptions = Array.from({ length: 100 }, (_, i) => currentUtcYear - i);
+  if (!yearOptions.includes(currentYear)) {
+    yearOptions.push(currentYear);
+    yearOptions.sort((a, b) => b - a);
+  }
 
   const calendarDays = generateCalendarDays();
 
@@ -180,10 +191,7 @@ export default function DatePicker({
               onChange={(e) => setCurrentYear(Number(e.target.value))}
               className="appearance-none bg-gray-100 rounded-lg px-3 py-1.5 pr-8 font-medium text-gray-900 cursor-pointer hover:bg-gray-200 transition-colors outline-none"
             >
-              {Array.from(
-                { length: 100 },
-                (_, i) => new Date().getFullYear() - i
-              ).map((year) => (
+              {yearOptions.map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>
