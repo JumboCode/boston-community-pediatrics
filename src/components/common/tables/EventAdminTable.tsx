@@ -57,11 +57,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     speaksSpanish: boolean;
     comment: string;
     memberSince?: number;
-    guestName?: string;
-    guestEmail?: string;
-    guestPhoneNumber?: string;
-    guestSpeaksSpanish?: boolean;
     profileImage?: string;
+    guests?: Array<{
+      name: string;
+      email: string;
+      phoneNumber: string;
+      speaksSpanish?: boolean;
+    }>;
   } | null>(null);
 
   const fetcher = async (url: string) => {
@@ -165,15 +167,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const handleViewComment = (id: string) => {
     // Try to find in volunteers first
     let mainUser = volunteers.find((v) => v.signUpId === id && !v.isGuest);
-    let guest = volunteers.find((v) => v.signUpId === id && v.isGuest);
 
     // If not found in volunteers, try waitlist
     if (!mainUser) {
       mainUser = waitlist.find((v) => v.waitlistId === id && !v.isGuest);
-      guest = waitlist.find((v) => v.waitlistId === id && v.isGuest);
     }
 
     if (!mainUser || !mainUser.comments) return;
+
+    // Find ALL guests belonging to this user
+    const allGuests = volunteers
+      .filter((v) => v.signUpId === id && v.isGuest)
+      .concat(waitlist.filter((v) => v.waitlistId === id && v.isGuest));
 
     setSelectedUserData({
       userId: mainUser.userId,
@@ -186,13 +191,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ...(mainUser.memberSince && {
         memberSince: mainUser.memberSince,
       }),
-      ...(guest && {
-        guestName: `${guest.firstName} ${guest.lastName}`,
-        guestEmail: guest.emailAddress,
-        guestPhoneNumber: guest.phoneNumber,
-        guestSpeaksSpanish: guest.speaksSpanish,
-        profileImage: mainUser.profileImage ?? undefined,
-      }),
+      guests: allGuests.map((guest) => ({
+        name: `${guest.firstName} ${guest.lastName}`,
+        email: guest.emailAddress,
+        phoneNumber: guest.phoneNumber,
+        speaksSpanish: guest.speaksSpanish,
+      })),
     });
     setShowCommentModal(true);
   };
@@ -816,7 +820,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           onClose={() => setShowCommentModal(false)}
           layout="custom"
           description={
-            <div className="w-full px-10 py-6 text-left text-bcp-blue">
+            <div className="w-full px-10 py-6 text-left text-bcp-blue max-h-[600px] overflow-y-auto overflow-x-hidden">
               {/* Main User */}
               <div className="flex items-start gap-6 mb-8">
                 <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
@@ -837,23 +841,22 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   )}
                 </div>
 
-                <div
-                  className="flex-shrink-0"
-                  style={{ minWidth: "240px", maxWidth: "240px" }}
-                >
+                <div className="flex-shrink-0" style={{ width: "240px" }}>
                   <div className="flex items-center gap-2 mb-1">
                     <h3
-                      className="text-xl font-bold truncate"
+                      className="text-xl font-bold truncate flex-1 min-w-0"
                       title={selectedUserData.name}
                     >
                       {selectedUserData.name}
                     </h3>
 
-                    {selectedUserData.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold flex-shrink-0">
-                        S
-                      </div>
-                    )}
+                    <div className="w-7 h-7 flex-shrink-0">
+                      {selectedUserData.speaksSpanish && (
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                          S
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {selectedUserData.memberSince && (
@@ -884,77 +887,85 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 </div>
               </div>
 
-              {/* Guest Section */}
-              {selectedUserData.guestName && (
-                <div className="flex items-start gap-6 mb-8">
-                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
-                    {selectedUserData.profileImage ? (
-                      <Image
-                        width={64}
-                        height={64}
-                        src={selectedUserData.profileImage}
-                        alt="Profile"
-                        className="w-full h-full rounded-full object-cover"
-                        unoptimized={
-                          typeof selectedUserData.profileImage === "string" &&
-                          selectedUserData.profileImage.startsWith("http")
-                        }
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-300 rounded-full" />
-                    )}
-                  </div>
-
-                  <div
-                    className="flex-shrink-0"
-                    style={{ minWidth: "240px", maxWidth: "240px" }}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3
-                        className="text-xl font-bold truncate"
-                        title={selectedUserData.guestName}
-                      >
-                        {selectedUserData.guestName}
-                      </h3>
-
-                      {selectedUserData.guestSpeaksSpanish && (
-                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black flex-shrink-0">
-                          S
+              {/* Guest Section - Display ALL guests */}
+              {selectedUserData.guests &&
+                selectedUserData.guests.length > 0 && (
+                  <>
+                    {selectedUserData.guests.map((guest, index) => (
+                      <div key={index} className="flex items-start gap-6 mb-8">
+                        <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                          {selectedUserData.profileImage ? (
+                            <Image
+                              width={64}
+                              height={64}
+                              src={selectedUserData.profileImage}
+                              alt="Profile"
+                              className="w-full h-full rounded-full object-cover"
+                              unoptimized={
+                                typeof selectedUserData.profileImage ===
+                                  "string" &&
+                                selectedUserData.profileImage.startsWith("http")
+                              }
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-300 rounded-full" />
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <p className="text-sm text-gray-500">
-                      Guest of {selectedUserData.name.split(" ")[0]}
-                    </p>
-                  </div>
+                        <div
+                          className="flex-shrink-0"
+                          style={{ width: "240px" }}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3
+                              className="text-xl font-bold truncate flex-1 min-w-0"
+                              title={guest.name}
+                            >
+                              {guest.name}
+                            </h3>
 
-                  <div
-                    className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
-                    style={{ minWidth: "320px" }}
-                  >
-                    <span className="text-gray-600 whitespace-nowrap">
-                      Phone number
-                    </span>
-                    <span
-                      className="truncate"
-                      title={selectedUserData.guestPhoneNumber || "N/A"}
-                    >
-                      {selectedUserData.guestPhoneNumber || "N/A"}
-                    </span>
+                            <div className="w-7 h-7 flex-shrink-0">
+                              {guest.speaksSpanish && (
+                                <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                                  S
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                    <span className="text-gray-600 whitespace-nowrap">
-                      Email
-                    </span>
-                    <span
-                      className="truncate"
-                      title={selectedUserData.guestEmail || "N/A"}
-                    >
-                      {selectedUserData.guestEmail || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              )}
+                          <p className="text-sm text-gray-500">
+                            Guest of {selectedUserData.name.split(" ")[0]}
+                          </p>
+                        </div>
+
+                        <div
+                          className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
+                          style={{ minWidth: "320px" }}
+                        >
+                          <span className="text-gray-600 whitespace-nowrap">
+                            Phone number
+                          </span>
+                          <span
+                            className="truncate"
+                            title={guest.phoneNumber || "N/A"}
+                          >
+                            {guest.phoneNumber || "N/A"}
+                          </span>
+
+                          <span className="text-gray-600 whitespace-nowrap">
+                            Email
+                          </span>
+                          <span
+                            className="truncate"
+                            title={guest.email || "N/A"}
+                          >
+                            {guest.email || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
 
               {/* Comment */}
               <div className="mt-4">
