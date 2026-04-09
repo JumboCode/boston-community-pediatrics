@@ -15,7 +15,7 @@ export default function EditProfilePage() {
   // Redirect if not signed in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isLoaded, isSignedIn, router]);
 
@@ -41,6 +41,9 @@ export default function EditProfilePage() {
   // Image State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Error State
+  const [error, setError] = useState<string>("");
 
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
@@ -117,6 +120,7 @@ export default function EditProfilePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError("");
 
     try {
       let finalImageUrl = form.profileImageKey;
@@ -163,13 +167,16 @@ export default function EditProfilePage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update");
+      }
 
       router.push("/profile");
       router.refresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to save changes.");
+      setError(err.message || "Failed to save changes.");
     } finally {
       setSaving(false);
     }
@@ -192,6 +199,12 @@ export default function EditProfilePage() {
           <h1 className="text-2xl font-semibold text-center mb-10 text-[#234254]">
             Edit your profile
           </h1>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* First / Last Name */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react"; // Added useRef
-import { useSignUp } from "@clerk/nextjs"; 
+import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,7 +15,7 @@ type SignupFormData = {
   email: string;
   phone: string;
   dob: string;
-  speaksSpanish: boolean,
+  speaksSpanish: boolean;
   street?: string;
   apt?: string;
   city?: string;
@@ -38,7 +38,9 @@ const SignupForm = () => {
 
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
+  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
+    null
+  );
   if (!isLoaded) return <BasicSkeleton />;
 
   // --- NEW: Handle Image Selection ---
@@ -56,7 +58,7 @@ const SignupForm = () => {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/onboarding", 
+        redirectUrlComplete: "/onboarding",
       });
     } catch {
       console.error("Google sign up error");
@@ -86,14 +88,14 @@ const SignupForm = () => {
     try {
       // --- 1. NEW: Upload Image to R2 (if selected) ---
       let uploadedImageUrl = "";
-      
+
       if (selectedFile) {
         // A. Get the presigned URL
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
           body: JSON.stringify({ fileType: selectedFile.type }),
         });
-        
+
         if (!uploadRes.ok) throw new Error("Failed to initialize upload");
         const { uploadUrl, publicUrl } = await uploadRes.json();
 
@@ -417,12 +419,12 @@ const SignupForm = () => {
             </div>
             <div className="flex flex-row items-center gap-[14px]">
               <input
-                  type="radio"
-                  // type="checkbox"
-                  className="accent-bcp-blue rounded-md"
-                  name="speaksSpanish"
-                  value="false"
-                />
+                type="radio"
+                // type="checkbox"
+                className="accent-bcp-blue rounded-md"
+                name="speaksSpanish"
+                value="false"
+              />
               <label
                 htmlFor="speaksSpanish"
                 className="text-base font-normal text-medium-gray mb-1 gap-14"
@@ -512,27 +514,38 @@ const SignupForm = () => {
 
         {/* --- NEW: Image Upload UI --- */}
         <div className="flex items-center gap-[60px]">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
             accept="image/*"
             className="hidden" // Hide the ugly default input
           />
-          
+
           {/* Clickable Circle Image */}
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
             className="w-[264px] h-[264px] relative cursor-pointer  overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
           >
             {previewUrl ? (
-              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <Image src={ProfilePlaceholder} alt="Placeholder" className="w-full h-full object-cover" />
+              <Image
+                src={ProfilePlaceholder}
+                alt="Placeholder"
+                className="w-full h-full object-cover"
+              />
             )}
           </div>
 
-          <span className="text-[20px] text-medium-gray cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <span
+            className="text-[20px] text-medium-gray cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
             Upload a profile photo <br /> (optional)
           </span>
         </div>
