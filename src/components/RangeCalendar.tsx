@@ -1,140 +1,157 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+
+function to12h(hhmm: string): string {
+  if (!hhmm) return "12:00 AM";
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${String(hour12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+function to24h(time12: string): string {
+  const [time, period] = time12.split(" ");
+  let [h, m] = time.split(":").map(Number);
+  if (period === "AM" && h === 12) h = 0;
+  else if (period === "PM" && h !== 12) h += 12;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function dateToYMD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function ymdToDate(s: string): Date | null {
+  if (!s) return null;
+  const [y, m, d] = s.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear()
+  );
+}
 
 interface DateRangePickerProps {
-  startDate?: Date | null;
-  endDate?: Date | null;
-  onStartDateChange?: (date: Date | null) => void;
-  onEndDateChange?: (date: Date | null) => void;
-  onStartTimeChange?: (time: string) => void;
-  onEndTimeChange?: (time: string) => void;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  onStartDateChange?: (ymd: string) => void;
+  onEndDateChange?: (ymd: string) => void;
+  onStartTimeChange?: (hhmm24: string) => void;
+  onEndTimeChange?: (hhmm24: string) => void;
   className?: string;
 }
 
 export default function DateRangePicker({
-  startDate: initialStartDate = null,
-  endDate: initialEndDate = null,
+  startDate: initialStartDate = "",
+  endDate: initialEndDate = "",
+  startTime: initialStartTime = "",
+  endTime: initialEndTime = "",
   onStartDateChange,
   onEndDateChange,
   onStartTimeChange,
   onEndTimeChange,
   className = "",
 }: DateRangePickerProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
-  const [endDate, setEndDate] = useState<Date | null>(initialEndDate);
-  const [startTime, setStartTime] = useState("00:00 AM");
-  const [endTime, setEndTime] = useState("00:00 AM");
+  const initSD = ymdToDate(initialStartDate);
+  const initED = ymdToDate(initialEndDate);
+
+  const [currentMonth, setCurrentMonth] = useState(
+    initSD ? initSD.getMonth() : new Date().getMonth()
+  );
+  const [currentYear, setCurrentYear] = useState(
+    initSD ? initSD.getFullYear() : new Date().getFullYear()
+  );
+  const [startDateState, setStartDateState] = useState<Date | null>(initSD);
+  const [endDateState, setEndDateState] = useState<Date | null>(initED);
+  const [startTime12, setStartTime12] = useState(to12h(initialStartTime));
+  const [endTime12, setEndTime12] = useState(to12h(initialEndTime));
 
   const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const monthNamesFull = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
   ];
 
   const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  // Generate calendar days
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
+  const getDaysInMonth = (month: number, year: number) =>
+    new Date(year, month + 1, 0).getDate();
 
-  const getFirstDayOfMonth = (month: number, year: number) => {
-    return new Date(year, month, 1).getDay();
-  };
+  const getFirstDayOfMonth = (month: number, year: number) =>
+    new Date(year, month, 1).getDay();
 
   const generateCalendarDays = () => {
     const daysInMonth = getDaysInMonth(currentMonth, currentYear);
     const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
     const days: (number | null)[] = [];
 
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
-    // Add all days of the month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-
-    // Add empty cells to complete the grid (to make 6 rows if needed)
     const remainingCells = 42 - days.length;
-    for (let i = 1; i <= remainingCells; i++) {
-      days.push(i);
-    }
+    for (let i = 1; i <= remainingCells; i++) days.push(i);
 
     return days;
   };
 
-  const handleDayClick = (day: number | null) => {
+  const handleDayClick = (day: number | null, index: number) => {
     if (day === null) return;
+
+    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+    const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+    if (index >= daysInMonth + firstDay) return;
 
     const clickedDate = new Date(currentYear, currentMonth, day);
 
-    // If no start date or both dates are set, start a new selection
-    if (!startDate || (startDate && endDate)) {
-      setStartDate(clickedDate);
-      setEndDate(null);
-      onStartDateChange?.(clickedDate);
-      onEndDateChange?.(null);
-    }
-    // If start date is set but no end date
-    else if (startDate && !endDate) {
-      if (clickedDate < startDate) {
-        // If clicked date is before start date, swap them
-        setEndDate(startDate);
-        setStartDate(clickedDate);
-        onStartDateChange?.(clickedDate);
-        onEndDateChange?.(startDate);
+    if (!startDateState || (startDateState && endDateState)) {
+      setStartDateState(clickedDate);
+      setEndDateState(null);
+      onStartDateChange?.(dateToYMD(clickedDate));
+      onEndDateChange?.("");
+    } else if (startDateState && !endDateState) {
+      if (clickedDate < startDateState) {
+        setEndDateState(startDateState);
+        setStartDateState(clickedDate);
+        onStartDateChange?.(dateToYMD(clickedDate));
+        onEndDateChange?.(dateToYMD(startDateState));
       } else {
-        setEndDate(clickedDate);
-        onEndDateChange?.(clickedDate);
+        setEndDateState(clickedDate);
+        onEndDateChange?.(dateToYMD(clickedDate));
       }
     }
   };
 
-  const isDateInRange = (day: number | null) => {
-    if (day === null || !startDate) return false;
+  const classifyDay = (day: number | null, index: number) => {
+    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+    const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+    const isGrayedOut = index >= daysInMonth + firstDay;
 
-    const currentDate = new Date(currentYear, currentMonth, day);
-
-    if (endDate) {
-      return currentDate >= startDate && currentDate <= endDate;
+    if (day === null || isGrayedOut || !startDateState) {
+      return { isStart: false, isEnd: false, inRange: false, isGrayedOut: isGrayedOut || day === null };
     }
 
-    return false;
-  };
+    const cellDate = new Date(currentYear, currentMonth, day);
+    const isStart = sameDay(cellDate, startDateState);
+    const isEnd = endDateState ? sameDay(cellDate, endDateState) : false;
+    const inRange = endDateState
+      ? cellDate >= startDateState && cellDate <= endDateState
+      : false;
 
-  const isStartDate = (day: number | null) => {
-    if (day === null || !startDate) return false;
-    const currentDate = new Date(currentYear, currentMonth, day);
-    return (
-      currentDate.getDate() === startDate.getDate() &&
-      currentDate.getMonth() === startDate.getMonth() &&
-      currentDate.getFullYear() === startDate.getFullYear()
-    );
-  };
-
-  const isEndDate = (day: number | null) => {
-    if (day === null || !endDate) return false;
-    const currentDate = new Date(currentYear, currentMonth, day);
-    return (
-      currentDate.getDate() === endDate.getDate() &&
-      currentDate.getMonth() === endDate.getMonth() &&
-      currentDate.getFullYear() === endDate.getFullYear()
-    );
+    return { isStart, isEnd, inRange, isGrayedOut: false };
   };
 
   const handlePrevMonth = () => {
@@ -155,12 +172,18 @@ export default function DateRangePicker({
     }
   };
 
+  const navigateToDate = (date: Date | null) => {
+    if (!date) return;
+    setCurrentMonth(date.getMonth());
+    setCurrentYear(date.getFullYear());
+  };
+
   const handleTimeChange = (
     type: "start" | "end",
     field: "hour" | "minute" | "period",
     value: string
   ) => {
-    const timeString = type === "start" ? startTime : endTime;
+    const timeString = type === "start" ? startTime12 : endTime12;
     const [time, period] = timeString.split(" ");
     let [hour, minute] = time.split(":");
 
@@ -168,48 +191,44 @@ export default function DateRangePicker({
     if (field === "minute") minute = value;
     const newPeriod = field === "period" ? value : period;
 
-    const newTime = `${hour}:${minute} ${newPeriod}`;
+    const newTime12 = `${hour}:${minute} ${newPeriod}`;
 
     if (type === "start") {
-      setStartTime(newTime);
-      onStartTimeChange?.(newTime);
+      setStartTime12(newTime12);
+      onStartTimeChange?.(to24h(newTime12));
     } else {
-      setEndTime(newTime);
-      onEndTimeChange?.(newTime);
+      setEndTime12(newTime12);
+      onEndTimeChange?.(to24h(newTime12));
     }
   };
 
-  const formatDate = (date: Date | null) => {
+  const formatDateLabel = (date: Date | null) => {
     if (!date) return "";
-    return `${monthNames[date.getMonth()]} ${date.getDate()}`;
+    return `${monthNamesFull[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
   };
 
   const calendarDays = generateCalendarDays();
+
+  const singleDayRange =
+    startDateState && endDateState && sameDay(startDateState, endDateState);
 
   return (
     <div
       className={`bg-white rounded-2xl shadow-lg p-6 w-[320px] font-sans ${className}`}
     >
-      {/* Header with month/year selectors and navigation */}
+      {/* Month/year nav */}
       <div className="flex items-center justify-between mb-6">
         <button
+          type="button"
           onClick={handlePrevMonth}
           className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10 12L6 8L10 4" />
           </svg>
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Month selector */}
           <div className="relative">
             <select
               value={currentMonth}
@@ -217,25 +236,14 @@ export default function DateRangePicker({
               className="appearance-none bg-gray-100 rounded-lg px-3 py-1.5 pr-8 font-medium text-gray-900 cursor-pointer hover:bg-gray-200 transition-colors outline-none"
             >
               {monthNames.map((month, index) => (
-                <option key={month} value={index}>
-                  {month}
-                </option>
+                <option key={month} value={index}>{month}</option>
               ))}
             </select>
-            <svg
-              className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 5L6 8L9 5" />
             </svg>
           </div>
 
-          {/* Year selector */}
           <div className="relative">
             <select
               value={currentYear}
@@ -244,112 +252,119 @@ export default function DateRangePicker({
             >
               {Array.from({ length: 20 }, (_, i) => currentYear - 10 + i).map(
                 (year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
+                  <option key={year} value={year}>{year}</option>
                 )
               )}
             </select>
-            <svg
-              className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 5L6 8L9 5" />
             </svg>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={handleNextMonth}
           className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 4L10 8L6 12" />
           </svg>
         </button>
       </div>
 
-      {/* Days of week */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      {/* Days of week header */}
+      <div className="grid grid-cols-7 mb-1">
         {daysOfWeek.map((day) => (
-          <div
-            key={day}
-            className="text-center text-xs font-medium text-gray-500 py-1"
-          >
+          <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
+      {/* Calendar grid -- no gap so range band is continuous */}
+      <div className="grid grid-cols-7 mb-4">
         {calendarDays.map((day, index) => {
-          const isInRange = isDateInRange(day);
-          const isStart = isStartDate(day);
-          const isEnd = isEndDate(day);
-          const isGrayedOut =
-            index >=
-            getDaysInMonth(currentMonth, currentYear) +
-              getFirstDayOfMonth(currentMonth, currentYear);
+          const { isStart, isEnd, inRange, isGrayedOut } = classifyDay(day, index);
+          const col = index % 7;
+
+          // Background strip behind the cell for the continuous range band
+          let bgClass = "";
+          if (inRange && !singleDayRange) {
+            if (isStart && isEnd) {
+              bgClass = "";
+            } else if (isStart) {
+              bgClass = "bg-gradient-to-r from-transparent to-bcp-blue/15";
+            } else if (isEnd) {
+              bgClass = "bg-gradient-to-l from-transparent to-bcp-blue/15";
+            } else {
+              bgClass = "bg-bcp-blue/15";
+            }
+          }
+
+          // Round the range strip at row edges so it doesn't bleed
+          let bgRound = "";
+          if (inRange && !isStart && !isEnd && !singleDayRange) {
+            if (col === 0) bgRound = "rounded-l-full";
+            if (col === 6) bgRound = "rounded-r-full";
+          }
 
           return (
-            <button
-              key={index}
-              onClick={() => handleDayClick(day)}
-              disabled={day === null}
-              className={`
-                h-8 flex items-center justify-center text-sm font-medium rounded-lg transition-all
-                ${day === null ? "invisible" : ""}
-                ${isGrayedOut ? "text-gray-300 cursor-default" : "text-gray-900"}
-                ${!isGrayedOut && !isStart && !isEnd ? "hover:bg-gray-100" : ""}
-                ${isInRange && !isStart && !isEnd ? "bg-really-light-gray" : ""}
-                ${isStart || isEnd ? "bg-bcp-blue text-white hover:bg-light-bcp-blue" : ""}
-              `}
-            >
-              {day}
-            </button>
+            <div key={index} className={`relative h-9 ${bgClass} ${bgRound}`}>
+              <button
+                type="button"
+                onClick={() => handleDayClick(day, index)}
+                disabled={day === null || isGrayedOut}
+                className={`
+                  relative z-10 w-full h-full flex items-center justify-center text-sm font-medium transition-colors
+                  ${day === null ? "invisible" : ""}
+                  ${isGrayedOut ? "text-gray-300 cursor-default" : ""}
+                  ${!isGrayedOut && !isStart && !isEnd ? "text-gray-900 hover:bg-gray-100 rounded-full" : ""}
+                  ${(isStart || isEnd) ? "text-white" : ""}
+                `}
+              >
+                {(isStart || isEnd) && (
+                  <span className="absolute inset-0 m-auto w-8 h-8 rounded-full bg-bcp-blue" />
+                )}
+                <span className="relative z-10">{day}</span>
+              </button>
+            </div>
           );
         })}
       </div>
 
-      {/* Time pickers */}
+      {/* Start / end rows with clickable date labels */}
       <div className="space-y-3 border-t border-gray-200 pt-4">
-        {/* Start time */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">
-              {formatDate(startDate) || "Start date"}
-            </span>
-            <span className="text-xs text-gray-500">Start time</span>
+          <div className="flex flex-col">
+            <span className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">Start</span>
+            <button
+              type="button"
+              onClick={() => navigateToDate(startDateState)}
+              className="text-sm font-medium text-gray-800 hover:text-bcp-blue transition-colors text-left"
+            >
+              {formatDateLabel(startDateState) || "Select start date"}
+            </button>
           </div>
           <TimeInput
-            value={startTime}
+            value={startTime12}
             onChange={(field, value) => handleTimeChange("start", field, value)}
           />
         </div>
 
-        {/* End time */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">
-              {formatDate(endDate) || "End date"}
-            </span>
-            <span className="text-xs text-gray-500">End time</span>
+          <div className="flex flex-col">
+            <span className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">End</span>
+            <button
+              type="button"
+              onClick={() => navigateToDate(endDateState)}
+              className="text-sm font-medium text-gray-800 hover:text-bcp-blue transition-colors text-left"
+            >
+              {formatDateLabel(endDateState) || "Select end date"}
+            </button>
           </div>
           <TimeInput
-            value={endTime}
+            value={endTime12}
             onChange={(field, value) => handleTimeChange("end", field, value)}
           />
         </div>
@@ -395,6 +410,7 @@ function TimeInput({ value, onChange }: TimeInputProps) {
         maxLength={2}
       />
       <button
+        type="button"
         onClick={() => onChange("period", period === "AM" ? "PM" : "AM")}
         className="ml-1 text-sm font-medium hover:bg-gray-200 px-1.5 py-0.5 rounded transition-colors"
       >
