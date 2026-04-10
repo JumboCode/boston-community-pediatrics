@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+/** Shared limits for create-event form + POST /api/events validation */
+export const EVENT_FIELD_LIMITS = {
+  title: 200,
+  description: 8000,
+  address: 300,
+  apt: 100,
+  city: 100,
+  state: 50,
+  zipMinDigits: 5,
+  zipMaxDigits: 9,
+  positionName: 200,
+  resourcesLink: 2048,
+  /** Max digits for participant count string (e.g. up to 999999) */
+  participantsMaxDigits: 6,
+} as const;
+
 // TODO: make this better in UI
 const hhmm = z
   .string()
@@ -10,21 +26,55 @@ const yyyymmdd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"); // hac
 const endAfterStart = (start: string, end: string) => end > start;
 const todayYmd = () => new Date().toISOString().slice(0, 10);
 
+const zipCodeSchema = z
+  .string()
+  .min(
+    EVENT_FIELD_LIMITS.zipMinDigits,
+    `Zip code must be at least ${EVENT_FIELD_LIMITS.zipMinDigits} digits`,
+  )
+  .max(
+    EVENT_FIELD_LIMITS.zipMaxDigits,
+    `Zip code must be at most ${EVENT_FIELD_LIMITS.zipMaxDigits} digits`,
+  )
+  .regex(/^\d+$/, "Zip code must contain only numbers");
+
 export const positionSchema = z
   .object({
-    name: z.string().min(1, "Position name is required"),
+    name: z
+      .string()
+      .min(1, "Position name is required")
+      .max(EVENT_FIELD_LIMITS.positionName, "Position name is too long"),
     date: yyyymmdd,
 
     startTime: hhmm,
     endTime: hhmm,
 
-    description: z.string().min(1, "Description is required"),
-    address: z.string().min(1, "Street address is required"),
-    apt: z.string().optional().or(z.literal("")),
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-    zip: z.string().min(1, "Zip code is required"),
-    participants: z.string().regex(/^\d+$/, "Must be a number"),
+    description: z
+      .string()
+      .min(1, "Description is required")
+      .max(EVENT_FIELD_LIMITS.description, "Description is too long"),
+    address: z
+      .string()
+      .min(1, "Street address is required")
+      .max(EVENT_FIELD_LIMITS.address, "Street address is too long"),
+    apt: z.string().max(EVENT_FIELD_LIMITS.apt, "Apt / suite is too long").default(""),
+    city: z
+      .string()
+      .min(1, "City is required")
+      .max(EVENT_FIELD_LIMITS.city, "City is too long"),
+    state: z
+      .string()
+      .min(1, "State is required")
+      .max(EVENT_FIELD_LIMITS.state, "State is too long"),
+    zip: zipCodeSchema,
+    participants: z
+      .string()
+      .regex(/^\d+$/, "Must be a number")
+      .min(1, "Must be a number")
+      .max(
+        EVENT_FIELD_LIMITS.participantsMaxDigits,
+        "Maximum participants value is too large",
+      ),
     sameAsDate: z.boolean(),
     sameAsTime: z.boolean(), // means same start+end as event
     sameAsAddress: z.boolean(),
@@ -36,23 +86,55 @@ export const positionSchema = z
 
 export const eventSchema = z
   .object({
-    title: z.string().min(1, "Event title is required"),
+    title: z
+      .string()
+      .min(1, "Event title is required")
+      .max(EVENT_FIELD_LIMITS.title, "Event title is too long"),
     date: yyyymmdd,
 
     startTime: hhmm,
     endTime: hhmm,
 
-    description: z.string().optional(),
-    resourcesLink: z
+    description: z
       .string()
-      .url("Must be a valid URL")
-      .optional()
-      .or(z.literal("")),
-    address: z.string().min(1, "Street address is required"),
-    apt: z.string().optional().or(z.literal("")),
-    city: z.string().min(1, "City is required"),
-    state: z.string().min(1, "State is required"),
-    zip: z.string().min(1, "Zip code is required"),
+      .max(EVENT_FIELD_LIMITS.description, "Description is too long")
+      .optional(),
+    resourcesLink: z.preprocess(
+      (v) => {
+        if (v == null) return "";
+        if (typeof v !== "string") return v;
+        return v.trim();
+      },
+      z
+        .union([
+          z.literal(""),
+          z
+            .string()
+            .min(1)
+            .max(
+              EVENT_FIELD_LIMITS.resourcesLink,
+              "Resources link is too long",
+            )
+            .url(
+              "Use a full URL starting with https:// (or leave this field blank)",
+            ),
+        ])
+        .optional(),
+    ),
+    address: z
+      .string()
+      .min(1, "Street address is required")
+      .max(EVENT_FIELD_LIMITS.address, "Street address is too long"),
+    apt: z.string().max(EVENT_FIELD_LIMITS.apt, "Apt / suite is too long").default(""),
+    city: z
+      .string()
+      .min(1, "City is required")
+      .max(EVENT_FIELD_LIMITS.city, "City is too long"),
+    state: z
+      .string()
+      .min(1, "State is required")
+      .max(EVENT_FIELD_LIMITS.state, "State is too long"),
+    zip: zipCodeSchema,
     positions: z
       .array(positionSchema)
       .min(1, "At least one position is required"),
