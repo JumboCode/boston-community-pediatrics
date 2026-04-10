@@ -88,6 +88,8 @@ const createStaticImageData = (url: string): StaticImageData =>
     blurHeight: 0,
   }) as StaticImageData;
 
+const todayYmd = () => new Date().toISOString().slice(0, 10);
+
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -625,6 +627,7 @@ const EventForm = () => {
         type={type}
         value={disabled ? fallbackValue : value}
         disabled={disabled}
+        min={type === "date" ? todayYmd() : undefined}
         onChange={(e) => {
           onChange(e.target.value);
           onClearError?.();
@@ -811,6 +814,7 @@ const EventForm = () => {
           <input
             id="event-date"
             type="date"
+            min={todayYmd()}
             value={event.date}
             onChange={(e) => {
               const v = e.target.value;

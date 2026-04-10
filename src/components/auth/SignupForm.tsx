@@ -41,6 +41,7 @@ const SignupForm = () => {
   const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
     null
   );
+  const todayYmd = new Date().toISOString().slice(0, 10);
   if (!isLoaded) return <BasicSkeleton />;
 
   // --- NEW: Handle Image Selection ---
@@ -78,9 +79,16 @@ const SignupForm = () => {
     const confirmPassword = formData.get("confirm-password") as string;
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
+    const dob = formData.get("dob") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (dob && dob > todayYmd) {
+      setError("Date of birth cannot be in the future");
       setLoading(false);
       return;
     }
@@ -388,6 +396,7 @@ const SignupForm = () => {
             id="dob"
             type="date"
             required
+            max={todayYmd}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>

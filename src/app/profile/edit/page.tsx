@@ -21,6 +21,7 @@ export default function EditProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const todayYmd = new Date().toISOString().slice(0, 10);
 
   // Form State
   const [form, setForm] = useState({
@@ -121,6 +122,12 @@ export default function EditProfilePage() {
     e.preventDefault();
     setSaving(true);
     setError("");
+
+    if (form.dob && form.dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
+      setSaving(false);
+      return;
+    }
 
     try {
       let finalImageUrl = form.profileImageKey;
@@ -260,6 +267,7 @@ export default function EditProfilePage() {
                 name="dob"
                 value={form.dob}
                 onChange={handleChange}
+                max={todayYmd}
                 className="w-full border rounded-md px-3 py-2 text-sm"
               />
             </div>

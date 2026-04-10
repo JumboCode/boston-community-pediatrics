@@ -13,6 +13,7 @@ function OnboardingPage() {
   const [checkingDb, setCheckingDb] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const todayYmd = new Date().toISOString().slice(0, 10);
 
   // Check if user already exists in Postgres
   useEffect(() => {
@@ -46,6 +47,13 @@ function OnboardingPage() {
     if (!user) return;
 
     const formData = new FormData(e.currentTarget);
+    const dob = formData.get("dob") as string;
+
+    if (dob && dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       // POST to your existing API to create the user record
@@ -174,6 +182,7 @@ function OnboardingPage() {
               id="dob"
               type="date"
               required
+              max={todayYmd}
               className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>

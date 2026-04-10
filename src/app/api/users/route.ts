@@ -9,6 +9,16 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
+function isFutureDate(value?: string | null) {
+  if (!value) return false;
+  const input = new Date(value);
+  if (Number.isNaN(input.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  input.setHours(0, 0, 0, 0);
+  return input > today;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
@@ -106,6 +116,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (isFutureDate(user.dateOfBirth)) {
+      return NextResponse.json(
+        { error: "Date of birth cannot be in the future" },
+        { status: 400 }
+      );
+    }
+
     const newUser = await createUser(user);
     if (!newUser) {
       return NextResponse.json({ error: "User not created" }, { status: 500 });
@@ -151,6 +168,13 @@ export async function PUT(req: NextRequest) {
           );
         }
       }
+    }
+
+    if (body.dateOfBirth !== undefined && isFutureDate(body.dateOfBirth)) {
+      return NextResponse.json(
+        { error: "Date of birth cannot be in the future" },
+        { status: 400 }
+      );
     }
 
     let filteredBody = body;

@@ -8,6 +8,7 @@ const hhmm = z
 const yyyymmdd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"); // hacky error message for eventform error display
 
 const endAfterStart = (start: string, end: string) => end > start;
+const todayYmd = () => new Date().toISOString().slice(0, 10);
 
 export const positionSchema = z
   .object({
@@ -55,6 +56,10 @@ export const eventSchema = z
     positions: z
       .array(positionSchema)
       .min(1, "At least one position is required"),
+  })
+  .refine((e) => e.date >= todayYmd(), {
+    message: "Event date cannot be in the past",
+    path: ["date"],
   })
   .refine((e) => endAfterStart(e.startTime, e.endTime), {
     message: "End time must be after start time",
