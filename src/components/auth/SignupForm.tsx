@@ -99,6 +99,12 @@ const SignupForm = () => {
       return;
     }
 
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
+    }
+
     if (dob && dob > todayYmd) {
       setError("Date of birth cannot be in the future");
       setLoading(false);
@@ -579,11 +585,15 @@ const SignupForm = () => {
           >
             Create password
           </label>
+          <p className="text-sm text-medium-gray mb-2">
+            Must be at least 8 characters.
+          </p>
           <input
             name="password"
             id="password"
             type="password"
             required
+            minLength={8}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
@@ -600,6 +610,7 @@ const SignupForm = () => {
             id="confirm-password"
             type="password"
             required
+            minLength={8}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
