@@ -19,6 +19,18 @@ function isFutureDate(value?: string | null) {
   return input > today;
 }
 
+function normalizeProfileImageUrl(value?: string | null) {
+  if (!value) return value ?? null;
+  if (!value.startsWith("http")) return value;
+  try {
+    const url = new URL(value);
+    url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
@@ -107,6 +119,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { user } = await req.json();
+    user.profileImage = normalizeProfileImageUrl(user.profileImage);
 
     // Validate phone number
     if (!user.phoneNumber || !/^[0-9]+$/.test(user.phoneNumber)) {
@@ -140,6 +153,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { id, body } = await req.json();
+    body.profileImage = normalizeProfileImageUrl(body.profileImage);
     let isAdmin = false;
     const currentUser = await getCurrentUser();
     if (currentUser) {

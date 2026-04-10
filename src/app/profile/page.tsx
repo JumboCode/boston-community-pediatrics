@@ -105,6 +105,18 @@ export default function ProfilePage() {
   const [modalButtons, setModalButtons] = useState<ModalButton[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
+
   // 1. Fetch User Phone Number
   useEffect(() => {
     async function fetchUserData() {
@@ -118,7 +130,7 @@ export default function ProfilePage() {
           setDbFirstName(userData.firstName ?? "");
           setDbLastName(userData.lastName ?? "");
           if (userData.profileImage) {
-            setProfileImageUrl(userData.profileImage);
+            setProfileImageUrl(normalizeProfileImageUrl(userData.profileImage));
           }
         }
       } catch (err) {

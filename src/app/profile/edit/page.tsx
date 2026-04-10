@@ -46,6 +46,18 @@ export default function EditProfilePage() {
   // Error State
   const [error, setError] = useState<string>("");
 
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
+
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
     async function fetchData() {
@@ -69,14 +81,14 @@ export default function EditProfilePage() {
           city: data.city || "",
           state: data.state || "",
           zip: data.zipCode || "",
-          profileImageKey: data.profileImage || "",
+          profileImageKey: normalizeProfileImageUrl(data.profileImage) || "",
         });
 
         // Resolve Image URL if exists
         if (data.profileImage) {
           // If it's a full URL, use it; otherwise fetch the public URL
           if (data.profileImage.startsWith("http")) {
-            setPreviewUrl(data.profileImage);
+            setPreviewUrl(normalizeProfileImageUrl(data.profileImage));
           } else {
             const imgRes = await fetch(
               `/api/images?filename=${data.profileImage}`
@@ -130,7 +142,7 @@ export default function EditProfilePage() {
     }
 
     try {
-      let finalImageUrl = form.profileImageKey;
+      let finalImageUrl = normalizeProfileImageUrl(form.profileImageKey) || "";
 
       // 1. Upload new image if selected
       if (selectedFile) {
@@ -142,13 +154,16 @@ export default function EditProfilePage() {
         if (uploadRes.ok) {
           const { uploadUrl, publicUrl } = await uploadRes.json();
 
-          await fetch(uploadUrl, {
+          const uploadToR2Res = await fetch(uploadUrl, {
             method: "PUT",
             body: selectedFile,
             headers: { "Content-Type": selectedFile.type },
           });
+          if (!uploadToR2Res.ok) {
+            throw new Error("Failed to upload profile image");
+          }
 
-          finalImageUrl = publicUrl;
+          finalImageUrl = normalizeProfileImageUrl(publicUrl) || "";
         }
       }
 

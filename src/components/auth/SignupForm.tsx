@@ -44,6 +44,18 @@ const SignupForm = () => {
   const todayYmd = new Date().toISOString().slice(0, 10);
   if (!isLoaded) return <BasicSkeleton />;
 
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
+
   // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,7 +127,7 @@ const SignupForm = () => {
         });
 
         if (!r2Res.ok) throw new Error("Failed to upload image");
-        uploadedImageUrl = publicUrl;
+        uploadedImageUrl = normalizeProfileImageUrl(publicUrl) || "";
       }
 
       // --- 2. Create Clerk Account ---
