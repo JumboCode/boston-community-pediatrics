@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     } else {
       const all = await getAllPositions();
       return NextResponse.json(all, { status: 200 });
-      return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
+      // return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);

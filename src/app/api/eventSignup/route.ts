@@ -10,6 +10,7 @@ import {
   getUsersByPositionId,
   updateEventSignup,
   deleteEventSignup,
+  getAllSignups,
 } from "./controller";
 
 import { decrementEventPositionCount } from "../eventPosition/controller";
@@ -57,10 +58,8 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventSignups, { status: 200 });
     } else {
-      return NextResponse.json(
-        { error: "Missing event or position Id" },
-        { status: 400 }
-      );
+      const all = await getAllSignups();
+      return NextResponse.json(all, { status: 200 });
     }
   } catch (err) {
     console.error(err);

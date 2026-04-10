@@ -148,6 +148,15 @@ export const deleteEventSignup = async (eventSignupId: string) => {
   return deletedEventSignup;
 };
 
+// Fetch all signups
+export const getAllSignups = async () => {
+  return prisma.eventSignup.findMany({
+    include: {
+      user: true,
+      guests: true,
+    },
+  });
+};
 export const createWaitlistSignup = async (
   positionId: string,
   userId: string

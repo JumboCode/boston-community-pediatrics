@@ -20,12 +20,27 @@ interface EventProps {
   endDate: Date;
   selected: boolean;
   createdAt?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
   positions: {
     positionId: string;
     positionName: string;
     filledSlots: number;
     totalSlots: number;
     waitlistCount: number;
+    startTime: string;
+    endTime: string;
+    date: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    signups: any[];
+    waitlist: any[];
   }[];
 }
 
@@ -48,17 +63,10 @@ const ManageEventsPage = () => {
   const router = useRouter();
 
   // Fetch event information
-  const { data: allPositions } = useSWR<PositionData[]>(`/api/eventPosition`, fetcher);
-
-  const { data: allVols } = useSWR<any[]>(`/api/events`, fetcher);
   const { data: allPositions } = useSWR<any[]>(`/api/eventPosition`, fetcher);
   const { data: allSignups } = useSWR<any[]>(`/api/eventSignup`, fetcher);
   const { data: allWaitlist } = useSWR<any[]>(`/api/waitlist`, fetcher);
-  useEffect(() => {
-  console.log("positions:", allPositions);
-  console.log("signups:", allSignups);
-  console.log("waitlist:", allWaitlist);
-}, [allPositions, allSignups, allWaitlist]);
+  const { data: allVols } = useSWR<any[]>(`/api/events`, fetcher);
 
   const events = useMemo(() => {
     if (!allVols) return [];
@@ -67,26 +75,64 @@ const ManageEventsPage = () => {
         .filter((p) => p.eventId === v.id)
         .map((p) => ({
           positionId: p.id,
-          positionName: p.name,
-          filledSlots: (allSignups ?? []).filter((s) => s.positionId === p.id)
-            .length,
+          positionName: p.position,
+          filledSlots: Math.max(
+            0,
+            (allSignups ?? [])
+              .filter((s) => s.positionId === p.id)
+              .reduce((sum, s) => sum + 1 + (s.guests?.length ?? 0), 0)
+          ),
           totalSlots: p.totalSlots ?? 0,
+          startTime: p.startTime,
+          endTime: p.endTime,
+          date: p.date,
+          addressLine1: p.addressLine1 ?? "",
+          addressLine2: p.addressLine2 ?? "",
+          city: p.city ?? "",
+          state: p.state ?? "",
+          zipCode: p.zipCode ?? "",
           waitlistCount: (allWaitlist ?? []).filter(
             (w) => w.positionId === p.id
           ).length,
+          signups: (allSignups ?? [])
+            .filter((s) => s.positionId === p.id)
+            .flatMap((s) => {
+              if (!s.user) return [];
+              const main = {
+                firstName: s.user.firstName,
+                lastName: s.user.lastName,
+                emailAddress: s.user.emailAddress,
+                phoneNumber: s.user.phoneNumber,
+                isGuest: false,
+              };
+              const guests = (s.guests ?? []).map((g: any) => ({
+                firstName: g.firstName,
+                lastName: g.lastName,
+                emailAddress: g.emailAddress || "",
+                phoneNumber: g.phoneNumber || "",
+                isGuest: true,
+              }));
+              return [main, ...guests];
+            }),
+          waitlist: (allWaitlist ?? []).filter((w) => w.positionId === p.id),
         }));
-
       return {
         eventId: v.id,
         eventName: v.name,
         startDate: new Date(v.startTime),
         endDate: new Date(v.endTime),
+        addressLine1: v.addressLine1 ?? "",
+        addressLine2: v.addressLine2 ?? "",
+        city: v.city ?? "",
+        state: v.state ?? "",
+        zipCode: v.zipCode ?? "",
         selected: false,
         createdAt: v.createdAt,
         positions,
       };
     });
   }, [allVols, allPositions, allSignups, allWaitlist]);
+
   useEffect(() => {
     setEvent(events);
   }, [events]);
@@ -114,6 +160,7 @@ const ManageEventsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const [sortOption, setSortOption] = useState<
     "OLDEST" | "MOST-RECENT" | "PAST" | "UPCOMING"
@@ -145,7 +192,7 @@ const ManageEventsPage = () => {
 
     if (searchQuery) {
       list = list.filter((v) => {
-        const full = `${v.eventName}`.toLowerCase(); // whenever we figure out how the positions look like we can add that here too
+        const full = `${v.eventName}`.toLowerCase();
         return full.includes(searchQuery.toLowerCase());
       });
     }
@@ -153,50 +200,138 @@ const ManageEventsPage = () => {
     return list;
   }, [event, sortOption, searchQuery]);
 
-  const handleSaveCSV = () => {
-    const header =
-      "Event Name,Start Date,End Date,Volunteer Role,Volunteer Name";
+  useEffect(() => {
+    setFilterOpen(false);
+  }, [searchQuery]);
+
+  const handleSaveCSV = async () => {
     const selectedEvents = event.filter((v) => v.selected);
+    if (selectedEvents.length === 0) return;
 
-    const rows: string[] = [];
+    if (selectedEvents.length === 1) {
+      const ev = selectedEvents[0];
+      const lines = buildCSVLines(ev);
+      downloadCSV(lines, `${ev.eventName}.csv`);
+    } else {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      for (const ev of selectedEvents) {
+        zip.file(`${ev.eventName}.csv`, buildCSVLines(ev).join("\n"));
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadCSV(null, "events.zip", blob);
+    }
 
-    selectedEvents.forEach((ev) => {
-      // Find all positions for this event
-      const positions =
-        allPositions?.filter((pos) => pos.eventId === ev.eventId) || [];
+    setEvent((prev) => prev.map((v) => ({ ...v, selected: false })));
+  };
 
-      positions.forEach((pos) => {
-        // Find all volunteers signed up for this position
-        const volunteers =
-          allSignups?.filter((s) => s.positionId === pos.id) || [];
-
-        volunteers.forEach((vol) => {
-          const volunteerName = `${vol.firstName} ${vol.lastName}`;
-          const row = [
-            ev.eventName,
-            ev.startDate.toLocaleDateString("en-US"),
-            ev.endDate.toLocaleDateString("en-US"),
-            pos.name,
-            volunteerName,
-          ]
-            .map((value) => `"${value}"`)
-            .join(",");
-          rows.push(row);
-        });
+  const buildCSVLines = (ev: EventProps): string[] => {
+    const formatTime = (dt: string | Date) =>
+      new Date(dt).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       });
-    });
 
-    const csvContent = [header, ...rows].join("\n");
+    const lines: string[] = [];
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    lines.push(
+      [
+        "Event ID",
+        "Event Name",
+        "First Name",
+        "Last Name",
+        "Email",
+        "Phone Number",
+        "Position",
+        "Is Guest",
+        "Event Start Date",
+        "Event End Date",
+        "Position Start Time",
+        "Position End Time",
+        "Position Capacity",
+        "Position Waitlist",
+        "Address Line 1",
+        "Address Line 2",
+        "City",
+        "State",
+        "Zip Code",
+      ]
+        .map((h) => `"${h}"`)
+        .join(",")
+    );
+
+    for (const pos of ev.positions) {
+      const posStart = pos.startTime ? formatTime(pos.startTime) : "—";
+      const posEnd = pos.endTime ? formatTime(pos.endTime) : "—";
+      const capacity = `${Math.max(0, pos.filledSlots)} of ${pos.totalSlots}`;
+      const address = [
+        pos.addressLine1,
+        pos.addressLine2 ?? "",
+        pos.city,
+        pos.state,
+        pos.zipCode,
+      ];
+
+      for (const v of pos.signups ?? []) {
+        const row = [
+          ev.eventId,
+          ev.eventName,
+          v.firstName,
+          v.lastName,
+          v.emailAddress,
+          v.phoneNumber,
+          pos.positionName,
+          v.isGuest ? "Yes" : "No",
+          ev.startDate.toLocaleDateString("en-US"),
+          ev.endDate.toLocaleDateString("en-US"),
+          posStart,
+          posEnd,
+          capacity,
+          pos.waitlistCount,
+          ...address,
+        ];
+        lines.push(row.map((x) => `"${x ?? ""}"`).join(","));
+      }
+
+      // Waitlist rows
+      for (const v of pos.waitlist ?? []) {
+        const row = [
+          ev.eventId,
+          ev.eventName,
+          v.firstName,
+          v.lastName,
+          v.emailAddress,
+          v.phoneNumber,
+          `${pos.positionName} (Waitlist)`,
+          v.isGuest ? "Yes" : "No",
+          ev.startDate.toLocaleDateString("en-US"),
+          ev.endDate.toLocaleDateString("en-US"),
+          posStart,
+          posEnd,
+          capacity,
+          pos.waitlistCount,
+          ...address,
+        ];
+        lines.push(row.map((x) => `"${x ?? ""}"`).join(","));
+      }
+    }
+
+    return lines;
+  };
+
+  const downloadCSV = (
+    lines: string[] | null,
+    filename: string,
+    existingBlob?: Blob
+  ) => {
+    const blob =
+      existingBlob ??
+      new Blob([lines!.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
-    a.download =
-      selectedEvents.length === 1
-        ? `${selectedEvents[0].eventName}.csv`
-        : "events.csv";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -280,7 +415,10 @@ const ManageEventsPage = () => {
               type="text"
               placeholder="Search by event name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setExpandedEvents(new Set());
+              }}
               className="flex-1 px-3 py-2 text-sm outline-none"
             />
           </div>
@@ -324,6 +462,7 @@ const ManageEventsPage = () => {
                       onClick={() => {
                         setSortOption(opt);
                         setFilterOpen(false);
+                        setExpandedEvents(new Set());
                       }}
                       className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-gray-50
                     ${sortOption === opt ? "bg-gray-100 font-medium" : ""}`}
@@ -344,14 +483,21 @@ const ManageEventsPage = () => {
         </div>
 
         {/* Events Table */}
-        <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
+        <div
+          ref={tableRef}
+          className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto min-w-0"
+        >
           <table className="w-full table-fixed border-white-700 text-bcp-blue">
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
                 <th className="py-3 pl-8 px-4 font-normal w-[40%]">Events</th>
-                <th className="py-3 px-4 font-normal w-[25%]">Date</th>
-                <th className="py-3 px-4 font-normal w-[20%]">Capacity</th>
-                <th className="py-3 px-4 pl-13 font-normal w-[15%]">
+                <th className="py-3 px-4 font-normal w-[25%] text-center">
+                  Date
+                </th>
+                <th className="py-3 px-4 font-normal w-[20%] text-center">
+                  Capacity
+                </th>
+                <th className="py-3 px-4    font-normal w-[15%] text-center">
                   <button onClick={toggleSelectAll} className="hover:underline">
                     Select All
                   </button>
@@ -361,7 +507,6 @@ const ManageEventsPage = () => {
             <tbody>
               {sortedEvents.map((p) => (
                 <Fragment key={p.eventId}>
-
                   {/* Main Row */}
                   <tr
                     className={`transition-colors duration-200 ${
@@ -371,13 +516,13 @@ const ManageEventsPage = () => {
                     <td className="py-3 px-4 pl-8">
                       <div className="flex items-center gap-2 min-w-0">
                         <button
-                          onClick={() => toggleExpand(p.eventId)}
-                          className="flex-shrink-0 text-sm transition-transform"
+                          onClick={() => {
+                            toggleExpand(p.eventId);
+                          }}
+                          className="flex-shrink-0"
                         >
                           <svg
-                            className={`w-4 h-4 transition-transform ${
-                              expandedEvents.has(p.eventId) ? "rotate-90" : ""
-                            }`}
+                            className={`w-4 h-4 transition-transform ${expandedEvents.has(p.eventId) ? "rotate-90" : ""}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -398,39 +543,82 @@ const ManageEventsPage = () => {
                         </Link>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      {p.startDate.toLocaleDateString()}
+                    <td className="py-3 px-4 text-center">
+                      {p.startDate.toLocaleDateString("en-US") ===
+                      p.endDate.toLocaleDateString("en-US")
+                        ? p.startDate.toLocaleDateString("en-US")
+                        : `${p.startDate.toLocaleDateString("en-US")} - ${p.endDate.toLocaleDateString("en-US")}`}
                     </td>
-                    <td className="py-3 px-4">{p.positions.length}</td>
-                    <td className="py-3 px-4">
-                      <input
-                        type="checkbox"
-                        checked={p.selected}
-                        onChange={() => toggleSelect(p.eventId)}
-                      />
+                    <td className="py-3 px-4 text-center">
+                      {(() => {
+                        if (!allPositions)
+                          return (
+                            <span className="inline-block w-12 h-4 bg-gray-200 rounded animate-pulse" />
+                          );
+                        const filled = p.positions.reduce(
+                          (s, pos) => s + pos.filledSlots,
+                          0
+                        );
+                        const total = p.positions.reduce(
+                          (s, pos) => s + pos.totalSlots,
+                          0
+                        );
+                        return `${filled}/${total}`;
+                      })()}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <div className="flex justify-center">
+                        <input
+                          type="checkbox"
+                          checked={p.selected}
+                          onChange={() => toggleSelect(p.eventId)}
+                          className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                        />
+                      </div>
                     </td>
                   </tr>
 
-                  {/* Expanded Row */}
+                  {/* Expanded position rows */}
                   {expandedEvents.has(p.eventId) && (
-                    <tr className="bg-gray-50">
-                      <td colSpan={4} className="px-12 py-3 w-full">
-                        <div className="w-full max-w-full">
-                          {p.positions.map((pos) => (
-                            <div
-                              key={pos.positionId}
-                              className="flex justify-between text-sm border rounded px-3 py-2 bg-white"
-                            >
-                              <span>{pos.positionName}</span>
-                              <span>
-                                {pos.filledSlots}/{pos.totalSlots} • WL:{" "}
-                                {pos.waitlistCount}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
+                    <>
+                      {!allPositions ? (
+                        <tr className="bg-gray-50 border-t border-gray-200">
+                          <td
+                            colSpan={4}
+                            className="py-2 px-4 pl-16 text-sm text-gray-400"
+                          >
+                            Loading...
+                          </td>
+                        </tr>
+                      ) : p.positions.length === 0 ? (
+                        <tr className="bg-gray-50 border-t border-gray-200">
+                          <td
+                            colSpan={4}
+                            className="py-2 px-4 pl-16 text-sm text-gray-400"
+                          >
+                            No positions
+                          </td>
+                        </tr>
+                      ) : (
+                        p.positions.map((pos) => (
+                          <tr
+                            key={pos.positionId}
+                            className="bg-gray-100 hover:bg-gray-200 border-t border-gray-200 transition-colors duration-200"
+                          >
+                            <td className="py-2 px-4 pl-16 text-sm text-gray-800">
+                              {pos.positionName || "—"}
+                            </td>
+                            <td className="py-2 px-4 text-sm text-gray-800 text-center">
+                              Capacity: {pos.filledSlots}/{pos.totalSlots}
+                            </td>
+                            <td className="py-2 px-4 text-sm text-gray-800 text-center">
+                              Waitlist: {pos.waitlistCount}
+                            </td>
+                            <td />
+                          </tr>
+                        ))
+                      )}
+                    </>
                   )}
                 </Fragment>
               ))}
@@ -464,9 +652,7 @@ const ManageEventsPage = () => {
       {showDeleteConfirm && (
         <Modal
           open={showDeleteConfirm}
-          title={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
-          // message={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
-          onClose={() => setShowDeleteConfirm(false)}
+          title={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}          onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {
               label: "Cancel",

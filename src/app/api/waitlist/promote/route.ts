@@ -120,11 +120,11 @@ export async function POST(req: Request) {
       console.log("Deleted from waitlist");
 
       // Calculate total people being promoted (users + their guests)
-      const totalPeoplePromoted = waitlistRows.reduce((sum, row) => {
-        const entry = waitlistRows.find((w) => w.id === row.id);
-        // Count: 1 (user) + number of guests
-        return sum + 1; // Will be updated to count guests properly
-      }, 0);
+      // const totalPeoplePromoted = waitlistRows.reduce((sum, row) => {
+      //   const entry = waitlistRows.find((w) => w.id === row.id);
+      //   // Count: 1 (user) + number of guests
+      //   return sum + 1; // Will be updated to count guests properly
+      // }, 0);
 
       // Increment filled slots by total people
       await tx.eventPosition.update({

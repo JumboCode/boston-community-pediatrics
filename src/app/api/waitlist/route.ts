@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 export type WaitlistEntry = {
   waitlistId: string;
+  positionId: string;
   userId: string;
   firstName: string;
   lastName: string;
@@ -19,7 +20,45 @@ export async function GET(req: Request) {
   const positionId = searchParams.get("positionId");
 
   if (!positionId) {
-    return NextResponse.json({ error: "Missing positionId" }, { status: 400 });
+    try {
+      const all = await prisma.eventWaitlist.findMany({
+        include: { user: true, guests: true },
+      });
+
+      const allEntries: WaitlistEntry[] = [];
+      for (const row of all) {
+        if (!row.user || !row.userId) continue;
+        allEntries.push({
+          waitlistId: row.id,
+          positionId: row.positionId, // needed for client-side filtering
+          userId: row.userId,
+          firstName: row.user.firstName,
+          lastName: row.user.lastName,
+          emailAddress: row.user.emailAddress,
+          phoneNumber: row.user.phoneNumber,
+          isGuest: false,
+        });
+        for (const guest of row.guests) {
+          allEntries.push({
+            waitlistId: row.id,
+            positionId: row.positionId,
+            userId: guest.id,
+            firstName: guest.firstName,
+            lastName: guest.lastName,
+            emailAddress: guest.email || "",
+            phoneNumber: "",
+            guestOf: `${row.user.firstName} ${row.user.lastName}`,
+            isGuest: true,
+          });
+        }
+      }
+      return NextResponse.json(allEntries, { status: 200 });
+    } catch {
+      return NextResponse.json(
+        { error: "Failed to fetch waitlist" },
+        { status: 500 }
+      );
+    }
   }
 
   try {
@@ -43,6 +82,7 @@ export async function GET(req: Request) {
       // Add main user
       allEntries.push({
         waitlistId: row.id,
+        positionId: row.positionId,
         userId: row.userId,
         firstName: row.user.firstName,
         lastName: row.user.lastName,
@@ -55,6 +95,7 @@ export async function GET(req: Request) {
       for (const guest of row.guests) {
         allEntries.push({
           waitlistId: row.id, // Same waitlist ID as parent
+          positionId: row.positionId,
           userId: guest.id, // Use guest ID as userId for unique identification
           firstName: guest.firstName,
           lastName: guest.lastName,
