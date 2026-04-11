@@ -1,18 +1,27 @@
 import { z } from "zod";
 
-// TODO: make this better in UI
 const hhmm = z
   .string()
   .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be HH:MM");
 
-const yyyymmdd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"); // hacky error message for eventform error display
+const yyyymmdd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
 
-const endAfterStart = (start: string, end: string) => end > start;
+function endDateTimeAfterStart(
+  startDate: string,
+  endDate: string,
+  startTime: string,
+  endTime: string
+) {
+  if (endDate > startDate) return true;
+  if (endDate === startDate) return endTime > startTime;
+  return false;
+}
 
 export const positionSchema = z
   .object({
     name: z.string().min(1, "Position name is required"),
-    date: yyyymmdd,
+    startDate: yyyymmdd,
+    endDate: yyyymmdd,
 
     startTime: hhmm,
     endTime: hhmm,
@@ -25,18 +34,22 @@ export const positionSchema = z
     zip: z.string().min(1, "Zip code is required"),
     participants: z.string().regex(/^\d+$/, "Must be a number"),
     sameAsDate: z.boolean(),
-    sameAsTime: z.boolean(), // means same start+end as event
+    sameAsTime: z.boolean(),
     sameAsAddress: z.boolean(),
   })
-  .refine((p) => endAfterStart(p.startTime, p.endTime), {
-    message: "End time must be after start time",
-    path: ["endTime"],
-  });
+  .refine(
+    (p) => endDateTimeAfterStart(p.startDate, p.endDate, p.startTime, p.endTime),
+    {
+      message: "End date/time must be after start date/time",
+      path: ["endTime"],
+    }
+  );
 
 export const eventSchema = z
   .object({
     title: z.string().min(1, "Event title is required"),
-    date: yyyymmdd,
+    startDate: yyyymmdd,
+    endDate: yyyymmdd,
 
     startTime: hhmm,
     endTime: hhmm,
@@ -69,7 +82,10 @@ export const eventSchema = z
       .array(positionSchema)
       .min(1, "At least one position is required"),
   })
-  .refine((e) => endAfterStart(e.startTime, e.endTime), {
-    message: "End time must be after start time",
-    path: ["endTime"],
-  });
+  .refine(
+    (e) => endDateTimeAfterStart(e.startDate, e.endDate, e.startTime, e.endTime),
+    {
+      message: "End date/time must be after start date/time",
+      path: ["endTime"],
+    }
+  );
