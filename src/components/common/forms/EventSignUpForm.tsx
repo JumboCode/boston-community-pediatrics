@@ -171,7 +171,7 @@ export default function EventSignUpForm({
     setIsSubmitting(true);
 
     const payload = {
-      userId: userData.id,
+      userId: userData?.id,
       positionId: positionData.id,
       comments: comment.trim(),
       guests: guests.map(({ id, ...rest }) => rest),
