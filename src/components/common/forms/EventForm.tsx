@@ -102,20 +102,18 @@ const EventForm = () => {
     "rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
 
   const inputClass = (key: string, extra = "") =>
-    `${inputBase} ${
-      errors[key]
-        ? "border-red-500 focus:ring-red-500/30"
-        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
+    `${inputBase} ${errors[key]
+      ? "border-red-500 focus:ring-red-500/30"
+      : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
     } ${extra}`;
 
   const textareaBase =
     "resize-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
 
   const textareaClass = (key: string, extra = "") =>
-    `${textareaBase} ${
-      errors[key]
-        ? "border-red-500 focus:ring-red-500/30"
-        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
+    `${textareaBase} ${errors[key]
+      ? "border-red-500 focus:ring-red-500/30"
+      : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
     } ${extra}`;
 
   const ErrorText = ({ k }: { k: string }) =>
@@ -632,11 +630,10 @@ const EventForm = () => {
         className={
           className ||
           `w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-           ${
-             error
-               ? "border-red-500 focus:ring-red-500/30"
-               : "border-medium-gray focus:ring-bcp-blue/30"
-           }
+           ${error
+            ? "border-red-500 focus:ring-red-500/30"
+            : "border-medium-gray focus:ring-bcp-blue/30"
+          }
            disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
         }
       />
@@ -695,7 +692,7 @@ const EventForm = () => {
         state: result.state ?? "",
         zip: result.zipCode ?? "",
 
-        
+
       });
       setIsLoading(false);
 
@@ -738,7 +735,7 @@ const EventForm = () => {
     load();
   }, [eventIdParam]);
 
-  if(isLoading) return <BasicSkeleton />;
+  if (isLoading) return <BasicSkeleton />;
 
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">
@@ -818,11 +815,10 @@ const EventForm = () => {
               clearError("date");
             }}
             className={`w-[588px] h-[43px] rounded-lg border p-3 text-base
-            ${
-              errors["date"]
+            ${errors["date"]
                 ? "border-red-500 focus:ring-red-500"
                 : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            }`}
+              }`}
           />
           {errors["date"] && (
             <p className="mt-1 text-sm text-red-500">{errors["date"]}</p>
@@ -845,11 +841,10 @@ const EventForm = () => {
                 clearError("startTime");
               }}
               className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
-              ${
-                errors["startTime"]
+              ${errors["startTime"]
                   ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
                   : "border-medium-gray focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-              }`}
+                }`}
             />
 
             <input
@@ -862,11 +857,10 @@ const EventForm = () => {
                 clearError("endTime");
               }}
               className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
-              ${
-                errors["endTime"]
+              ${errors["endTime"]
                   ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
                   : "border-medium-gray focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-              }`}
+                }`}
             />
           </div>
 
@@ -1000,7 +994,8 @@ const EventForm = () => {
               inputMode="numeric"
               value={event.zip}
               onChange={(e) => {
-                setEvent((prev) => ({ ...prev, zip: e.target.value }));
+                const numericValue = e.target.value.replace(/\D/g, ""); // remove non-digits
+                setEvent((prev) => ({ ...prev, zip: numericValue }));
                 clearError("zip");
               }}
               className={`w-[264px] h-[43px] ${inputClass("zip")}`}
@@ -1082,11 +1077,10 @@ const EventForm = () => {
                     clearError(`positions.${index}.startTime`);
                   }}
                   className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-                  ${
-                    errors[`positions.${index}.startTime`]
+                  ${errors[`positions.${index}.startTime`]
                       ? "border-red-500 focus:ring-red-500/30"
                       : "border-medium-gray focus:ring-bcp-blue/30"
-                  }
+                    }
                   disabled:bg-light-gray disabled:cursor-not-allowed`}
                 />
 
@@ -1100,21 +1094,20 @@ const EventForm = () => {
                     clearError(`positions.${index}.endTime`);
                   }}
                   className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-                  ${
-                    errors[`positions.${index}.endTime`]
+                  ${errors[`positions.${index}.endTime`]
                       ? "border-red-500 focus:ring-red-500/30"
                       : "border-medium-gray focus:ring-bcp-blue/30"
-                  }
+                    }
                   disabled:bg-light-gray disabled:cursor-not-allowed`}
                 />
               </div>
               {(errors[`positions.${index}.startTime`] ||
                 errors[`positions.${index}.endTime`]) && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors[`positions.${index}.endTime`] ??
-                    errors[`positions.${index}.startTime`]}
-                </p>
-              )}
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors[`positions.${index}.endTime`] ??
+                      errors[`positions.${index}.startTime`]}
+                  </p>
+                )}
             </div>
             {/* position description */}
             <div className="flex flex-col">
