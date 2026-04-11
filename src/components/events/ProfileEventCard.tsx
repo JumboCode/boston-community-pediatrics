@@ -62,9 +62,16 @@ const ProfileEventCard = ({
 
   const timeRange = `${formatTime(startTime)} - ${formatTime(endTime)}`;
 
-  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+  const startDateStr = new Date(startTime).toLocaleDateString("en-US", {
     timeZone: "America/New_York",
   });
+  const endDateStr = new Date(endTime).toLocaleDateString("en-US", {
+    timeZone: "America/New_York",
+  });
+  const formattedDate =
+    startDateStr === endDateStr
+      ? startDateStr
+      : `${startDateStr} - ${endDateStr}`;
 
   const handleMenuClick = (e: React.MouseEvent, action?: () => void) => {
     e.preventDefault();

@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { UserRole } from "@prisma/client";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import DatePicker from "@/components/DatePicker";
 
 function OnboardingPage() {
   const { user, isLoaded } = useUser();
@@ -14,6 +15,35 @@ function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const todayYmd = new Date().toISOString().slice(0, 10);
+  const [dob, setDob] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const formatDateForInput = (date: Date) => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseInputDate = (value: string): Date | null => {
+    if (!value) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    if (!year || !month || !day) return null;
+    return new Date(Date.UTC(year, month - 1, day));
+  };
+
+  const formatDateForDisplay = (value: string) => {
+    if (!value) return "Select date";
+    const date = parseInputDate(value);
+    if (!date) return "Select date";
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  };
 
   // Check if user already exists in Postgres
   useEffect(() => {
@@ -69,7 +99,7 @@ function OnboardingPage() {
             emailAddress: user.primaryEmailAddress?.emailAddress,
             // User inputs these now
             phoneNumber: formData.get("phone"),
-            dateOfBirth: formData.get("dob"), // "YYYY-MM-DD"
+            dateOfBirth: dob, // "YYYY-MM-DD"
             speaksSpanish: formData.get("speaksSpanish") === "true",
             streetAddress: formData.get("street"),
             city: formData.get("city"),
@@ -177,14 +207,34 @@ function OnboardingPage() {
             >
               Date of Birth
             </label>
-            <input
-              name="dob"
-              id="dob"
-              type="date"
-              required
-              max={todayYmd}
-              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            />
+            <input name="dob" type="hidden" value={dob} />
+            <div className="relative w-full">
+              <button
+                id="dob"
+                type="button"
+                onClick={() => setShowDatePicker((prev) => !prev)}
+                className="w-full h-[43px] rounded-lg border border-medium-gray px-3 flex items-center justify-start text-left text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              >
+                {formatDateForDisplay(dob)}
+              </button>
+              {showDatePicker && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowDatePicker(false)}
+                  />
+                  <div className="absolute top-full left-0 mt-2 z-50">
+                    <DatePicker
+                      selectedDate={parseInputDate(dob)}
+                      onDateChange={(date) => {
+                        setDob(formatDateForInput(date));
+                        setShowDatePicker(false);
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Languages (Optional) */}
@@ -292,7 +342,7 @@ function OnboardingPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !dob}
             className="w-full py-3 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors mt-4"
           >
             {submitting ? "Creating Profile..." : "Finish Registration"}

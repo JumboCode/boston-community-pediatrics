@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { getPublicURL } from "@/lib/r2";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import DateRangePicker from "@/components/RangeCalendar";
 
 function sanitizeZipInput(value: string) {
   return value
@@ -57,7 +58,8 @@ type ApiEvent = Partial<{
 type PositionState = {
   id?: string;
   name: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   startTime: string;
   endTime: string;
   description: string;
@@ -99,6 +101,26 @@ const createStaticImageData = (url: string): StaticImageData =>
 
 const todayYmd = () => new Date().toISOString().slice(0, 10);
 
+const parseInputDate = (value: string): Date | null => {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+const formatDateForDisplay = (value: string) => {
+  if (!value) return "Select date";
+  const date = parseInputDate(value);
+  if (!date) return "Select date";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,6 +129,11 @@ const EventForm = () => {
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("id");
   const [isLoading, setIsLoading] = useState(!!eventIdParam);
+  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
+  const [openPositionDatePicker, setOpenPositionDatePicker] = useState<
+    number | null
+  >(null);
+
 
 
   const inputBase =
@@ -134,7 +161,8 @@ const EventForm = () => {
 
   const [event, setEvent] = useState({
     title: "",
-    date: "",
+    startDate: "",
+    endDate: "",
     startTime: "",
     endTime: "",
     description: "",
@@ -149,7 +177,8 @@ const EventForm = () => {
     {
       id: undefined,
       name: "",
-      date: "",
+      startDate: "",
+      endDate: "",
       startTime: "",
       endTime: "",
       description: "",
@@ -295,7 +324,8 @@ const EventForm = () => {
       ...prev,
       {
         name: "",
-        date: "",
+        startDate: "",
+        endDate: "",
         startTime: "",
         endTime: "",
         description: "",
@@ -323,7 +353,10 @@ const EventForm = () => {
   const toggleSameAsDate = (index: number) => {
     const next = !positions[index].sameAsDate;
     handlePositionChange(index, "sameAsDate", next);
-    if (next) clearError(`positions.${index}.date`);
+    if (next) {
+      clearError(`positions.${index}.startDate`);
+      clearError(`positions.${index}.endDate`);
+    }
   };
   const toggleSameAsTime = (index: number) => {
     const next = !positions[index].sameAsTime;
@@ -384,7 +417,8 @@ const EventForm = () => {
     try {
       const normalizedPositions = positions.map((p) => ({
         ...p,
-        date: p.sameAsDate ? event.date : p.date,
+        startDate: p.sameAsDate ? event.startDate : p.startDate,
+        endDate: p.sameAsDate ? event.endDate : p.endDate,
         startTime: p.sameAsTime ? event.startTime : p.startTime,
         endTime: p.sameAsTime ? event.endTime : p.endTime,
         address: p.sameAsAddress ? event.address : p.address,
@@ -410,7 +444,11 @@ const EventForm = () => {
             const field = String(path[2] ?? "");
             const pos = positions[idx];
 
-            if (field === "date" && pos?.sameAsDate) return ["date"];
+            if (
+              (field === "startDate" || field === "endDate") &&
+              pos?.sameAsDate
+            )
+              return [field];
             if (
               (field === "startTime" || field === "endTime") &&
               pos?.sameAsTime
@@ -451,16 +489,26 @@ const EventForm = () => {
         const combineDateTime = (date: string, time: string) =>
           new Date(`${date}T${time}:00`);
         const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
+        const generateDateRange = (start: string, end: string) => {
+          const dates: Date[] = [];
+          const cur = new Date(`${start}T00:00:00`);
+          const last = new Date(`${end}T00:00:00`);
+          while (cur <= last) {
+            dates.push(new Date(cur));
+            cur.setDate(cur.getDate() + 1);
+          }
+          return dates;
+        };
 
         payload = {
           name: parseResult.data.title,
           description: parseResult.data.description || "",
           startTime: combineDateTime(
-            parseResult.data.date,
+            parseResult.data.startDate,
             parseResult.data.startTime
           ),
           endTime: combineDateTime(
-            parseResult.data.date,
+            parseResult.data.endDate,
             parseResult.data.endTime
           ),
           addressLine1: parseResult.data.address,
@@ -469,7 +517,10 @@ const EventForm = () => {
           state: parseResult.data.state,
           country: "USA",
           zipCode: parseResult.data.zip,
-          date: [toMidnight(parseResult.data.date)],
+          date: generateDateRange(
+            parseResult.data.startDate,
+            parseResult.data.endDate
+          ),
         };
       } else {
         payload = parseResult.data;
@@ -539,11 +590,10 @@ const EventForm = () => {
             const posPayload = {
               position: p.name,
               description: p.description || "",
-              date: toMidnight(p.date),
-              startTime: combineDateTime(p.date, p.startTime),
-              endTime: combineDateTime(p.date, p.endTime),
+              date: toMidnight(p.startDate),
+              startTime: combineDateTime(p.startDate, p.startTime),
+              endTime: combineDateTime(p.endDate, p.endTime),
               totalSlots: Number(p.participants || 0),
-              // filledSlots: leave undefined to avoid overwriting
               addressLine1: p.address || "",
               addressLine2: p.apt || null,
               city: p.city || "",
@@ -664,7 +714,12 @@ const EventForm = () => {
       arr.map((p: APIPosition) => ({
         id: p.id ?? undefined,
         name: p.position ?? "",
-        date: p.date ? new Date(p.date).toISOString().slice(0, 10) : "",
+        startDate: p.startTime
+          ? new Date(p.startTime).toISOString().slice(0, 10)
+          : "",
+        endDate: p.endTime
+          ? new Date(p.endTime).toISOString().slice(0, 10)
+          : "",
         startTime: p.startTime
           ? new Date(p.startTime).toISOString().slice(11, 16)
           : "",
@@ -689,13 +744,14 @@ const EventForm = () => {
       const result = await fetchEventById(id);
       if (!result) return;
 
-      // Map event-level fields
       setEvent({
         title: result.name ?? "",
-        date:
-          result.date && result.date.length
-            ? new Date(result.date[0]).toISOString().slice(0, 10)
-            : "",
+        startDate: result.startTime
+          ? new Date(result.startTime).toISOString().slice(0, 10)
+          : "",
+        endDate: result.endTime
+          ? new Date(result.endTime).toISOString().slice(0, 10)
+          : "",
         startTime: result.startTime
           ? new Date(result.startTime).toISOString().slice(11, 16)
           : "",
@@ -814,80 +870,65 @@ const EventForm = () => {
           />
           <ErrorText k="title" />
         </div>
-        {/* event date */}
-        <div className="flex flex-col items-start">
-          <label
-            htmlFor="event-date"
-            className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
-          >
-            Event date
-          </label>
-          <input
-            id="event-date"
-            type="date"
-            min={todayYmd()}
-            value={event.date}
-            onChange={(e) => {
-              const v = e.target.value;
-              setEvent((prev) => ({ ...prev, date: v }));
-              clearError("date");
-            }}
-            className={`w-[588px] h-[43px] rounded-lg border p-3 text-base
-            ${
-              errors["date"]
-                ? "border-red-500 focus:ring-red-500"
-                : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            }`}
-          />
-          {errors["date"] && (
-            <p className="mt-1 text-sm text-red-500">{errors["date"]}</p>
-          )}
-        </div>
-        {/* event time */}
+        {/* event date & time */}
         <div className="flex flex-col items-start">
           <label className="mb-1 mt-[40px] text-base font-normal text-medium-gray">
-            Event time
+            Event date &amp; time
           </label>
-
-          <div className="flex w-[588px] gap-[60px]">
-            <input
-              id="event-start-time"
-              type="time"
-              value={event.startTime}
-              onChange={(e) => {
-                const v = e.target.value;
-                setEvent((prev) => ({ ...prev, startTime: v }));
-                clearError("startTime");
-              }}
-              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
+          <div className="relative">
+            <button
+              id="event-date"
+              type="button"
+              onClick={() => setShowEventDatePicker((prev) => !prev)}
+              className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base
               ${
-                errors["startTime"]
-                  ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
-                  : "border-medium-gray focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+                errors["startDate"] || errors["endDate"] || errors["startTime"] || errors["endTime"]
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
               }`}
-            />
-
-            <input
-              id="event-end-time"
-              type="time"
-              value={event.endTime}
-              onChange={(e) => {
-                const v = e.target.value;
-                setEvent((prev) => ({ ...prev, endTime: v }));
-                clearError("endTime");
-              }}
-              className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none
-              ${
-                errors["endTime"]
-                  ? "border-red-500 focus:ring-2 focus:ring-red-500/30"
-                  : "border-medium-gray focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-              }`}
-            />
+            >
+              {event.startDate && event.endDate
+                ? `${formatDateForDisplay(event.startDate)} – ${formatDateForDisplay(event.endDate)}`
+                : event.startDate
+                  ? formatDateForDisplay(event.startDate)
+                  : "Select dates & times"}
+            </button>
+            {showEventDatePicker && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowEventDatePicker(false)}
+                />
+                <div className="absolute top-full left-0 mt-2 z-50">
+                  <DateRangePicker
+                    startDate={event.startDate}
+                    endDate={event.endDate}
+                    startTime={event.startTime}
+                    endTime={event.endTime}
+                    onStartDateChange={(ymd) => {
+                      setEvent((prev) => ({ ...prev, startDate: ymd }));
+                      clearError("startDate");
+                    }}
+                    onEndDateChange={(ymd) => {
+                      setEvent((prev) => ({ ...prev, endDate: ymd }));
+                      clearError("endDate");
+                    }}
+                    onStartTimeChange={(hhmm) => {
+                      setEvent((prev) => ({ ...prev, startTime: hhmm }));
+                      clearError("startTime");
+                    }}
+                    onEndTimeChange={(hhmm) => {
+                      setEvent((prev) => ({ ...prev, endTime: hhmm }));
+                      clearError("endTime");
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </div>
-
-          {(errors["startTime"] || errors["endTime"]) && (
+          {(errors["startDate"] || errors["endDate"] || errors["startTime"] || errors["endTime"]) && (
             <p className="mt-1 text-sm text-red-500">
-              {errors["endTime"] ?? errors["startTime"]}
+              {errors["startDate"] || errors["endDate"] || errors["endTime"] || errors["startTime"]}
             </p>
           )}
         </div>
@@ -1069,84 +1110,114 @@ const EventForm = () => {
               />
               <ErrorText k={`positions.${index}.name`} />
             </div>
-            {/* position date */}
-            <ConditionalInput
-              id={`position-date-${index}`}
-              label="Position date"
-              type="date"
-              value={position.date}
-              fallbackValue={event.date}
-              disabled={position.sameAsDate}
-              onToggle={() => toggleSameAsDate(index)}
-              onChange={(val) => handlePositionChange(index, "date", val)}
-              error={errors[`positions.${index}.date`]}
-              onClearError={() => clearError(`positions.${index}.date`)}
-            />
-            {/* position time */}
+            {/* position date & time */}
             <div className="flex flex-col">
               <div className="mt-10 flex items-center justify-between">
                 <label className="mb-1 text-base font-normal text-medium-gray">
-                  Position time
+                  Position date &amp; time
                 </label>
-
                 <div className="mb-1 flex items-center gap-[11px]">
                   <Button
                     label="Same as event"
                     altStyle="bg-transparent text-medium-gray font-medium px-0 hover:bg-transparent focus:outline-none"
-                    onClick={() => toggleSameAsTime(index)}
+                    onClick={() => {
+                      toggleSameAsDate(index);
+                      toggleSameAsTime(index);
+                    }}
                   />
                   <input
                     type="checkbox"
-                    checked={position.sameAsTime}
-                    onChange={() => toggleSameAsTime(index)}
+                    checked={position.sameAsDate && position.sameAsTime}
+                    onChange={() => {
+                      const next = !(position.sameAsDate && position.sameAsTime);
+                      handlePositionChange(index, "sameAsDate", next);
+                      handlePositionChange(index, "sameAsTime", next);
+                      if (next) {
+                        clearError(`positions.${index}.startDate`);
+                        clearError(`positions.${index}.endDate`);
+                        clearError(`positions.${index}.startTime`);
+                        clearError(`positions.${index}.endTime`);
+                      }
+                    }}
                     className="h-[16px] w-[16px] cursor-pointer accent-bcp-blue"
                   />
                 </div>
               </div>
 
-              <div className="flex w-[588px] gap-[60px]">
-                <input
-                  id={`position-start-time-${index}`}
-                  type="time"
-                  value={
-                    position.sameAsTime ? event.startTime : position.startTime
-                  }
-                  disabled={position.sameAsTime}
-                  onChange={(e) => {
-                    handlePositionChange(index, "startTime", e.target.value);
-                    clearError(`positions.${index}.startTime`);
-                  }}
-                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-                  ${
-                    errors[`positions.${index}.startTime`]
-                      ? "border-red-500 focus:ring-red-500/30"
-                      : "border-medium-gray focus:ring-bcp-blue/30"
-                  }
-                  disabled:bg-light-gray disabled:cursor-not-allowed`}
-                />
+              {position.sameAsDate && position.sameAsTime ? (
+                <div className="w-[588px] h-[43px] rounded-lg border border-medium-gray px-3 flex items-center text-base text-medium-gray bg-light-gray cursor-not-allowed">
+                  {event.startDate && event.endDate
+                    ? `${formatDateForDisplay(event.startDate)} – ${formatDateForDisplay(event.endDate)}`
+                    : "Same as event"}
+                </div>
+              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenPositionDatePicker((current) =>
+                        current === index ? null : index
+                      )
+                    }
+                    className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base text-medium-gray
+                    ${
+                      errors[`positions.${index}.startDate`] ||
+                      errors[`positions.${index}.endDate`] ||
+                      errors[`positions.${index}.startTime`] ||
+                      errors[`positions.${index}.endTime`]
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
+                    }`}
+                  >
+                    {position.startDate && position.endDate
+                      ? `${formatDateForDisplay(position.startDate)} – ${formatDateForDisplay(position.endDate)}`
+                      : position.startDate
+                        ? formatDateForDisplay(position.startDate)
+                        : "Select dates & times"}
+                  </button>
+                  {openPositionDatePicker === index && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setOpenPositionDatePicker(null)}
+                      />
+                      <div className="absolute top-full left-0 mt-2 z-50">
+                        <DateRangePicker
+                          startDate={position.startDate}
+                          endDate={position.endDate}
+                          startTime={position.startTime}
+                          endTime={position.endTime}
+                          onStartDateChange={(ymd) => {
+                            handlePositionChange(index, "startDate", ymd);
+                            clearError(`positions.${index}.startDate`);
+                          }}
+                          onEndDateChange={(ymd) => {
+                            handlePositionChange(index, "endDate", ymd);
+                            clearError(`positions.${index}.endDate`);
+                          }}
+                          onStartTimeChange={(hhmm) => {
+                            handlePositionChange(index, "startTime", hhmm);
+                            clearError(`positions.${index}.startTime`);
+                          }}
+                          onEndTimeChange={(hhmm) => {
+                            handlePositionChange(index, "endTime", hhmm);
+                            clearError(`positions.${index}.endTime`);
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
-                <input
-                  id={`position-end-time-${index}`}
-                  type="time"
-                  value={position.sameAsTime ? event.endTime : position.endTime}
-                  disabled={position.sameAsTime}
-                  onChange={(e) => {
-                    handlePositionChange(index, "endTime", e.target.value);
-                    clearError(`positions.${index}.endTime`);
-                  }}
-                  className={`w-[282px] h-[43px] rounded-lg border p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-                  ${
-                    errors[`positions.${index}.endTime`]
-                      ? "border-red-500 focus:ring-red-500/30"
-                      : "border-medium-gray focus:ring-bcp-blue/30"
-                  }
-                  disabled:bg-light-gray disabled:cursor-not-allowed`}
-                />
-              </div>
-              {(errors[`positions.${index}.startTime`] ||
+              {(errors[`positions.${index}.startDate`] ||
+                errors[`positions.${index}.endDate`] ||
+                errors[`positions.${index}.startTime`] ||
                 errors[`positions.${index}.endTime`]) && (
                 <p className="mt-1 text-sm text-red-500">
-                  {errors[`positions.${index}.endTime`] ??
+                  {errors[`positions.${index}.startDate`] ||
+                    errors[`positions.${index}.endDate`] ||
+                    errors[`positions.${index}.endTime`] ||
                     errors[`positions.${index}.startTime`]}
                 </p>
               )}

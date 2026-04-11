@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import DatePicker from "@/components/DatePicker";
 
 export default function EditProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -22,6 +23,7 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const todayYmd = new Date().toISOString().slice(0, 10);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -127,6 +129,31 @@ export default function EditProfilePage() {
     setSelectedFile(null);
     setPreviewUrl(null);
     setForm((prev) => ({ ...prev, profileImageKey: "" })); // Mark for deletion
+  }
+
+  // Handle Date Selection from DatePicker
+  function handleDateSelect(date: Date) {
+    // Use UTC methods to prevent timezone offset issues
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+    setForm((prev) => ({ ...prev, dob: formattedDate }));
+    setShowDatePicker(false);
+  }
+
+  // Format date for display
+  function formatDateForDisplay(dateString: string) {
+    if (!dateString) return "";
+    // Parse as UTC to prevent timezone offset
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
   }
 
   // --- SUBMIT ---
@@ -274,17 +301,42 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* DOB */}
-            <div>
+            {/* DOB with Custom DatePicker */}
+            <div className="relative">
               <label className="block text-sm mb-1">Date of Birth</label>
-              <input
-                type="date"
-                name="dob"
-                value={form.dob}
-                onChange={handleChange}
-                max={todayYmd}
-                className="w-full border rounded-md px-3 py-2 text-sm"
-              />
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
+              >
+                {form.dob ? formatDateForDisplay(form.dob) : "Select date"}
+              </button>
+
+              {showDatePicker && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowDatePicker(false)}
+                  />
+                  {/* DatePicker Dropdown */}
+                  <div className="absolute top-full left-0 mt-2 z-50">
+                    <DatePicker
+                      selectedDate={
+                        form.dob
+                          ? (() => {
+                              const [year, month, day] = form.dob
+                                .split("-")
+                                .map(Number);
+                              return new Date(Date.UTC(year, month - 1, day));
+                            })()
+                          : null
+                      }
+                      onDateChange={handleDateSelect}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Spanish */}

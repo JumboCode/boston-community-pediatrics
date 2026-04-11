@@ -16,15 +16,22 @@ export const EVENT_FIELD_LIMITS = {
   participantsMaxDigits: 6,
 } as const;
 
-// TODO: make this better in UI
 const hhmm = z
   .string()
   .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Time must be HH:MM");
 
-const yyyymmdd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"); // hacky error message for eventform error display
+const yyyymmdd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");
 
-const endAfterStart = (start: string, end: string) => end > start;
-const todayYmd = () => new Date().toISOString().slice(0, 10);
+function endDateTimeAfterStart(
+  startDate: string,
+  endDate: string,
+  startTime: string,
+  endTime: string
+) {
+  if (endDate > startDate) return true;
+  if (endDate === startDate) return endTime > startTime;
+  return false;
+}
 
 const zipCodeSchema = z
   .string()
@@ -44,7 +51,8 @@ export const positionSchema = z
       .string()
       .min(1, "Position name is required")
       .max(EVENT_FIELD_LIMITS.positionName, "Position name is too long"),
-    date: yyyymmdd,
+    startDate: yyyymmdd,
+    endDate: yyyymmdd,
 
     startTime: hhmm,
     endTime: hhmm,
@@ -76,13 +84,16 @@ export const positionSchema = z
         "Maximum participants value is too large",
       ),
     sameAsDate: z.boolean(),
-    sameAsTime: z.boolean(), // means same start+end as event
+    sameAsTime: z.boolean(),
     sameAsAddress: z.boolean(),
   })
-  .refine((p) => endAfterStart(p.startTime, p.endTime), {
-    message: "End time must be after start time",
-    path: ["endTime"],
-  });
+  .refine(
+    (p) => endDateTimeAfterStart(p.startDate, p.endDate, p.startTime, p.endTime),
+    {
+      message: "End date/time must be after start date/time",
+      path: ["endTime"],
+    }
+  );
 
 export const eventSchema = z
   .object({
@@ -90,7 +101,8 @@ export const eventSchema = z
       .string()
       .min(1, "Event title is required")
       .max(EVENT_FIELD_LIMITS.title, "Event title is too long"),
-    date: yyyymmdd,
+    startDate: yyyymmdd,
+    endDate: yyyymmdd,
 
     startTime: hhmm,
     endTime: hhmm,
@@ -139,11 +151,10 @@ export const eventSchema = z
       .array(positionSchema)
       .min(1, "At least one position is required"),
   })
-  .refine((e) => e.date >= todayYmd(), {
-    message: "Event date cannot be in the past",
-    path: ["date"],
-  })
-  .refine((e) => endAfterStart(e.startTime, e.endTime), {
-    message: "End time must be after start time",
-    path: ["endTime"],
-  });
+  .refine(
+    (e) => endDateTimeAfterStart(e.startDate, e.endDate, e.startTime, e.endTime),
+    {
+      message: "End date/time must be after start date/time",
+      path: ["endTime"],
+    }
+  );

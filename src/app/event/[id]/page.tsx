@@ -61,16 +61,30 @@ export default async function EventDetailsPage(props: {
 
                   if (isNaN(start.getTime())) return "Date unavailable";
 
-                  const month = start.toLocaleString(undefined, {
-                    month: "long",
-                  });
-                  const year = start.getFullYear();
+                  const tz = "America/New_York";
 
                   if (start.toDateString() === end.toDateString()) {
-                    return `${month} ${start.getDate()}, ${year}`;
+                    return start.toLocaleDateString("en-US", {
+                      timeZone: tz,
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    });
                   }
 
-                  return `${month} ${start.getDate()}-${end.getDate()}, ${year}`;
+                  const startStr = start.toLocaleDateString("en-US", {
+                    timeZone: tz,
+                    month: "long",
+                    day: "numeric",
+                  });
+                  const endStr = end.toLocaleDateString("en-US", {
+                    timeZone: tz,
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+
+                  return `${startStr} – ${endStr}`;
                 })()}
               </p>
               {/* Time */}
