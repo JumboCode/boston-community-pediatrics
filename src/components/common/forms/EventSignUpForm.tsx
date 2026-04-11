@@ -260,13 +260,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsWaitlisted(false)}
-            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
+            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm tracking-wide hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -306,13 +306,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsSuccess(false)}
-            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm"
+            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm tracking-wide hover:bg-[#2a4455] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm tracking-wide hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
