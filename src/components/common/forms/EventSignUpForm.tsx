@@ -24,7 +24,7 @@ interface Guest {
 }
 
 interface EventSignUpFormProps {
-  userData: {
+  userData?: {
     id: string;
     firstName: string;
     lastName: string;
@@ -32,7 +32,7 @@ interface EventSignUpFormProps {
     phoneNumber: string;
     dateOfBirth?: string;
     profileImage?: string | null;
-  };
+  } | null;
   positionData: {
     id: string;
     position: string;
@@ -70,7 +70,7 @@ export default function EventSignUpForm({
   const [comment, setComment] = useState("");
 
   // Use the URL directly — no getPublicURL needed
-  const profileImageSrc = userData.profileImage ?? blankProfile;
+  const profileImageSrc = userData?.profileImage ?? blankProfile;
 
   useEffect(() => {
     if (initialGuests.length > 0) {
@@ -214,7 +214,7 @@ export default function EventSignUpForm({
         setIsSuccess(false);
         setWaitlistMessage(
           responseData.message ||
-            "Your update exceeded capacity, so you have been moved to the waitlist."
+          "Your update exceeded capacity, so you have been moved to the waitlist."
         );
       } else {
         setIsSuccess(true);
@@ -323,6 +323,32 @@ export default function EventSignUpForm({
 
   return (
     <div className="bg-white p-10 rounded-xl shadow-lg border border-gray-100 w-full max-w-2xl mx-auto">
+      {!userData && (
+        // 1. Changed 'absolute' to 'fixed'
+        // 2. Removed 'rounded-xl' so it reaches the very corners of the screen
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-400/50 backdrop-blur-[2px]">
+
+          {/* This is your actual modal card. Keep this one rounded! */}
+          <div className="bg-white rounded-lg shadow-xl p-10 max-w-md w-full text-center mx-4 border border-gray-200">
+            <h2 className="text-3xl font-semibold text-[#34495e] mb-2">Sign in to Volunteer</h2>
+            <p className="text-gray-900 font-medium mb-8">Volunteers must have an account</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="px-8 py-2.5 bg-gray-300 text-gray-800 rounded font-medium hover:bg-gray-400 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => router.push('/login')}
+                className="px-8 py-2.5 bg-[#34495e] text-white rounded font-medium hover:bg-[#2c3e50] transition"
+              >
+                Log In
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-semibold text-bcp-blue">{eventName}</h1>
         <p className="text-lg text-gray-700 mt-2">{positionData?.position}</p>
@@ -383,15 +409,15 @@ export default function EventSignUpForm({
           <div className="space-y-1.5 text-sm text-gray-800 pt-1">
             <p>
               <span className="font-semibold text-gray-900">Name:</span>{" "}
-              {userData.firstName} {userData.lastName}
+              {userData?.firstName || "Guest"} {userData?.lastName || ""}
             </p>
             <p>
               <span className="font-semibold text-gray-900">Email:</span>{" "}
-              {userData.emailAddress}
+              {userData?.emailAddress || "Not signed in"}
             </p>
             <p>
               <span className="font-semibold text-gray-900">Phone:</span>{" "}
-              {userData.phoneNumber}
+              {userData?.phoneNumber || "N/A"}
             </p>
           </div>
         </div>
