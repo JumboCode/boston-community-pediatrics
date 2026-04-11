@@ -104,6 +104,18 @@ export default async function EventDetailsPage(props: {
               <p className="mt-[32px] text-bcp-blue text-[16px] leading-[24px]">
                 {event.description}
               </p>
+              {event.resourcesLink && (
+                <div className="mt-[16px]">
+                  <a
+                    href={event.resourcesLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-bcp-blue text-[16px] leading-[24px] underline hover:text-blue-700"
+                  >
+                    Link to resources
+                  </a>
+                </div>
+              )}
               {isExpired && (
                 <p className="mt-6 text-gray-500 italic">
                   This event has already taken place and is no longer accepting

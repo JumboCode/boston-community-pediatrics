@@ -444,6 +444,7 @@ const EventForm = () => {
         payload = {
           name: parseResult.data.title,
           description: parseResult.data.description || "",
+          resourcesLink: parseResult.data.resourcesLink || null,
           startTime: combineDateTime(
             parseResult.data.date,
             parseResult.data.startTime
@@ -907,11 +908,13 @@ const EventForm = () => {
             id="event-resources"
             type="url"
             value={event.resourcesLink || ""}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            onChange={(e) => {
+              setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }));
+              clearError("resourcesLink");
+            }}
+            className={`w-[588px] h-[43px] ${inputClass("resourcesLink")}`}
           />
+          <ErrorText k="resourcesLink" />
         </div>
         {/* event street */}
         <div className="flex flex-col items-start">

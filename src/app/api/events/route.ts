@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
     const prismaData = {
       name: data.title,
       description: data.description || "",
+      resourcesLink: data.resourcesLink || null,
 
       startTime: eventStart,
       endTime: eventEnd,

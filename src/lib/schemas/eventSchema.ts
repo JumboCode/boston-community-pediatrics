@@ -44,9 +44,22 @@ export const eventSchema = z
     description: z.string().optional(),
     resourcesLink: z
       .string()
-      .url("Must be a valid URL")
       .optional()
-      .or(z.literal("")),
+      .or(z.literal(""))
+      .transform((val) => {
+        if (!val) return val;
+        // If it already has a protocol, validate as URL
+        if (val.match(/^https?:\/\//)) {
+          return val;
+        }
+        // If it's a domain-like string, add https://
+        if (val.match(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/)) {
+          return `https://${val}`;
+        }
+        // Otherwise, treat as invalid (will be caught by url validation)
+        return val;
+      })
+      .pipe(z.string().url("Must be a valid URL or domain name")),
     address: z.string().min(1, "Street address is required"),
     apt: z.string().optional().or(z.literal("")),
     city: z.string().min(1, "City is required"),
