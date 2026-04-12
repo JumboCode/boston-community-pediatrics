@@ -75,7 +75,26 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const { positionId, userId, guests = [] } = data;
+    const { positionId, userId, comments, guests = [] } = data;
+
+    // SECURITY START: Check if user is creating for themselves or is admin
+    const currentUser = await getCurrentUser();
+    const isAdmin = currentUser?.role === UserRole.ADMIN;
+
+    if (!currentUser || (currentUser.id !== userId && !isAdmin)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    // SECURITY END
+
+    // Validate guest phone numbers
+    for (const guest of guests) {
+      if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+        return NextResponse.json(
+          { error: "Guest phone number must contain only numbers" },
+          { status: 400 }
+        );
+      }
+    }
 
     // Get position and count current signups
     const [position] = await Promise.all([
@@ -115,6 +134,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           positionId,
+          comments: comments || null,
           eventId: position.eventId,
           hasGuests: guests.length > 0,
           guests: {
@@ -185,6 +205,14 @@ export async function POST(req: NextRequest) {
 // PUT handler
 export async function PUT(req: NextRequest) {
   try {
+
+    // SECURITY START: Only admins can PUT
+    const currentUser = await getCurrentUser();
+    if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+      return NextResponse.json({ error: "Forbidden: Admins only" }, { status: 403 });
+    }
+    // SECURITY END
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -192,6 +220,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
     const data = await req.json();
+
+    // Validate guest phone numbers if guests are being updated
+    if (data.guests) {
+      for (const guest of data.guests) {
+        if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+          return NextResponse.json(
+            { error: "Guest phone number must contain only numbers" },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     let isAdmin = false;
     const user = await getCurrentUser();
@@ -232,6 +272,21 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
+
+    // SECURITY START: Fetch the signup first to see who owns it
+    const signup = await prisma.eventSignup.findUnique({
+      where: { id }
+    });
+
+    if (!signup) {
+      return NextResponse.json({ error: "Signup not found" }, { status: 404 });
+    }
+
+    // Check if the current user owns this specific signup, or is an admin
+    if (!currentUser || (currentUser.id !== signup.userId && !isAdmin)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    // SECURITY END
 
     if (currentUser?.id != id && !isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

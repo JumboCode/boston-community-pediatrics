@@ -1,3 +1,5 @@
+import React from "react";
+
 interface ModalButton {
   label: string;
   onClick: () => void;
@@ -12,7 +14,8 @@ interface ModalProps {
   message?: string;
   onClose: () => void;
   buttons?: ModalButton[];
-  description?: string;
+  description?: string | React.ReactNode;
+  layout?: "center" | "custom";
 }
 
 const Modal = ({
@@ -22,12 +25,14 @@ const Modal = ({
   onClose,
   description,
   buttons = [],
+  layout = "center",
 }: ModalProps) => {
   if (!open) return null;
 
   const variantStyles = {
     primary: "bg-[#234254] text-white hover:bg-[#1b3443] disabled:opacity-50",
-    secondary: "bg-gray-300 text-black hover:bg-gray-400 disabled:opacity-50",
+    secondary:
+      "bg-white text-black border-2 border-black hover:bg-gray-50 disabled:opacity-50",
     danger: "bg-red-600 text-white hover:bg-red-700 disabled:opacity-50",
   };
 
@@ -38,14 +43,22 @@ const Modal = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white h-[336px] w-[792px] rounded-lg border-2 border-black-500 p-8 shadow-xl flex flex-col items-center justify-center text-center`}
+        className={`bg-white w-[792px] rounded-lg border border-black p-8 shadow-xl flex flex-col ${
+          layout === "center" ? "items-center text-center" : ""
+        }`}
       >
         {title && <h2 className="text-4xl mb-4">{title}</h2>}
 
         {description && (
-          <p className="text-xl text-gray-700 mb-2 mt-1 whitespace-pre-line">
+          <div
+            className={
+              layout === "center"
+                ? "text-xl text-gray-700 mb-2 mt-1 whitespace-pre-line"
+                : "w-full"
+            }
+          >
             {description}
-          </p>
+          </div>
         )}
 
         {message && (
@@ -54,14 +67,12 @@ const Modal = ({
 
         {/* BUTTONS */}
         {buttons.length > 0 && (
-          <div
-            className={`flex gap-4 ${message || description ? "mt-5" : "mt-13"}`}
-          >
+          <div className="flex justify-center gap-4 mt-8">
             {buttons.map((btn, i) => (
               <button
                 key={i}
                 onClick={btn.onClick}
-                className={`px-12 py-2 rounded-md transition ${
+                className={`px-6 py-2 rounded-md border border-black transition ${
                   variantStyles[btn.variant || "primary"]
                 }`}
                 disabled={btn.disabled || btn.loading}

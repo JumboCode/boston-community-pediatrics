@@ -5,9 +5,11 @@ import AdminNavBar from "./AdminNavBar";
 import { useState, useEffect } from "react";
 import ProfilePageSkeleton from "./ui/skeleton/ProfilePageSkeleton";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 function NavBar() {
   const { user, isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -27,6 +29,10 @@ function NavBar() {
     async function fetchUser() {
       try {
         const res = await fetch("/api/users?id=" + user?.id);
+        if (res.status === 404) {
+          router.push("/onboarding");
+          return;
+        }  
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setIsAdmin(data?.role == "ADMIN");
@@ -39,7 +45,7 @@ function NavBar() {
       }
     }
     fetchUser();
-  }, [user?.id, isLoaded, isSignedIn, pathname]);
+  }, [user?.id, isLoaded, isSignedIn, pathname, router]);
 
   if (isAdmin === null) return <ProfilePageSkeleton/>;
 

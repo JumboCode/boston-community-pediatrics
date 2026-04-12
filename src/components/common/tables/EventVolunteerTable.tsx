@@ -41,6 +41,11 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   }
 
   const isPast = new Date() > new Date(endTime);
+  const filledSpots = volunteers.reduce(
+    (acc, v) => acc + 1 + (v.guests?.length ?? 0),
+    0
+  );
+  const isFull = filledSpots >= totalSpots;
 
   return (
     <div className="max-w-[1000px] flex">
@@ -53,22 +58,36 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
         </div>
         <div className="text-bcp-blue text-[14px] font-normal font-avenir">
           <p className="text-[14px]">
-            {new Date(startTime).toLocaleDateString(undefined, {
-              month: "long",
-              day: "numeric",
-            })}
-            {", "}
-            {new Date(startTime).toLocaleTimeString([], {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })}{" "}
-            -{" "}
-            {new Date(endTime).toLocaleTimeString([], {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })}
+            {(() => {
+              const s = new Date(startTime);
+              const e = new Date(endTime);
+              const sameDay = s.toDateString() === e.toDateString();
+              const sDate = s.toLocaleDateString("en-US", {
+                timeZone: "America/New_York",
+                month: "long",
+                day: "numeric",
+              });
+              const sTime = s.toLocaleTimeString("en-US", {
+                timeZone: "America/New_York",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              });
+              const eDate = e.toLocaleDateString("en-US", {
+                timeZone: "America/New_York",
+                month: "long",
+                day: "numeric",
+              });
+              const eTime = e.toLocaleTimeString("en-US", {
+                timeZone: "America/New_York",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              });
+
+              if (sameDay) return `${sDate}, ${sTime} - ${eTime}`;
+              return `${sDate} ${sTime} – ${eDate} ${eTime}`;
+            })()}
           </p>
         </div>
         <div className="mt-[12px] break-words text-bcp-blue text-[14px] font-normal font-avenir leading-[1.4]">
@@ -79,7 +98,8 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
           <RegisterButton
             disabled={isPast}
             positionId={positionId}
-          ></RegisterButton>
+            isFull={isFull}
+          />
         )}
       </div>
 

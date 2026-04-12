@@ -39,6 +39,9 @@ const ProfileEventCard = ({
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = userRole === "ADMIN";
+  const hasMenuActions = isAdmin
+    ? Boolean(onEdit || onRemove || onVolunteer)
+    : Boolean(onEdit || onRemove);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -62,9 +65,16 @@ const ProfileEventCard = ({
 
   const timeRange = `${formatTime(startTime)} - ${formatTime(endTime)}`;
 
-  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+  const startDateStr = new Date(startTime).toLocaleDateString("en-US", {
     timeZone: "America/New_York",
   });
+  const endDateStr = new Date(endTime).toLocaleDateString("en-US", {
+    timeZone: "America/New_York",
+  });
+  const formattedDate =
+    startDateStr === endDateStr
+      ? startDateStr
+      : `${startDateStr} - ${endDateStr}`;
 
   const handleMenuClick = (e: React.MouseEvent, action?: () => void) => {
     e.preventDefault();
@@ -90,21 +100,23 @@ const ProfileEventCard = ({
         </h3>
 
         {/* Menu Trigger */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowMenu(!showMenu);
-          }}
-          className="text-black hover:bg-gray-100 rounded-full p-0.5 transition"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-          </svg>
-        </button>
+        {hasMenuActions && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="text-black hover:bg-gray-100 rounded-full p-0.5 transition"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </button>
+        )}
 
         {/* Dropdown Menu */}
-        {showMenu && (
+        {hasMenuActions && showMenu && (
           <div
             ref={menuRef}
             className="absolute top-8 right-0 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden"
@@ -113,24 +125,30 @@ const ProfileEventCard = ({
             {isAdmin ? (
               // ADMIN MENU
               <>
-                <button
-                  onClick={(e) => handleMenuClick(e, onEdit)}
-                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-100"
-                >
-                  Edit Event
-                </button>
-                <button
-                  onClick={(e) => handleMenuClick(e, onRemove)}
-                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 border-b border-gray-100"
-                >
-                  Remove Event
-                </button>
-                <button
-                  onClick={(e) => handleMenuClick(e, onVolunteer)}
-                  className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50"
-                >
-                  Volunteer
-                </button>
+                {onEdit && (
+                  <button
+                    onClick={(e) => handleMenuClick(e, onEdit)}
+                    className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50 border-b border-gray-100"
+                  >
+                    Edit Event
+                  </button>
+                )}
+                {onRemove && (
+                  <button
+                    onClick={(e) => handleMenuClick(e, onRemove)}
+                    className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 border-b border-gray-100"
+                  >
+                    Remove volunteer from event
+                  </button>
+                )}
+                {onVolunteer && (
+                  <button
+                    onClick={(e) => handleMenuClick(e, onVolunteer)}
+                    className="w-full text-left px-4 py-3 text-sm text-black hover:bg-gray-50"
+                  >
+                    Volunteer
+                  </button>
+                )}
               </>
             ) : (
               // USER MENU
