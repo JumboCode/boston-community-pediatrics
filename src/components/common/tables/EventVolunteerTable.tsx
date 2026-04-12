@@ -181,13 +181,13 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                                   y1="0"
                                   x2="14"
                                   y2={isLast ? "18" : "36"}
-                                  stroke="#D9D9D9"
+                                  stroke="gray-border"
                                   strokeWidth="3"
                                   strokeLinecap="round"
                                 />
                                 <path
                                   d="M14 18 Q14 28 2 28"
-                                  stroke="#D9D9D9"
+                                  stroke="gray-border"
                                   strokeWidth="3"
                                   fill="none"
                                   strokeLinecap="round"

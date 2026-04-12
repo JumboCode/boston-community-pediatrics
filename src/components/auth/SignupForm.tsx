@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react"; // Added useRef
-import { useSignUp } from "@clerk/nextjs"; 
+import { useState } from "react";
+import { useSignUp } from "@clerk/nextjs"; // Clerk Hook
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
-import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
+
 
 type SignupFormData = {
   firstName: string;
@@ -15,13 +15,12 @@ type SignupFormData = {
   email: string;
   phone: string;
   dob: string;
-  speaksSpanish: boolean,
+  languages: string[];
   street?: string;
   apt?: string;
   city?: string;
   state?: string;
   zip?: string;
-  profileImageUrl?: string; // <--- ADDED
 };
 
 const SignupForm = () => {
@@ -31,32 +30,23 @@ const SignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // --- NEW: Image State ---
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
+  // State to switch between Form and Verification
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
-  if (!isLoaded) return <BasicSkeleton />;
 
-  // --- NEW: Handle Image Selection ---
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Immediate local preview
-    }
-  };
+  // Store form data here so we can use it AFTER verification
+  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
+    null
+  );
 
+  // --- 1. GOOGLE SIGN UP FLOW ---
   const handleGoogleSignUp = async () => {
     if (!isLoaded) return;
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/onboarding", 
+        redirectUrlComplete: "/onboarding", // Goes to onboarding to finish profile
       });
     } catch {
       console.error("Google sign up error");
@@ -64,6 +54,7 @@ const SignupForm = () => {
     }
   };
 
+  // --- HANDLER 1: SUBMIT FORM ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLoaded) return;
@@ -84,31 +75,7 @@ const SignupForm = () => {
     }
 
     try {
-      // --- 1. NEW: Upload Image to R2 (if selected) ---
-      let uploadedImageUrl = "";
-      
-      if (selectedFile) {
-        // A. Get the presigned URL
-        const uploadRes = await fetch("/api/upload-signup", {
-          method: "POST",
-          body: JSON.stringify({ fileType: selectedFile.type }),
-        });
-        
-        if (!uploadRes.ok) throw new Error("Failed to initialize upload");
-        const { uploadUrl, publicUrl } = await uploadRes.json();
-
-        // B. Upload the file directly to R2
-        const r2Res = await fetch(uploadUrl, {
-          method: "PUT",
-          body: selectedFile,
-          headers: { "Content-Type": selectedFile.type },
-        });
-
-        if (!r2Res.ok) throw new Error("Failed to upload image");
-        uploadedImageUrl = publicUrl;
-      }
-
-      // --- 2. Create Clerk Account ---
+      // 1. Create the SignUp on Clerk
       await signUp.create({
         emailAddress: email,
         password,
@@ -116,42 +83,47 @@ const SignupForm = () => {
         lastName,
       });
 
+      // 2. Send the OTP
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      // --- 3. Save Data (include the new image URL) ---
+      // 3. Save the extra data (phone, dob, addr) to state for later
       setSavedFormData({
         firstName,
         lastName,
         email,
         phone: formData.get("phone") as string,
         dob: formData.get("dob") as string,
-        speaksSpanish: formData.get("speaksSpanish") === "true",
+        languages: (formData.get("languages") as string)
+          .split(",")
+          .map((s) => s.trim()),
         street: formData.get("street") as string,
         apt: formData.get("apt") as string,
         city: formData.get("city") as string,
         state: formData.get("state") as string,
         zip: formData.get("zip") as string,
-        profileImageUrl: uploadedImageUrl, // <--- SAVED HERE
       });
 
+      // 4. Switch UI to Verification Mode
       setPendingVerification(true);
-    } catch (err: any) {
-      console.error("Signup error:", err);
-      setError(err?.errors?.[0]?.message || "Error creating account");
+    } catch {
+      setError("Error creating account");
     } finally {
       setLoading(false);
     }
   };
 
+  // --- HANDLER 2: VERIFY OTP & SYNC DB ---
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded) return;
     setLoading(true);
 
     try {
+      // 1. Verify the code
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code,
       });
+
 
       if (completeSignUp.status !== "complete") {
         setError("Verification incomplete. Please check your code.");
@@ -159,39 +131,55 @@ const SignupForm = () => {
         return;
       }
 
+      // 2. Verification Successful - Clerk User Created!
       const clerkUserId = completeSignUp.createdUserId;
 
-      if (clerkUserId && savedFormData) {
-        // --- 4. Sync to DB (Send profileImage) ---
+      if (clerkUserId) {
+        // 3. Sync to YOUR Postgres DB via your existing API
+        // We use the clerkUserId as the Primary Key 'id'
+
+        if (!savedFormData) {
+          setError("Signup data missing. Please restart signup.");
+          return;
+        }
+
         const dbResponse = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user: {
-              id: clerkUserId,
+              id: clerkUserId, // <--- IMPORTANT: Using Clerk ID as DB ID
               firstName: savedFormData.firstName,
               lastName: savedFormData.lastName,
               emailAddress: savedFormData.email,
               phoneNumber: savedFormData.phone,
-              dateOfBirth: savedFormData.dob,
-              speaksSpanish: savedFormData.speaksSpanish,
-              streetAddress: savedFormData.street,
+              dateOfBirth: savedFormData.dob, // sends string "YYYY-MM-DD"
+              languages: savedFormData.languages,
+              streetAddress: savedFormData.street, // Map 'street' to 'streetAddress'
               city: savedFormData.city,
               state: savedFormData.state,
-              zipCode: savedFormData.zip,
-              profileImage: savedFormData.profileImageUrl, // <--- SENT TO DB
+              zipCode: savedFormData.zip, // Map 'zip' to 'zipCode'
               role: "VOLUNTEER",
+              // clerkId is optional since we used it as PK, but if your schema needs it:
               clerkId: clerkUserId,
             },
           }),
         });
 
-        if (!dbResponse.ok) console.error("Failed to sync user to DB");
+        if (!dbResponse.ok) {
+          console.error("Failed to sync user to database");
+          // Optional: Handle DB error (maybe retry logic or alert admin)
+        }
       }
 
+      // 4. Set active session (Log them in)
       await setActive({ session: completeSignUp.createdSessionId });
-      router.push("/event");
+      // after setActive()
+
+      // 5. Redirect
+      router.push("/event"); // or wherever you want them to go
     } catch {
+      // console.error(JSON.stringify(err, null, 2));
       setError("Verification failed");
     } finally {
       setLoading(false);
@@ -236,7 +224,7 @@ const SignupForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors"
+            className="w-full py-3 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors"
           >
             {loading ? "Verifying..." : "Verify & Create Account"}
           </button>
@@ -391,46 +379,18 @@ const SignupForm = () => {
         </div>
 
         {/* Languages */}
-        <div className="flex flex-row items-start justify-between">
+        <div className="flex flex-col items-start">
           <label
-            htmlFor="speakSpanish"
+            htmlFor="languages"
             className="text-base font-normal text-medium-gray mb-1"
           >
-            Do you speak Spanish?
+            Languages Spoken
           </label>
-          <div className="flex flex-row items-center justify-between gap-[48px]">
-            <div className="flex flex-row items-center gap-[14px]">
-              <input
-                // type="checkbox"
-                type="radio"
-                name="speaksSpanish"
-                value="true"
-                required
-                className="accent-bcp-blue rounded-md"
-              />
-              <label
-                htmlFor="speaksSpanish"
-                className="flex flex-row text-base font-normal text-medium-gray mb-1"
-              >
-                Yes
-              </label>
-            </div>
-            <div className="flex flex-row items-center gap-[14px]">
-              <input
-                  type="radio"
-                  // type="checkbox"
-                  className="accent-bcp-blue rounded-md"
-                  name="speaksSpanish"
-                  value="false"
-                />
-              <label
-                htmlFor="speaksSpanish"
-                className="text-base font-normal text-medium-gray mb-1 gap-14"
-              >
-                No
-              </label>
-            </div>
-          </div>
+          <input
+            name="languages"
+            id="languages"
+            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+          />
         </div>
 
         {/* Street Address */}
@@ -510,32 +470,17 @@ const SignupForm = () => {
           </div>
         </div>
 
-        {/* --- NEW: Image Upload UI --- */}
-        <div className="flex items-center gap-[60px]">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            accept="image/*"
-            className="hidden" // Hide the ugly default input
+        {/* Upload helper text */}
+        <p className="flex items-center gap-[60px] text-[20px] text-medium-gray">
+          <Image
+            src={ProfilePlaceholder}
+            alt="Profile placeholder"
+            className="w-[264px] h-[264px] left"
           />
-          
-          {/* Clickable Circle Image */}
-          <div 
-            onClick={() => fileInputRef.current?.click()}
-            className="w-[264px] h-[264px] relative cursor-pointer  overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
-          >
-            {previewUrl ? (
-              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-              <Image src={ProfilePlaceholder} alt="Placeholder" className="w-full h-full object-cover" />
-            )}
-          </div>
-
-          <span className="text-[20px] text-medium-gray cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <span>
             Upload a profile photo <br /> (optional)
           </span>
-        </div>
+        </p>
 
         {/* Password */}
         <div className="flex flex-col items-start">
@@ -580,7 +525,7 @@ const SignupForm = () => {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-text-white transition-colors"
+          className="px-6 py-2 bg-bcp-blue text-white rounded-lg disabled:opacity-50 hover:bg-[#1a3140] transition-colors"
         >
           {loading ? "Please wait..." : "Create Account"}
         </button>

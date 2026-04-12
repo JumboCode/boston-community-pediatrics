@@ -16,7 +16,7 @@ function UserNavBar(props: UserNavBarProps) {
   const firstName = (dbFirstName || user?.firstName) ?? "Guest";
 
   return (
-    <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <nav className="bg-bcp-blue px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
         <li>
           <Link href="/" className="flex items-center gap-4">
@@ -41,7 +41,7 @@ function UserNavBar(props: UserNavBarProps) {
             <li>
               <Link
                 href="/event"
-                className="bg-[#426982] text-white text-sm px-3 py-2 rounded text-center"
+                className="bg-light-bcp-blue text-white text-sm px-3 py-2 rounded text-center"
               >
                 Volunteer
               </Link>

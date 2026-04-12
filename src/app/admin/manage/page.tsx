@@ -7,6 +7,9 @@ import ManageRolesSkeleton from "@/components/ui/skeleton/ManageRolesSkeleton";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 interface FrontEndUser {
   userId: string;
@@ -45,7 +48,6 @@ const ManageRolesPage = () => {
   const currentUserId = user?.id;
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
 
-  // search/dropdown helpers copied from admin/email/page.tsx
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +71,6 @@ const ManageRolesPage = () => {
 
   const router = useRouter();
 
-  // Fetch signups for the position (volunteers)
   const { data: allVols, isLoading: isLoadingVols } = useSWR<ApiUser[]>(
     `/api/users`,
     fetcher
@@ -78,10 +79,10 @@ const ManageRolesPage = () => {
   const frontEndUsers = useMemo(() => {
     if (!allVols) return [];
     return allVols
-      .filter((v: ApiUser) => v.id || v.userId) // Filter out invalid users first
+      .filter((v: ApiUser) => v.id || v.userId)
       .map(
         (v: ApiUser): FrontEndUser => ({
-          userId: (v.id || v.userId)!, 
+          userId: (v.id || v.userId)!,
           firstName: v.firstName,
           lastName: v.lastName,
           emailAddress: v.emailAddress,
@@ -104,10 +105,8 @@ const ManageRolesPage = () => {
     setVolunteers(frontEndUsers);
   }, [frontEndUsers]);
 
-  // Volunteer selection (toggle by `userId`)
   const toggleSelect = (id?: string) => {
     if (!id || id === currentUserId) return;
-
     setVolunteers((prev) =>
       prev.map((v) => (v.userId === id ? { ...v, selected: !v.selected } : v))
     );
@@ -134,14 +133,12 @@ const ManageRolesPage = () => {
   const sortedVolunteers = useMemo(() => {
     let list = [...volunteers];
 
-    // Apply role filters
     if (sortOption === "ADMIN") {
       list = list.filter((v) => v.role === "ADMIN");
     } else if (sortOption === "VOLUNTEER") {
       list = list.filter((v) => v.role === "VOLUNTEER");
     }
 
-    // Apply sorting
     if (sortOption === "NAME_AZ") {
       list.sort((a, b) => {
         const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
@@ -187,7 +184,6 @@ const ManageRolesPage = () => {
         setSearchQuery("");
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -197,6 +193,7 @@ const ManageRolesPage = () => {
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   }, [dropdownOpen]);
+
   const copyEmailString = volunteers
     .filter((v) => v.selected)
     .map((v) => v.emailAddress)
@@ -209,6 +206,7 @@ const ManageRolesPage = () => {
       console.error(err);
     }
   };
+
   const handleSaveCSV = () => {
     const header = "Last Name,First Name,Email Address,Phone Number";
     const content = volunteers
@@ -218,7 +216,6 @@ const ManageRolesPage = () => {
       )
       .join("\n");
 
-    // const blob = new Blob([content], { type: "text/plain" });
     const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -240,20 +237,18 @@ const ManageRolesPage = () => {
     const selectedIds = volunteers
       .filter((v) => v.selected)
       .map((v) => v.userId);
-
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(selectedIds)
     );
     sessionStorage.setItem("adminEmailSource", "manage");
-
     router.push("/admin/email");
   };
+
   if (isLoadingVols) {
     return <ManageRolesSkeleton />;
   }
 
-  // Delete User - show confirmation first
   const handleDeleteConfirm = () => {
     setPendingCount(selectedCount);
     setShowDeleteConfirm(true);
@@ -274,25 +269,15 @@ const ManageRolesPage = () => {
       const deletePromises = volunteersToDel.map(async (vol) => {
         const res = await fetch(`/api/admin/users/${vol.userId}`, {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: vol.userId }),
         });
-
-        if (!res.ok) {
-          throw new Error(`Failed to delete user`);
-        }
-
+        if (!res.ok) throw new Error(`Failed to delete user`);
         return vol.userId;
       });
 
       await Promise.all(deletePromises);
-
-      // Remove all selected entries from state
       setVolunteers((prev) => prev.filter((v) => !v.selected));
-
-      // Show success modal
       setShowDeleteConfirm(false);
       setModalTitle("Users Removed!");
       setModalMessage("Users successfully removed");
@@ -305,7 +290,6 @@ const ManageRolesPage = () => {
     }
   };
 
-  // Edit roles - show confirmation first
   const handleEditConfirm = () => {
     setPendingCount(selectedCount);
     setShowEditConfirm(true);
@@ -332,11 +316,7 @@ const ManageRolesPage = () => {
             role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN",
           }),
         });
-
-        if (!res.ok) {
-          throw new Error(`Failed to update role`);
-        }
-
+        if (!res.ok) throw new Error(`Failed to update role`);
         return vol.userId;
       });
 
@@ -353,7 +333,6 @@ const ManageRolesPage = () => {
         }))
       );
 
-      // Show success modal
       setShowEditConfirm(false);
       setModalTitle("Roles Updated!");
       setModalMessage("Role successfully assigned!");
@@ -368,7 +347,8 @@ const ManageRolesPage = () => {
 
   return (
     <>
-      <div className="items-center justify-center p-6 ml-60 mr-60">
+      {/* Inter font applied via className on outermost wrapper */}
+      <div className={`${inter.className} items-center justify-center p-6 ml-60 mr-60`}>
         <h1 className="text-[16px] font-semibold mb-6 text-bcp-blue">
           <Link href="/" className="hover:underline">
             Home
@@ -379,12 +359,12 @@ const ManageRolesPage = () => {
           </Link>
         </h1>
 
-        {/* search bar + sort dropdown copied/adapted from admin/email/page.tsx */}
+        {/* Search bar + sort dropdown */}
         <div className="mb-4 flex items-center gap-4 w-full">
-          <div ref={containerRef} className="relative flex-1">
+          <div ref={containerRef} className="relative flex-1 min-w-0">
             <div
-              className={`min-h-[44px] w-full rounded-lg border px-3 py-2
-                  flex flex-wrap gap-2 cursor-text focus-within:ring-2`}
+              className="min-h-[44px] w-full rounded-lg border px-3 py-2
+                flex flex-wrap gap-2 cursor-text focus-within:ring-2"
               onClick={() => setDropdownOpen(true)}
             >
               {volunteers
@@ -392,8 +372,8 @@ const ManageRolesPage = () => {
                 .map((u) => (
                   <span
                     key={u.userId}
-                    className="flex items-center gap-1 border border-gray-400 
-                    rounded-full px-3 py-0.5 text-sm text-medium-black bg-white 
+                    className="flex items-center gap-1 border border-gray-border
+                    rounded-full px-3 py-0.5 text-sm text-bcp-blue bg-white
                     whitespace-nowrap"
                   >
                     {u.lastName}, {u.firstName}
@@ -403,8 +383,7 @@ const ManageRolesPage = () => {
                         e.stopPropagation();
                         toggleSelect(u.userId);
                       }}
-                      className="ml-1 text-gray-500 hover:text-red-500 
-                      leading-none"
+                      className="ml-1 text-medium-gray hover:text-red-500 leading-none"
                       aria-label={`Remove ${u.firstName}`}
                     >
                       x
@@ -416,10 +395,10 @@ const ManageRolesPage = () => {
 
             {dropdownOpen && (
               <div
-                className="absolute z-50 left-0 right-0 bg-white border 
-                    border-medium-gray rounded-lg shadow-lg mt-1"
+                className="absolute z-50 left-0 right-0 bg-white border
+                  border-medium-gray rounded-lg shadow-lg mt-1"
               >
-                <div className="p-2 border-b border-gray-100">
+                <div className="p-2 border-b border-light-gray">
                   <input
                     ref={searchInputRef}
                     type="text"
@@ -436,7 +415,7 @@ const ManageRolesPage = () => {
                   />
                 </div>
                 {seenVolunteers.length === 0 && searchQuery ? (
-                  <div className="p-2 text-sm text-gray-500">No results</div>
+                  <div className="p-2 text-sm text-medium-gray">No results</div>
                 ) : (
                   <div className="max-h-[320px] overflow-y-auto">
                     {seenVolunteers.map((u) => (
@@ -447,12 +426,10 @@ const ManageRolesPage = () => {
                           e.preventDefault();
                           addVolunteer(u.userId);
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-100 text-left text-sm"
+                        className="flex items-center gap-2 w-full px-3 py-2 hover:bg-really-light-gray text-left text-sm"
                       >
                         {u.lastName}, {u.firstName}{" "}
-                        <span className="text-gray-500">
-                          ({u.emailAddress})
-                        </span>
+                        <span className="text-medium-gray">({u.emailAddress})</span>
                       </button>
                     ))}
                   </div>
@@ -461,11 +438,9 @@ const ManageRolesPage = () => {
             )}
           </div>
 
-          {/* sort-by dropdown */}
-          <div className="w-40">
-            <label htmlFor="sort" className="sr-only">
-              Sort by role
-            </label>
+          {/* Sort dropdown */}
+          <div className="w-40 flex-shrink-0">
+            <label htmlFor="sort" className="sr-only">Sort by role</label>
             <select
               id="sort"
               value={sortOption}
@@ -492,20 +467,29 @@ const ManageRolesPage = () => {
           </div>
         </div>
 
-        <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
-          {/* Volunteer Table (populated by `/api/users`) */}
-          <table className="w-full border-white-700 text-bcp-blue">
+        {/* Table — fixed layout so columns never shift */}
+        <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto overflow-x-auto">
+          <table className="w-full min-w-[600px] table-fixed border-white-700 text-bcp-blue">
+            <colgroup>
+              {/* #   Name   Role   Email   Phone   Select */}
+              <col className="w-[5%]" />
+              <col className="w-[22%]" />
+              <col className="w-[12%]" />
+              <col className="w-[30%]" />
+              <col className="w-[20%]" />
+              <col className="w-[11%]" />
+            </colgroup>
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
-                <th className="py-3 px-5 font-normal"></th>
-                <th className="py-3 pl-5 px-4 font-normal">Name</th>
+                <th className="py-3 px-4 font-normal"></th>
+                <th className="py-3 px-4 font-normal">Name</th>
                 <th className="py-3 px-4 font-normal">Role</th>
                 <th className="py-3 px-4 font-normal">Email</th>
-                <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-                <th className="py-3 px-4 pl-13 font-normal">
+                <th className="py-3 px-4 font-normal">Phone Number</th>
+                <th className="py-3 px-4 font-normal text-center">
                   <button
                     onClick={toggleSelectAll}
-                    className="hover:underline transition-all duration-200 "
+                    className="hover:underline transition-all duration-200"
                   >
                     Select All
                   </button>
@@ -513,73 +497,68 @@ const ManageRolesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedVolunteers.map((p, i) => {
-                const rowNumber = i + 1;
-
-                return (
-                  <tr
-                    key={p.userId}
-                    className={`transition-colors duration-200 ${
-                      p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                    } border-t border-gray-300`}
-                  >
-                    <td className="py-3 px-6">{rowNumber}</td>
-                    <td className="py-3 px-4">
-                      {p.firstName} {p.lastName}
-                    </td>
-                    <td className="py-3 px-4">{p.role}</td>
-                    <td className="py-3 px-4">{p.emailAddress}</td>
-                    <td className="py-3 px-4">{p.phoneNumber}</td>
-                    <td className="py-3 px-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={p.selected}
-                        onChange={() => toggleSelect(p.userId)}
-                        disabled={p.userId === currentUserId}
-                        className="w-5 h-5 accent-bcp-blue cursor-pointer"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+              {sortedVolunteers.map((p, i) => (
+                <tr
+                  key={p.userId}
+                  className={`transition-colors duration-200 ${
+                    p.selected ? "bg-light-gray" : "bg-white hover:bg-really-light-gray"
+                  } border-t border-gray-border`}
+                >
+                  <td className="py-3 px-4 text-sm">{i + 1}</td>
+                  <td className="py-3 px-4 truncate text-sm">
+                    {p.firstName} {p.lastName}
+                  </td>
+                  <td className="py-3 px-4 truncate text-sm">{p.role}</td>
+                  <td className="py-3 px-4 truncate text-sm">{p.emailAddress}</td>
+                  <td className="py-3 px-4 truncate text-sm">{p.phoneNumber}</td>
+                  <td className="py-3 px-4 text-center">
+                    <input
+                      type="checkbox"
+                      checked={p.selected}
+                      onChange={() => toggleSelect(p.userId)}
+                      disabled={p.userId === currentUserId}
+                      className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                    />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
         <div className="border-t w-full">
-          <div className="flex justify-between py-6">
-            <div className="flex justify-between gap-4">
+          <div className="flex flex-wrap justify-between py-6 gap-4">
+            <div className="flex flex-wrap gap-4">
               <Button
                 disabled={selectedCount <= 0}
                 label="Message"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleMessage}
               />
               <Button
                 disabled={selectedCount <= 0}
                 label="Copy to Clipboard"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleCopy}
               />
               <Button
                 disabled={selectedCount <= 0}
                 label="Save as CSV"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleSaveCSV}
               />
             </div>
-            <div className="flex justify-between gap-4">
+            <div className="flex flex-wrap gap-4">
               <Button
                 disabled={selectedCount <= 0}
                 label="Change Role"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleEditConfirm}
               />
-
               <Button
                 disabled={selectedCount <= 0}
                 label="Remove"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-light-bcp-blue"
                 onClick={handleDeleteConfirm}
               />
             </div>
@@ -616,7 +595,7 @@ const ManageRolesPage = () => {
         <Modal
           open={showDeleteConfirm}
           title="Confirm Removal"
-          message={`remove (${pendingCount}) users?`}
+          message={`Remove (${pendingCount}) users?`}
           onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {

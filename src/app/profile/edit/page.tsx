@@ -189,7 +189,7 @@ export default function EditProfilePage() {
             </div>
           </Link>
 
-          <h1 className="text-2xl font-semibold text-center mb-10 text-[#234254]">
+          <h1 className="text-2xl font-semibold text-center mb-10 text-bcp-blue">
             Edit your profile
           </h1>
 
@@ -262,7 +262,7 @@ export default function EditProfilePage() {
                     value="yes"
                     checked={form.spanish === "yes"}
                     onChange={handleChange}
-                    className="accent-[#234254]"
+                    className="accent-bcp-blue"
                   />
                   Yes
                 </label>
@@ -274,7 +274,7 @@ export default function EditProfilePage() {
                     value="no"
                     checked={form.spanish === "no"}
                     onChange={handleChange}
-                    className="accent-[#234254]"
+                    className="accent-bcp-blue"
                   />
                   No
                 </label>
@@ -409,7 +409,7 @@ export default function EditProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-[#234254] text-white px-6 py-2 rounded-md text-sm hover:bg-[#1b3443] disabled:opacity-50"
+                className="bg-bcp-blue text-white px-6 py-2 rounded-md text-sm hover:bg-[#1b3443] disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save details"}
               </button>

@@ -78,7 +78,7 @@ export default async function EventsPage() {
 
       <div className="w-full max-w-[1200px] px-6 py-12">
         <div className="flex">
-          <h1 className="text-[16px] font-semibold mb-6 text-[#234254]">
+          <h1 className="text-[16px] font-semibold mb-6 text-bcp-blue">
             <Link href="/" className="hover:underline">
               Home
             </Link>
@@ -97,7 +97,7 @@ export default async function EventsPage() {
           )}
         </div>
         {/* Featured Opportunities */}
-        <h2 className="text-[32px] font-semibold mb-6 color: #234254">
+        <h2 className="text-[32px] font-semibold mb-6 color: bcp-blue;">
           Featured Opportunities
         </h2>
 
@@ -128,7 +128,7 @@ export default async function EventsPage() {
         )}
 
         {/* All Opportunities */}
-        <h2 className="text-[32px] font-semibold mb-6 color: #234254">
+        <h2 className="text-[32px] font-semibold mb-6 color: bcp-blue">
           Opportunities
         </h2>
 

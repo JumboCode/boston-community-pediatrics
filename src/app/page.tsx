@@ -125,7 +125,7 @@ const Home: React.FC = () => {
         {loading ? (
           <p className="text-bcp-blue text-lg">Loading events...</p>
         ) : pinnedEvents.length === 0 ? (
-          <p className="text-[#234254] text-lg">
+          <p className="text-bcp-blue text-lg">
             There are no featured events at this time.
           </p>
         ) : (
