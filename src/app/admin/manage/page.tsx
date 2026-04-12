@@ -526,7 +526,11 @@ const ManageRolesPage = () => {
                     <td className="py-3 px-6">{rowNumber}</td>
                     <td className="py-3 px-4">
                       {p.role === "VOLUNTEER" ? (
-                        <button className="hover:underline text-left">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/admin/manage/${p.userId}`)}
+                          className="hover:underline text-left"
+                        >
                           {p.firstName} {p.lastName}
                         </button>
                       ) : (
