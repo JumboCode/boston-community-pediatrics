@@ -333,12 +333,55 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   return (
-    <div className="w-full p-2 sm:p-6">
-      <div className="w-full flex items-center justify-center">
-        <div className="w-full max-w-[996px] bg-white border border-black font-sans">
-          {/* Header */}
-          <div className="flex flex-col">
-            <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
+    <div className="min-w-[1100px] flex items-center justify-center p-6">
+      <div className="w-full max-w-[996px] bg-white border border-black font-sans">
+        {/* Header */}
+        <div className="flex flex-col">
+          <div className="flex flex-col md:flex-row items-start gap-10 mb-3 px-5 pt-5">
+            <div
+              className="text-bcp-blue flex-shrink-0"
+              style={{ width: "280px" }}
+            >
+              <h1 className="text-[24px] font-semibold">{position}</h1>
+              <p className="text-[16px] pt-2">
+                {location ? location : "No location"}
+              </p>
+              <p className="text-[16px]">
+                {(() => {
+                  const s = new Date(startTime);
+                  const e = new Date(endTime);
+                  const sameDay = s.toDateString() === e.toDateString();
+                  const fmt = (d: Date) =>
+                    d.toLocaleTimeString("en-US", {
+                      timeZone: "America/New_York",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    });
+                  const fmtDate = (d: Date) =>
+                    d.toLocaleDateString("en-US", {
+                      timeZone: "America/New_York",
+                      month: "short",
+                      day: "numeric",
+                    });
+
+                  if (sameDay) return `${fmt(s)} - ${fmt(e)}`;
+                  return `${fmtDate(s)} ${fmt(s)} – ${fmtDate(e)} ${fmt(e)}`;
+                })()}
+              </p>
+            </div>
+
+            <div className="text-bcp-blue flex-1 flex flex-col justify-between mb-2">
+              <p className="text-[16px] leading-[1.6] mb-5">{description}</p>
+            </div>
+          </div>
+          <div className="flex flex-row items-center gap-10 mb-1 px-5">
+            <div className="w-[280px] block">
+              <p className="text-[24px] w-[280px] block">
+                {volunteers.length}/{totalSlots} Spots Filled
+              </p>
+            </div>
+            <div className="bg-gray-200 rounded-full h-4 w-full overflow-hidden">
               <div
                 className="text-bcp-blue flex-shrink-0"
                 style={{ width: "280px" }}

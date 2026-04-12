@@ -430,6 +430,7 @@ const SignupForm = () => {
           >
             Date of Birth
           </label>
+
           <button
             type="button"
             onClick={() => setShowDatePicker(!showDatePicker)}
@@ -585,8 +586,8 @@ const SignupForm = () => {
           </div>
         </div>
 
-        {/* Image Upload */}
-        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-[60px]">
+        {/* --- NEW: Image Upload UI --- */}
+        <div className="flex items-center gap-[60px]">
           <input
             type="file"
             ref={fileInputRef}
@@ -601,7 +602,7 @@ const SignupForm = () => {
             className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-200 flex-shrink-0"
           >
             {previewUrl ? (
-              <img
+              <Image
                 src={previewUrl}
                 alt="Preview"
                 className="w-full h-full object-cover"
@@ -616,7 +617,7 @@ const SignupForm = () => {
           </div>
 
           <span
-            className="text-base sm:text-[20px] text-medium-gray cursor-pointer text-center sm:text-left"
+            className="text-[20px] text-medium-gray cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             Upload a profile photo <br /> (optional)

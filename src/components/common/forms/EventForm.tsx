@@ -503,6 +503,7 @@ const EventForm = () => {
         payload = {
           name: parseResult.data.title,
           description: parseResult.data.description || "",
+          resourcesLink: parseResult.data.resourcesLink || null,
           startTime: combineDateTime(
             parseResult.data.startDate,
             parseResult.data.startTime
