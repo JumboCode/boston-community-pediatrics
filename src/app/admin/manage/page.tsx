@@ -81,7 +81,7 @@ const ManageRolesPage = () => {
       .filter((v: ApiUser) => v.id || v.userId) // Filter out invalid users first
       .map(
         (v: ApiUser): FrontEndUser => ({
-          userId: (v.id || v.userId)!, 
+          userId: (v.id || v.userId)!,
           firstName: v.firstName,
           lastName: v.lastName,
           emailAddress: v.emailAddress,
@@ -525,9 +525,22 @@ const ManageRolesPage = () => {
                   >
                     <td className="py-3 px-6">{rowNumber}</td>
                     <td className="py-3 px-4">
-                      {p.firstName} {p.lastName}
+                      {p.role === "VOLUNTEER" ? (
+                        <button className="hover:underline text-left">
+                          {p.firstName} {p.lastName}
+                        </button>
+                      ) : (
+                        <span>
+                          {p.firstName} {p.lastName}
+                        </span>
+                      )}
                     </td>
-                    <td className="py-3 px-4">{p.role}</td>
+                    <td className="py-3 px-4">
+                      {p.role
+                        .toLowerCase()
+                        .replace(/^\w/, (c) => c.toUpperCase())}
+                    </td>
+
                     <td className="py-3 px-4">{p.emailAddress}</td>
                     <td className="py-3 px-4">{p.phoneNumber}</td>
                     <td className="py-3 px-4 text-center">
