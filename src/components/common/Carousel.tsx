@@ -5,26 +5,24 @@ import { useEffect, useState } from "react";
 import placeholder from "@/assets/images/image-place-holder.svg";
 
 interface CarouselProps {
-  images: (StaticImageData | string) [];
-};
+  images: (StaticImageData | string)[];
+}
 
 const Carousel = ({ images }: CarouselProps) => {
   const [index, setIndex] = useState(0);
   const slideCount = images.length;
   const hasImages = slideCount > 0;
   const showDots = slideCount > 1;
+  const [paused, setPaused] = useState(false);
+
   const goTo = (i: number) => {
     setIndex(i);
     setPaused(true);
     setTimeout(() => setPaused(false), 5000);
   };
-  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused == true) {
-      return;
-    }
-    if (!showDots || paused) return;
+    if (paused || !showDots) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % slideCount), 5000);
     return () => clearInterval(id);
   }, [slideCount, paused, showDots]);
@@ -33,26 +31,26 @@ const Carousel = ({ images }: CarouselProps) => {
     typeof src === "string" ? src : src.src;
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-[1000px] px-4 sm:px-0">
       {/* Image box */}
-      <div className="relative h-[212px] md:h-[360px] overflow-hidden bg-white">
+      <div className="relative w-full h-[220px] sm:h-[360px] overflow-hidden bg-white">
         {hasImages ? (
           images.map((src, i) => (
-          <div
-            key={`${getSrcKey(src)}-${i}`}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              index === i ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-            }`}
-            aria-hidden={index !== i}
-          >
-            <Image
-              src={getSrcKey(src)}
-              alt={`Slide ${i + 1}`}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ))
+            <div
+              key={`${getSrcKey(src)}-${i}`}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === i ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+              }`}
+              aria-hidden={index !== i}
+            >
+              <Image
+                src={getSrcKey(src)}
+                alt={`Slide ${i + 1}`}
+                fill
+                className="object-cover"
+              />
+            </div>
+          ))
         ) : (
           <Image
             src={placeholder}
@@ -63,7 +61,7 @@ const Carousel = ({ images }: CarouselProps) => {
         )}
       </div>
 
-      {/* Dots UNDER the picture, 24px gap */}
+      {/* Dots */}
       {showDots && (
         <div className="mt-[24px] flex justify-center gap-3">
           {images.map((_, i) => (
@@ -85,4 +83,5 @@ const Carousel = ({ images }: CarouselProps) => {
     </div>
   );
 };
+
 export default Carousel;

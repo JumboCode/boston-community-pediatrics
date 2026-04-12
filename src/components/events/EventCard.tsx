@@ -75,7 +75,6 @@ const EventCard = ({
       });
 
       if (!res.ok) {
-        // Only pin can fail due to the 2-pin rule
         setModalTitle("Unable to pin event");
         setModalMessage("Please unpin at least 1 event.");
         return;
@@ -116,7 +115,6 @@ const EventCard = ({
       setModalMessage("The event has been successfully deleted.");
       setShowDeleteConfirm(false);
 
-      // Redirect after a short delay to show the confirmation message
       setTimeout(() => {
         router.push("/event");
         router.refresh();
@@ -162,14 +160,14 @@ const EventCard = ({
   }, [modalMessage, closeModal]);
 
   return (
-    <div className="relative flex flex-col w-[283px] rounded-2xl p-4 gap-2 shadow bg-really-light-gray">
+    <div className="relative flex flex-col w-full rounded-2xl p-4 gap-2 shadow bg-really-light-gray">
       <Link href={`/event/${id}`}>
         <Image
           src={image}
           alt={title}
           width={600}
           height={600}
-          className="w-full h-[167.53px] object-cover"
+          className="w-full aspect-video object-cover rounded-xl"
         />
       </Link>
 
@@ -185,8 +183,6 @@ const EventCard = ({
         {isAdmin && <KebabMenu items={menuItems} />}
       </div>
 
-      {/* <p className="text-sm text-gray-700">{formattedStartTime} - {formattedEndTime}</p>
-       */}
       <div className="flex flex-col gap-1 text-[16px] text-black">
         <p>{timeRange}</p>
         <p className="line-clamp-1">{location}</p>
