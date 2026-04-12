@@ -374,7 +374,7 @@ const ManageRolesPage = () => {
             Home
           </Link>
           {" / "}
-          <Link href="/admin/manage" className="hover:underline">
+          <Link href="/admin/manage/roles" className="hover:underline">
             Manage Roles
           </Link>
         </h1>
@@ -632,8 +632,8 @@ const ManageRolesPage = () => {
       {showDeleteConfirm && (
         <Modal
           open={showDeleteConfirm}
-          title="Confirm Removal"
-          message={`remove (${pendingCount}) users?`}
+          title={`Remove ${pendingCount} user${pendingCount === 1 ? "" : "s"}?`}
+          // message={`remove (${pendingCount}) users?`}
           onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {
@@ -644,7 +644,7 @@ const ManageRolesPage = () => {
             },
             {
               label: "Remove",
-              variant: "danger",
+              variant: "primary",
               onClick: handleDeleteApproved,
               disabled: isLoading,
             },
