@@ -45,7 +45,21 @@ const SignupForm = () => {
   const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
     null
   );
+  const todayYmd = new Date().toISOString().slice(0, 10);
+
   if (!isLoaded) return <BasicSkeleton />;
+
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
 
   // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,9 +96,22 @@ const SignupForm = () => {
     const confirmPassword = formData.get("confirm-password") as string;
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
+    const dob = formData.get("dob") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
+    }
+
+    if (dob && dob > todayYmd) {
+      setError("Date of birth cannot be in the future");
       setLoading(false);
       return;
     }
@@ -111,7 +138,7 @@ const SignupForm = () => {
         });
 
         if (!r2Res.ok) throw new Error("Failed to upload image");
-        uploadedImageUrl = publicUrl;
+        uploadedImageUrl = normalizeProfileImageUrl(publicUrl) || "";
       }
 
       // --- 2. Create Clerk Account ---
@@ -410,7 +437,6 @@ const SignupForm = () => {
           >
             Date of Birth
           </label>
-
           <button
             type="button"
             onClick={() => setShowDatePicker(!showDatePicker)}
@@ -614,11 +640,15 @@ const SignupForm = () => {
           >
             Create password
           </label>
+          <p className="text-sm text-medium-gray mb-2">
+            Must be at least 8 characters.
+          </p>
           <input
             name="password"
             id="password"
             type="password"
             required
+            minLength={8}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
@@ -635,6 +665,7 @@ const SignupForm = () => {
             id="confirm-password"
             type="password"
             required
+            minLength={8}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>

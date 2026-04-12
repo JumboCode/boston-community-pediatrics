@@ -14,6 +14,7 @@ function OnboardingPage() {
   const [checkingDb, setCheckingDb] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const todayYmd = new Date().toISOString().slice(0, 10);
   const [dob, setDob] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -76,6 +77,13 @@ function OnboardingPage() {
     if (!user) return;
 
     const formData = new FormData(e.currentTarget);
+    const dob = formData.get("dob") as string;
+
+    if (dob && dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       // POST to your existing API to create the user record

@@ -22,6 +22,7 @@ export default function EditProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const todayYmd = new Date().toISOString().slice(0, 10);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Form State
@@ -43,6 +44,21 @@ export default function EditProfilePage() {
   // Image State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Error State
+  const [error, setError] = useState<string>("");
+
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
 
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
@@ -67,14 +83,14 @@ export default function EditProfilePage() {
           city: data.city || "",
           state: data.state || "",
           zip: data.zipCode || "",
-          profileImageKey: data.profileImage || "",
+          profileImageKey: normalizeProfileImageUrl(data.profileImage) || "",
         });
 
         // Resolve Image URL if exists
         if (data.profileImage) {
           // If it's a full URL, use it; otherwise fetch the public URL
           if (data.profileImage.startsWith("http")) {
-            setPreviewUrl(data.profileImage);
+            setPreviewUrl(normalizeProfileImageUrl(data.profileImage));
           } else {
             const imgRes = await fetch(
               `/api/images?filename=${data.profileImage}`
@@ -144,9 +160,16 @@ export default function EditProfilePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError("");
+
+    if (form.dob && form.dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
+      setSaving(false);
+      return;
+    }
 
     try {
-      let finalImageUrl = form.profileImageKey;
+      let finalImageUrl = normalizeProfileImageUrl(form.profileImageKey) || "";
 
       // 1. Upload new image if selected
       if (selectedFile) {
@@ -158,13 +181,16 @@ export default function EditProfilePage() {
         if (uploadRes.ok) {
           const { uploadUrl, publicUrl } = await uploadRes.json();
 
-          await fetch(uploadUrl, {
+          const uploadToR2Res = await fetch(uploadUrl, {
             method: "PUT",
             body: selectedFile,
             headers: { "Content-Type": selectedFile.type },
           });
+          if (!uploadToR2Res.ok) {
+            throw new Error("Failed to upload profile image");
+          }
 
-          finalImageUrl = publicUrl;
+          finalImageUrl = normalizeProfileImageUrl(publicUrl) || "";
         }
       }
 
@@ -190,13 +216,16 @@ export default function EditProfilePage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update");
+      }
 
       router.push("/profile");
       router.refresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to save changes.");
+      setError(err.message || "Failed to save changes.");
     } finally {
       setSaving(false);
     }
@@ -219,6 +248,12 @@ export default function EditProfilePage() {
           <h1 className="text-2xl font-semibold text-center mb-10 text-[#234254]">
             Edit your profile
           </h1>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* First / Last Name */}

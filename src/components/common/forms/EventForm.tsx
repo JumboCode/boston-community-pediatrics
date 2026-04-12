@@ -1,5 +1,8 @@
 "use client";
-import { eventSchema } from "@/lib/schemas/eventSchema";
+import {
+  eventSchema,
+  EVENT_FIELD_LIMITS,
+} from "@/lib/schemas/eventSchema";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect, type ChangeEvent } from "react";
@@ -12,6 +15,12 @@ import { useSearchParams } from "next/navigation";
 import { getPublicURL } from "@/lib/r2";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 import DateRangePicker from "@/components/RangeCalendar";
+
+function sanitizeZipInput(value: string) {
+  return value
+    .replace(/\D/g, "")
+    .slice(0, EVENT_FIELD_LIMITS.zipMaxDigits);
+}
 
 // API shapes used by this component
 type APIPosition = Partial<{
@@ -89,6 +98,8 @@ const createStaticImageData = (url: string): StaticImageData =>
     blurWidth: 0,
     blurHeight: 0,
   }) as StaticImageData;
+
+const todayYmd = () => new Date().toISOString().slice(0, 10);
 
 const parseInputDate = (value: string): Date | null => {
   if (!value) return null;
@@ -635,6 +646,7 @@ const EventForm = () => {
     className,
     error,
     onClearError,
+    maxLength,
   }: {
     id: string;
     label: string;
@@ -647,6 +659,7 @@ const EventForm = () => {
     className?: string;
     error?: string;
     onClearError?: () => void;
+    maxLength?: number;
   }) => (
     <div className="flex flex-col">
       <div className="mt-10 flex items-center justify-between">
@@ -675,6 +688,8 @@ const EventForm = () => {
         type={type}
         value={disabled ? fallbackValue : value}
         disabled={disabled}
+        min={type === "date" ? todayYmd() : undefined}
+        maxLength={maxLength}
         onChange={(e) => {
           onChange(e.target.value);
           onClearError?.();
@@ -716,7 +731,7 @@ const EventForm = () => {
         apt: p.addressLine2 ?? undefined,
         city: p.city ?? "",
         state: p.state ?? "",
-        zip: p.zipCode ?? "",
+        zip: sanitizeZipInput(String(p.zipCode ?? "")),
         participants: p.totalSlots != null ? String(p.totalSlots) : "",
         sameAsDate: false,
         sameAsTime: false,
@@ -749,7 +764,7 @@ const EventForm = () => {
         apt: result.addressLine2 ?? undefined,
         city: result.city ?? "",
         state: result.state ?? "",
-        zip: result.zipCode ?? "",
+        zip: sanitizeZipInput(String(result.zipCode ?? "")),
       });
       setIsLoading(false);
 
@@ -846,6 +861,7 @@ const EventForm = () => {
             id="event-title"
             type="text"
             value={event.title}
+            maxLength={EVENT_FIELD_LIMITS.title}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, title: e.target.value }));
               clearError("title");
@@ -927,6 +943,7 @@ const EventForm = () => {
           <textarea
             id="event-description"
             value={event.description}
+            maxLength={EVENT_FIELD_LIMITS.description}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, description: e.target.value }));
               clearError("description");
@@ -945,13 +962,22 @@ const EventForm = () => {
           </label>
           <input
             id="event-resources"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            placeholder="https://…"
             value={event.resourcesLink || ""}
-            onChange={(e) =>
-              setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }))
-            }
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            maxLength={EVENT_FIELD_LIMITS.resourcesLink}
+            onChange={(e) => {
+              setEvent((prev) => ({
+                ...prev,
+                resourcesLink: e.target.value,
+              }));
+              clearError("resourcesLink");
+            }}
+            className={`w-[588px] h-[43px] ${inputClass("resourcesLink")}`}
           />
+          <ErrorText k="resourcesLink" />
         </div>
         {/* event street */}
         <div className="flex flex-col items-start">
@@ -964,6 +990,7 @@ const EventForm = () => {
           <input
             id="event-street"
             value={event.address}
+            maxLength={EVENT_FIELD_LIMITS.address}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, address: e.target.value }));
               clearError("address");
@@ -983,6 +1010,7 @@ const EventForm = () => {
           <input
             id="event-apt"
             value={event.apt}
+            maxLength={EVENT_FIELD_LIMITS.apt}
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, apt: e.target.value }))
             }
@@ -1000,6 +1028,7 @@ const EventForm = () => {
           <input
             id="event-city"
             value={event.city}
+            maxLength={EVENT_FIELD_LIMITS.city}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, city: e.target.value }));
               clearError("city");
@@ -1020,6 +1049,7 @@ const EventForm = () => {
             <input
               id="event-state"
               value={event.state}
+              maxLength={EVENT_FIELD_LIMITS.state}
               onChange={(e) => {
                 setEvent((prev) => ({ ...prev, state: e.target.value }));
                 clearError("state");
@@ -1038,9 +1068,14 @@ const EventForm = () => {
             <input
               id="event-zip"
               inputMode="numeric"
+              autoComplete="postal-code"
               value={event.zip}
+              maxLength={EVENT_FIELD_LIMITS.zipMaxDigits}
               onChange={(e) => {
-                setEvent((prev) => ({ ...prev, zip: e.target.value }));
+                setEvent((prev) => ({
+                  ...prev,
+                  zip: sanitizeZipInput(e.target.value),
+                }));
                 clearError("zip");
               }}
               className={`w-[264px] h-[43px] ${inputClass("zip")}`}
@@ -1066,6 +1101,7 @@ const EventForm = () => {
                 id={`position-name-${index}`}
                 type="text"
                 value={position.name}
+                maxLength={EVENT_FIELD_LIMITS.positionName}
                 onChange={(e) => {
                   handlePositionChange(index, "name", e.target.value);
                   clearError(`positions.${index}.name`);
@@ -1197,6 +1233,7 @@ const EventForm = () => {
               <textarea
                 id={`position-description-${index}`}
                 value={position.description}
+                maxLength={EVENT_FIELD_LIMITS.description}
                 onChange={(e) => {
                   handlePositionChange(index, "description", e.target.value);
                   clearError(`positions.${index}.description`);
@@ -1217,6 +1254,7 @@ const EventForm = () => {
               onChange={(val) => handlePositionChange(index, "address", val)}
               error={errors[`positions.${index}.address`]}
               onClearError={() => clearError(`positions.${index}.address`)}
+              maxLength={EVENT_FIELD_LIMITS.address}
             />
             {/* position apt */}
             <div className="flex flex-col">
@@ -1233,6 +1271,7 @@ const EventForm = () => {
                   position.sameAsAddress ? event.apt || "" : position.apt || ""
                 }
                 disabled={position.sameAsAddress}
+                maxLength={EVENT_FIELD_LIMITS.apt}
                 onChange={(e) =>
                   handlePositionChange(index, "apt", e.target.value)
                 }
@@ -1252,6 +1291,7 @@ const EventForm = () => {
                 type="text"
                 value={position.sameAsAddress ? event.city : position.city}
                 disabled={position.sameAsAddress}
+                maxLength={EVENT_FIELD_LIMITS.city}
                 onChange={(e) => {
                   handlePositionChange(index, "city", e.target.value);
                   clearError(`positions.${index}.city`);
@@ -1277,6 +1317,7 @@ const EventForm = () => {
                   type="text"
                   value={position.sameAsAddress ? event.state : position.state}
                   disabled={position.sameAsAddress}
+                  maxLength={EVENT_FIELD_LIMITS.state}
                   onChange={(e) => {
                     handlePositionChange(index, "state", e.target.value);
                     clearError(`positions.${index}.state`);
@@ -1298,10 +1339,17 @@ const EventForm = () => {
                 <input
                   id={`position-zip-${index}`}
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
                   value={position.sameAsAddress ? event.zip : position.zip}
                   disabled={position.sameAsAddress}
+                  maxLength={EVENT_FIELD_LIMITS.zipMaxDigits}
                   onChange={(e) => {
-                    handlePositionChange(index, "zip", e.target.value);
+                    handlePositionChange(
+                      index,
+                      "zip",
+                      sanitizeZipInput(e.target.value),
+                    );
                     clearError(`positions.${index}.zip`);
                   }}
                   className={`w-[264px] h-[43px] ${inputClass(
@@ -1323,6 +1371,10 @@ const EventForm = () => {
               <input
                 id={`position-participants-${index}`}
                 type="number"
+                min={1}
+                max={
+                  10 ** EVENT_FIELD_LIMITS.participantsMaxDigits - 1
+                }
                 value={position.participants}
                 onChange={(e) => {
                   handlePositionChange(index, "participants", e.target.value);

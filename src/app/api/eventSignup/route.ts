@@ -87,6 +87,16 @@ export async function POST(req: NextRequest) {
     }
     // SECURITY END
 
+    // Validate guest phone numbers
+    for (const guest of guests) {
+      if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+        return NextResponse.json(
+          { error: "Guest phone number must contain only numbers" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Get position and count current signups
     const [position] = await Promise.all([
       prisma.eventPosition.findUnique({
@@ -211,6 +221,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
     const data = await req.json();
+
+    // Validate guest phone numbers if guests are being updated
+    if (data.guests) {
+      for (const guest of data.guests) {
+        if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+          return NextResponse.json(
+            { error: "Guest phone number must contain only numbers" },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     let isAdmin = false;
     const user = await getCurrentUser();

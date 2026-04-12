@@ -15,6 +15,12 @@ const s3 = new S3Client({
 // Hardcoded for now based on your previous snippet, but better to move to ENV
 const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN!;
 
+function joinPublicUrl(base: string, key: string) {
+  const cleanBase = base.replace(/\/+$/, "");
+  const cleanKey = key.replace(/^\/+/, "");
+  return `${cleanBase}/${cleanKey}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { fileType } = await req.json();
@@ -36,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       uploadUrl,
-      publicUrl: `${R2_PUBLIC_DOMAIN}/${key}`,
+      publicUrl: joinPublicUrl(R2_PUBLIC_DOMAIN, key),
     });
   } catch (error) {
     console.error("Error generating signup upload URL:", error);

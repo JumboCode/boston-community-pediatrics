@@ -9,6 +9,28 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
+function isFutureDate(value?: string | null) {
+  if (!value) return false;
+  const input = new Date(value);
+  if (Number.isNaN(input.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  input.setHours(0, 0, 0, 0);
+  return input > today;
+}
+
+function normalizeProfileImageUrl(value?: string | null) {
+  if (!value) return value ?? null;
+  if (!value.startsWith("http")) return value;
+  try {
+    const url = new URL(value);
+    url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
@@ -97,6 +119,23 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { user } = await req.json();
+    user.profileImage = normalizeProfileImageUrl(user.profileImage);
+
+    // Validate phone number
+    if (!user.phoneNumber || !/^[0-9]+$/.test(user.phoneNumber)) {
+      return NextResponse.json(
+        { error: "Phone number is required and must contain only numbers" },
+        { status: 400 }
+      );
+    }
+
+    if (isFutureDate(user.dateOfBirth)) {
+      return NextResponse.json(
+        { error: "Date of birth cannot be in the future" },
+        { status: 400 }
+      );
+    }
+
     const newUser = await createUser(user);
     if (!newUser) {
       return NextResponse.json({ error: "User not created" }, { status: 500 });
@@ -114,6 +153,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { id, body } = await req.json();
+    body.profileImage = normalizeProfileImageUrl(body.profileImage);
     let isAdmin = false;
     const currentUser = await getCurrentUser();
     if (currentUser) {
@@ -123,6 +163,32 @@ export async function PUT(req: NextRequest) {
     } else return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     if (currentUser?.id != id && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Validate phone number if it's being updated and is different from current
+    if (body.phoneNumber !== undefined) {
+      // Fetch current user to check if phone is actually changing
+      const existingUser = await getUserById(id);
+      if (!existingUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // Only validate if the phone number is actually changing
+      if (body.phoneNumber !== existingUser.phoneNumber) {
+        if (!body.phoneNumber || !/^[0-9]+$/.test(body.phoneNumber)) {
+          return NextResponse.json(
+            { error: "Phone number must contain only numbers" },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    if (body.dateOfBirth !== undefined && isFutureDate(body.dateOfBirth)) {
+      return NextResponse.json(
+        { error: "Date of birth cannot be in the future" },
+        { status: 400 }
+      );
     }
 
     let filteredBody = body;
