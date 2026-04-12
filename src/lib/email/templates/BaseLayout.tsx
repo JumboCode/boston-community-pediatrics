@@ -13,9 +13,10 @@ import {
 } from "@react-email/components";
 import { TailwindConfig } from "@react-email/tailwind";
 
-const BASE_URL = "https://boston-community-pediatrics.vercel.app";
-const LOGO_URL = `${BASE_URL}/BCP.svg`;
-const HEADER_IMAGE_URL = `${BASE_URL}/email-header-image.jpg`;
+const LOGO_URL =
+  "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev/emails/BCP.png";
+const HEADER_IMAGE_URL =
+  "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev/emails/email-header-image.jpg";
 const tailwindConfig: TailwindConfig = {
   theme: {
     extend: {},
