@@ -56,7 +56,7 @@ const Carousel = ({ images }: CarouselProps) => {
             src={placeholder}
             alt="Event image placeholder"
             fill
-            className="object-cover"
+            className="object-contain"
           />
         )}
       </div>
