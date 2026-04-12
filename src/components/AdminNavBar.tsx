@@ -56,7 +56,7 @@ function AdminNavBar(props: UserNavBarProps) {
                   <Menu.Item>
                     {({ active }) => (
                       <Link
-                        href="/manage/events"
+                        href="/admin/manage/event"
                         className={`block px-4 py-2 text-sm ${
                           active ? "bg-blue-500 text-white" : "text-black"
                         }`}

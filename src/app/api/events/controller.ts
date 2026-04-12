@@ -4,7 +4,15 @@ const prisma = new PrismaClient();
 
 // GET all events
 export const getEvents = async () => {
-  return prisma.event.findMany();
+  return prisma.event.findMany({
+    include: {
+      positions: {
+        select: {
+          totalSlots: true,
+        },
+      },
+    },
+  });
 };
 
 // Fetch event by ID
