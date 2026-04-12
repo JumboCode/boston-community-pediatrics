@@ -390,8 +390,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Name & Role */}
-          <div className="text-center text-white mb-10">
-            <h1 className="text-[32px] font-bold">
+          <div className="text-center text-white mb-10 w-full max-w-[760px]">
+            <h1
+              title={`${firstName} ${lastName} • Admin`}
+              className="text-[32px] font-bold max-w-full truncate whitespace-nowrap"
+            >
               {firstName} {lastName} &bull; Admin
             </h1>
             <p className="text-[18px] mt-1">Member since {memberSince}</p>
@@ -489,7 +492,10 @@ export default function ProfilePage() {
         </div>
 
         <div className="mt-40 flex flex-col items-center space-y-[1px]">
-          <div className="text-[24px] font-bold text-white">
+          <div
+            title={`${firstName} ${lastName}`}
+            className="text-[24px] font-bold text-white max-w-[320px] truncate whitespace-nowrap px-3"
+          >
             {firstName} {lastName}
           </div>
           <div className="text-[16px] text-white">
