@@ -2,8 +2,7 @@ import React from "react";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-bcp-blue bg-opacity-100 w-full flex items-center justify-between p-6 mt-auto">
-      <div>
+    <footer className="bg-bcp-blue bg-opacity-100 w-full flex flex-wrap items-center justify-between gap-4 p-6 mt-auto"><div>
         <a
           href="https://www.bostoncommunitypediatrics.org/donate"
           className="bg-light-bcp-blue text-white text-sm px-4 py-3 rounded text-center"

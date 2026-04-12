@@ -62,8 +62,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-[792px] pt-[50px] px-[102px] pb-[60px] box-border">
-      <h1 className="text-bcp-blue text-[36px] font-medium m-0">Sign In</h1>
+<div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-full md:w-[792px] pt-[50px] px-6 md:px-[102px] pb-[60px] box-border">      <h1 className="text-bcp-blue text-[36px] font-medium m-0">Sign In</h1>
 
       {/* Error Display */}
       {error && (

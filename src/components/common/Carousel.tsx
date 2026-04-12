@@ -33,9 +33,9 @@ const Carousel = ({ images }: CarouselProps) => {
     typeof src === "string" ? src : src.src;
 
   return (
-    <div className="w-[1000px]">
+    <div className="w-full">
       {/* Image box */}
-      <div className="relative h-[360px] overflow-hidden bg-white">
+      <div className="relative h-[212px] md:h-[360px] overflow-hidden bg-white">
         {hasImages ? (
           images.map((src, i) => (
           <div
@@ -58,7 +58,7 @@ const Carousel = ({ images }: CarouselProps) => {
             src={placeholder}
             alt="Event image placeholder"
             fill
-            className="object-cover"
+            className="object-contain"
           />
         )}
       </div>
