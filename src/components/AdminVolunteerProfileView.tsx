@@ -360,7 +360,7 @@ export default function AdminVolunteerProfileView({
                   .toUpperCase();
                 const day = dateObj.getDate().toString().padStart(2, "0");
 
-                const start = new Date(reg.position.event.startTime).getTime();
+                const start = new Date(reg.position.startTime).getTime();
                 const end = new Date(reg.position.endTime).getTime();
                 const hoursVal = !isNaN(end - start)
                   ? (end - start) / (1000 * 60 * 60)
