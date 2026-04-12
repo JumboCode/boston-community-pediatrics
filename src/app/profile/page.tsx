@@ -105,6 +105,18 @@ export default function ProfilePage() {
   const [modalButtons, setModalButtons] = useState<ModalButton[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
+
   // 1. Fetch User Phone Number
   useEffect(() => {
     async function fetchUserData() {
@@ -118,7 +130,7 @@ export default function ProfilePage() {
           setDbFirstName(userData.firstName ?? "");
           setDbLastName(userData.lastName ?? "");
           if (userData.profileImage) {
-            setProfileImageUrl(userData.profileImage);
+            setProfileImageUrl(normalizeProfileImageUrl(userData.profileImage));
           }
         }
       } catch (err) {
@@ -250,75 +262,6 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  // const handleDeleteEvent = (eventId: string, registrationId?: string) => {
-  //   setModalTitle("Delete Event?");
-  //   setModalMessage(
-  //     "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
-  //   );
-
-  //   setModalButtons([
-  //     {
-  //       label: "Cancel",
-  //       variant: "secondary",
-  //       onClick: () => setModalOpen(false),
-  //     },
-  //     {
-  //       label: "Delete",
-  //       variant: "danger",
-  //       loading: modalLoading,
-  //       onClick: async () => {
-  //         try {
-  //           setModalLoading(true);
-
-  //           if (eventId.startsWith("evt-") || eventId === "demo-event") {
-  //             setModalTitle("Demo Event Deleted");
-  //             setModalMessage("This was a demo event.");
-  //             setModalButtons([
-  //               { label: "Close", onClick: () => setModalOpen(false) },
-  //             ]);
-  //             return;
-  //           }
-
-  //           const res = await fetch(`/api/events?id=${eventId}`, {
-  //             method: "DELETE",
-  //           });
-
-  //           if (res.ok) {
-  //             if (registrationId) {
-  //               setMyEvents((prev) =>
-  //                 prev.filter((evt) => evt.id !== registrationId)
-  //               );
-  //             }
-
-  //             setModalTitle("Event Deleted");
-  //             setModalMessage("Event successfully deleted.");
-  //             setModalButtons([
-  //               { label: "Close", onClick: () => setModalOpen(false) },
-  //             ]);
-  //           } else {
-  //             const err = await res.json();
-  //             setModalTitle("Error");
-  //             setModalMessage(err.error || "Failed to delete event.");
-  //             setModalButtons([
-  //               { label: "Close", onClick: () => setModalOpen(false) },
-  //             ]);
-  //           }
-  //         } catch {
-  //           setModalTitle("Error");
-  //           setModalMessage("An error occurred while deleting the event.");
-  //           setModalButtons([
-  //             { label: "Close", onClick: () => setModalOpen(false) },
-  //           ]);
-  //         } finally {
-  //           setModalLoading(false);
-  //         }
-  //       },
-  //     },
-  //   ]);
-
-  //   setModalOpen(true);
-  // };
-
   // Wait for Clerk, event data (loading), and the user's role from the DB
   if (!isLoaded || loading) {
     return <ProfilePageSkeleton />;
@@ -378,8 +321,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Name & Role */}
-          <div className="text-center text-white mb-10">
-            <h1 className="text-[32px] font-bold">
+          <div className="text-center text-white mb-10 w-full max-w-[760px]">
+            <h1
+              title={`${firstName} ${lastName} • Admin`}
+              className="text-[32px] font-bold max-w-full truncate whitespace-nowrap"
+            >
               {firstName} {lastName} &bull; Admin
             </h1>
             <p className="text-[18px] mt-1">Member since {memberSince}</p>
@@ -477,7 +423,10 @@ export default function ProfilePage() {
         </div>
 
         <div className="mt-40 flex flex-col items-center space-y-[1px]">
-          <div className="text-[24px] font-bold text-white">
+          <div
+            title={`${firstName} ${lastName}`}
+            className="text-[24px] font-bold text-white max-w-[320px] truncate whitespace-nowrap px-3"
+          >
             {firstName} {lastName}
           </div>
           <div className="text-[16px] text-white">

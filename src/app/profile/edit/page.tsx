@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import DatePicker from "@/components/DatePicker";
 
 export default function EditProfilePage() {
   const { user, isSignedIn, isLoaded } = useUser();
@@ -15,12 +16,14 @@ export default function EditProfilePage() {
   // Redirect if not signed in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [isLoaded, isSignedIn, router]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const todayYmd = new Date().toISOString().slice(0, 10);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -41,6 +44,21 @@ export default function EditProfilePage() {
   // Image State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Error State
+  const [error, setError] = useState<string>("");
+
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
 
   // --- 1. FETCH USER DATA ---
   useEffect(() => {
@@ -65,14 +83,14 @@ export default function EditProfilePage() {
           city: data.city || "",
           state: data.state || "",
           zip: data.zipCode || "",
-          profileImageKey: data.profileImage || "",
+          profileImageKey: normalizeProfileImageUrl(data.profileImage) || "",
         });
 
         // Resolve Image URL if exists
         if (data.profileImage) {
           // If it's a full URL, use it; otherwise fetch the public URL
           if (data.profileImage.startsWith("http")) {
-            setPreviewUrl(data.profileImage);
+            setPreviewUrl(normalizeProfileImageUrl(data.profileImage));
           } else {
             const imgRes = await fetch(
               `/api/images?filename=${data.profileImage}`
@@ -113,13 +131,45 @@ export default function EditProfilePage() {
     setForm((prev) => ({ ...prev, profileImageKey: "" })); // Mark for deletion
   }
 
+  // Handle Date Selection from DatePicker
+  function handleDateSelect(date: Date) {
+    // Use UTC methods to prevent timezone offset issues
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+    setForm((prev) => ({ ...prev, dob: formattedDate }));
+    setShowDatePicker(false);
+  }
+
+  // Format date for display
+  function formatDateForDisplay(dateString: string) {
+    if (!dateString) return "";
+    // Parse as UTC to prevent timezone offset
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
+
   // --- SUBMIT ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError("");
+
+    if (form.dob && form.dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
+      setSaving(false);
+      return;
+    }
 
     try {
-      let finalImageUrl = form.profileImageKey;
+      let finalImageUrl = normalizeProfileImageUrl(form.profileImageKey) || "";
 
       // 1. Upload new image if selected
       if (selectedFile) {
@@ -131,13 +181,16 @@ export default function EditProfilePage() {
         if (uploadRes.ok) {
           const { uploadUrl, publicUrl } = await uploadRes.json();
 
-          await fetch(uploadUrl, {
+          const uploadToR2Res = await fetch(uploadUrl, {
             method: "PUT",
             body: selectedFile,
             headers: { "Content-Type": selectedFile.type },
           });
+          if (!uploadToR2Res.ok) {
+            throw new Error("Failed to upload profile image");
+          }
 
-          finalImageUrl = publicUrl;
+          finalImageUrl = normalizeProfileImageUrl(publicUrl) || "";
         }
       }
 
@@ -163,13 +216,16 @@ export default function EditProfilePage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update");
+      }
 
       router.push("/profile");
       router.refresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to save changes.");
+      setError(err.message || "Failed to save changes.");
     } finally {
       setSaving(false);
     }
@@ -192,6 +248,12 @@ export default function EditProfilePage() {
           <h1 className="text-2xl font-semibold text-center mb-10 text-[#234254]">
             Edit your profile
           </h1>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* First / Last Name */}
@@ -239,16 +301,42 @@ export default function EditProfilePage() {
               />
             </div>
 
-            {/* DOB */}
-            <div>
+            {/* DOB with Custom DatePicker */}
+            <div className="relative">
               <label className="block text-sm mb-1">Date of Birth</label>
-              <input
-                type="date"
-                name="dob"
-                value={form.dob}
-                onChange={handleChange}
-                className="w-full border rounded-md px-3 py-2 text-sm"
-              />
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
+              >
+                {form.dob ? formatDateForDisplay(form.dob) : "Select date"}
+              </button>
+
+              {showDatePicker && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowDatePicker(false)}
+                  />
+                  {/* DatePicker Dropdown */}
+                  <div className="absolute top-full left-0 mt-2 z-50">
+                    <DatePicker
+                      selectedDate={
+                        form.dob
+                          ? (() => {
+                              const [year, month, day] = form.dob
+                                .split("-")
+                                .map(Number);
+                              return new Date(Date.UTC(year, month - 1, day));
+                            })()
+                          : null
+                      }
+                      onDateChange={handleDateSelect}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Spanish */}

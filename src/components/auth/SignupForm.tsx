@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef } from "react"; // Added useRef
-import { useSignUp } from "@clerk/nextjs"; 
+import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
+import DatePicker from "@/components/DatePicker";
 
 type SignupFormData = {
   firstName: string;
@@ -15,7 +16,7 @@ type SignupFormData = {
   email: string;
   phone: string;
   dob: string;
-  speaksSpanish: boolean,
+  speaksSpanish: boolean;
   street?: string;
   apt?: string;
   city?: string;
@@ -36,10 +37,29 @@ const SignupForm = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const [dob, setDob] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
+  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
+    null
+  );
+  const todayYmd = new Date().toISOString().slice(0, 10);
+
   if (!isLoaded) return <BasicSkeleton />;
+
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
 
   // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +76,7 @@ const SignupForm = () => {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/onboarding", 
+        redirectUrlComplete: "/onboarding",
       });
     } catch {
       console.error("Google sign up error");
@@ -76,6 +96,7 @@ const SignupForm = () => {
     const confirmPassword = formData.get("confirm-password") as string;
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
+    const dob = formData.get("dob") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -83,17 +104,29 @@ const SignupForm = () => {
       return;
     }
 
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
+    }
+
+    if (dob && dob > todayYmd) {
+      setError("Date of birth cannot be in the future");
+      setLoading(false);
+      return;
+    }
+
     try {
       // --- 1. NEW: Upload Image to R2 (if selected) ---
       let uploadedImageUrl = "";
-      
+
       if (selectedFile) {
         // A. Get the presigned URL
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
           body: JSON.stringify({ fileType: selectedFile.type }),
         });
-        
+
         if (!uploadRes.ok) throw new Error("Failed to initialize upload");
         const { uploadUrl, publicUrl } = await uploadRes.json();
 
@@ -105,7 +138,7 @@ const SignupForm = () => {
         });
 
         if (!r2Res.ok) throw new Error("Failed to upload image");
-        uploadedImageUrl = publicUrl;
+        uploadedImageUrl = normalizeProfileImageUrl(publicUrl) || "";
       }
 
       // --- 2. Create Clerk Account ---
@@ -197,6 +230,30 @@ const SignupForm = () => {
       setLoading(false);
     }
   };
+
+  function handleDateSelect(date: Date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
+
+    setDob(formattedDate);
+    setShowDatePicker(false);
+  }
+
+  function formatDateForDisplay(dateString: string) {
+    if (!dateString) return "";
+
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
 
   // --- RENDER: VERIFICATION FORM ---
   if (pendingVerification) {
@@ -373,21 +430,48 @@ const SignupForm = () => {
           />
         </div>
 
-        {/* DOB */}
-        <div className="flex flex-col items-start">
+        <div className="relative flex flex-col items-start">
           <label
             htmlFor="dob"
             className="text-base font-normal text-medium-gray mb-1"
           >
             Date of Birth
           </label>
-          <input
-            name="dob"
-            id="dob"
-            type="date"
-            required
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-          />
+          <button
+            type="button"
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="w-full h-[43px] rounded-lg border border-medium-gray px-3 text-left text-base text-medium-gray bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+          >
+            {dob ? formatDateForDisplay(dob) : "Select date"}
+          </button>
+
+          {showDatePicker && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowDatePicker(false)}
+              />
+
+              {/* DatePicker */}
+              <div className="absolute top-full left-0 mt-2 z-50">
+                <DatePicker
+                  selectedDate={
+                    dob
+                      ? (() => {
+                          const [year, month, day] = dob.split("-").map(Number);
+                          return new Date(Date.UTC(year, month - 1, day));
+                        })()
+                      : null
+                  }
+                  onDateChange={handleDateSelect}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Hidden input so FormData still works */}
+          <input type="hidden" name="dob" value={dob} required />
         </div>
 
         {/* Languages */}
@@ -417,12 +501,12 @@ const SignupForm = () => {
             </div>
             <div className="flex flex-row items-center gap-[14px]">
               <input
-                  type="radio"
-                  // type="checkbox"
-                  className="accent-bcp-blue rounded-md"
-                  name="speaksSpanish"
-                  value="false"
-                />
+                type="radio"
+                // type="checkbox"
+                className="accent-bcp-blue rounded-md"
+                name="speaksSpanish"
+                value="false"
+              />
               <label
                 htmlFor="speaksSpanish"
                 className="text-base font-normal text-medium-gray mb-1 gap-14"
@@ -512,27 +596,38 @@ const SignupForm = () => {
 
         {/* --- NEW: Image Upload UI --- */}
         <div className="flex items-center gap-[60px]">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
             accept="image/*"
             className="hidden" // Hide the ugly default input
           />
-          
+
           {/* Clickable Circle Image */}
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
             className="w-[264px] h-[264px] relative cursor-pointer  overflow-hidden hover:opacity-90 transition-opacity border border-gray-200"
           >
             {previewUrl ? (
-              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <Image src={ProfilePlaceholder} alt="Placeholder" className="w-full h-full object-cover" />
+              <Image
+                src={ProfilePlaceholder}
+                alt="Placeholder"
+                className="w-full h-full object-cover"
+              />
             )}
           </div>
 
-          <span className="text-[20px] text-medium-gray cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <span
+            className="text-[20px] text-medium-gray cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
             Upload a profile photo <br /> (optional)
           </span>
         </div>
@@ -545,11 +640,15 @@ const SignupForm = () => {
           >
             Create password
           </label>
+          <p className="text-sm text-medium-gray mb-2">
+            Must be at least 8 characters.
+          </p>
           <input
             name="password"
             id="password"
             type="password"
             required
+            minLength={8}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
@@ -566,6 +665,7 @@ const SignupForm = () => {
             id="confirm-password"
             type="password"
             required
+            minLength={8}
             className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>

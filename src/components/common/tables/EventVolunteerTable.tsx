@@ -41,165 +41,188 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   }
 
   const isPast = new Date() > new Date(endTime);
+  const filledSpots = volunteers.reduce(
+    (acc, v) => acc + 1 + (v.guests?.length ?? 0),
+    0
+  );
+  const isFull = filledSpots >= totalSpots;
 
   return (
-    <div className="w-full max-w-[1000px]">
-      <div className="flex flex-col sm:flex-row">
-        <div className="w-full sm:w-[750px] relative p-[20px] border-b sm:border-r border-gray-300">
-          <div className="text-bcp-blue text-[22px] font-medium font-avenir leading-[1.25]">
-            {positionTitle}
-          </div>
-          <div className="text-bcp-blue text-[14px] font-bold font-avenir mt-[8px]">
-            {streetAddress}
-          </div>
-          <div className="text-bcp-blue text-[14px] font-normal font-avenir">
-            <p className="text-[14px]">
-              {new Date(startTime).toLocaleDateString(undefined, {
+    <div className="w-full max-w-[1000px] flex flex-col md:flex-row">
+      <div className="w-full md:w-[750px] relative p-[20px] border-b border-gray-300 md:border-r">
+        <div className="text-bcp-blue text-[22px] font-medium font-avenir leading-[1.25]">
+          {positionTitle}
+        </div>
+        <div className="text-bcp-blue text-[14px] font-bold font-avenir mt-[8px]">
+          {streetAddress}
+        </div>
+        <div className="text-bcp-blue text-[14px] font-normal font-avenir">
+          <p className="text-[14px]">
+            {(() => {
+              const s = new Date(startTime);
+              const e = new Date(endTime);
+              const sameDay = s.toDateString() === e.toDateString();
+              const sDate = s.toLocaleDateString("en-US", {
+                timeZone: "America/New_York",
                 month: "long",
                 day: "numeric",
-              })}
-              {", "}
-              {new Date(startTime).toLocaleTimeString([], {
+              });
+              const sTime = s.toLocaleTimeString("en-US", {
+                timeZone: "America/New_York",
                 hour: "numeric",
                 minute: "2-digit",
                 hour12: true,
-              })}{" "}
-              -{" "}
-              {new Date(endTime).toLocaleTimeString([], {
+              });
+              const eDate = e.toLocaleDateString("en-US", {
+                timeZone: "America/New_York",
+                month: "long",
+                day: "numeric",
+              });
+              const eTime = e.toLocaleTimeString("en-US", {
+                timeZone: "America/New_York",
                 hour: "numeric",
                 minute: "2-digit",
                 hour12: true,
-              })}
-            </p>
-          </div>
-          <div className="mt-[12px] break-words text-bcp-blue text-[14px] font-normal font-avenir leading-[1.4]">
-            {description}
-          </div>
+              });
 
-          {!isPast && (
-            <RegisterButton disabled={isPast} positionId={positionId} />
-          )}
+              if (sameDay) return `${sDate}, ${sTime} - ${eTime}`;
+              return `${sDate} ${sTime} – ${eDate} ${eTime}`;
+            })()}
+          </p>
+        </div>
+        <div className="mt-[12px] break-words text-bcp-blue text-[14px] font-normal font-avenir leading-[1.4]">
+          {description}
         </div>
 
-        <div className="border-b border-gray-300 w-full sm:w-[250px] p-[20px]">
-          <div className="text-bcp-blue text-[22px] font-medium font-avenir sm:text-right">
-            {volunteers.reduce((acc, v) => acc + 1 + (v.guests?.length ?? 0), 0)}/
-            {totalSpots} Spots Filled
-          </div>
+        {!isPast && (
+          <RegisterButton
+            disabled={isPast}
+            positionId={positionId}
+            isFull={isFull}
+          />
+        )}
+      </div>
 
-          {error && (
-            <p className="text-red-500 sm:text-right mt-2 text-sm">
-              Failed to load volunteers
-            </p>
-          )}
+      <div className="border-b border-gray-300 w-full md:w-[250px] p-[20px]">
+        <div className="text-bcp-blue text-[22px] font-medium font-avenir md:text-right">
+          {volunteers.reduce((acc, v) => acc + 1 + (v.guests?.length ?? 0), 0)}/
+          {totalSpots} Spots Filled
+        </div>
 
-          <div className="mt-[20px] overflow-y-auto pr-1">
-            {volunteers.length === 0 ? (
-              <div className="flex flex-col items-center text-center text-bcp-blue mt-4">
-                {isPast ? (
-                  <>
-                    <p className="text-[15px] font-medium">Crickets... 🦗</p>
-                    <p className="text-[13px] text-gray-400 mt-1">
-                      Nobody showed up for this one. Awkward.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[15px] font-medium">
-                      Be the first to sign up!
-                    </p>
-                    <p className="text-[13px] text-gray-400 mt-1">
-                      No volunteers yet — join and make a difference.
-                    </p>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div>
-                {volunteers.map((volunteer) => {
-                  const avatarSrc = volunteer.profileImage ?? defaultPfp.src;
+        {error && (
+          <p className="text-red-500 md:text-right mt-2 text-sm">
+            Failed to load volunteers
+          </p>
+        )}
 
-                  return (
-                    <div key={volunteer.signupId}>
-                      <div className="flex items-center gap-2 justify-end">
-                        <span className="text-bcp-blue text-[15px] font-normal font-avenir">
-                          {volunteer.firstName} {volunteer.lastName}
-                        </span>
-                        <Image
-                          width={28}
-                          height={28}
-                          src={avatarSrc}
-                          alt="Profile"
-                          className="rounded-full object-cover relative z-10"
-                          unoptimized={
-                            typeof avatarSrc === "string" &&
-                            avatarSrc.startsWith("http")
-                          }
-                        />
-                      </div>
+        <div className="mt-[20px] overflow-y-auto pr-1">
+          {volunteers.length === 0 ? (
+            <div className="flex flex-col items-center text-center text-bcp-blue mt-4">
+              {isPast ? (
+                <>
+                  <p className="text-[15px] font-medium">Crickets... 🦗</p>
+                  <p className="text-[13px] text-gray-400 mt-1">
+                    Nobody showed up for this one. Awkward.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] font-medium">
+                    Be the first to sign up!
+                  </p>
+                  <p className="text-[13px] text-gray-400 mt-1">
+                    No volunteers yet — join and make a difference.
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div>
+              {volunteers.map((volunteer) => {
+                // Use profileImage URL directly, fall back to default icon
+                const avatarSrc = volunteer.profileImage ?? defaultPfp.src;
 
-                      {volunteer.guests && volunteer.guests.length > 0 && (
-                        <div className="flex mt-[4px]">
-                          <div
-                            className="flex flex-col flex-1"
-                            style={{ marginRight: 8 }}
-                          >
-                            {volunteer.guests.map((guest) => (
-                              <div
-                                key={guest.id}
-                                className="flex items-center justify-end"
-                                style={{ height: 36 }}
-                              >
-                                <span className="text-bcp-blue text-[15px] font-normal font-avenir">
-                                  {guest.firstName} {guest.lastName}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                          <div
-                            className="flex flex-col"
-                            style={{ width: 28, marginTop: -8 }}
-                          >
-                            {volunteer.guests.map((guest, gIdx) => {
-                              const isLast =
-                                gIdx === volunteer.guests.length - 1;
-                              return (
-                                <svg
-                                  key={guest.id}
-                                  width="28"
-                                  height="36"
-                                  viewBox="0 0 28 36"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <line
-                                    x1="14"
-                                    y1="0"
-                                    x2="14"
-                                    y2={isLast ? "18" : "36"}
-                                    stroke="#D9D9D9"
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                  />
-                                  <path
-                                    d="M14 18 Q14 28 2 28"
-                                    stroke="#D9D9D9"
-                                    strokeWidth="3"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                  />
-                                </svg>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                return (
+                  <div key={volunteer.signupId}>
+                    {/* Main volunteer row */}
+                    <div className="flex items-center gap-2 justify-end">
+                      <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                        {volunteer.firstName} {volunteer.lastName}
+                      </span>
+                      <Image
+                        width={28}
+                        height={28}
+                        src={avatarSrc}
+                        alt="Profile"
+                        className="rounded-full object-cover relative z-10"
+                        unoptimized={
+                          typeof avatarSrc === "string" &&
+                          avatarSrc.startsWith("http")
+                        }
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+
+                    {/* Guest rows: names on left, curved stem on right under avatar */}
+                    {volunteer.guests && volunteer.guests.length > 0 && (
+                      <div className="flex mt-[4px]">
+                        <div
+                          className="flex flex-col flex-1"
+                          style={{ marginRight: 8 }}
+                        >
+                          {volunteer.guests.map((guest) => (
+                            <div
+                              key={guest.id}
+                              className="flex items-center justify-end"
+                              style={{ height: 36 }}
+                            >
+                              <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                                {guest.firstName} {guest.lastName}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div
+                          className="flex flex-col"
+                          style={{ width: 28, marginTop: -8 }}
+                        >
+                          {volunteer.guests.map((guest, gIdx) => {
+                            const isLast = gIdx === volunteer.guests.length - 1;
+                            return (
+                              <svg
+                                key={guest.id}
+                                width="28"
+                                height="36"
+                                viewBox="0 0 28 36"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <line
+                                  x1="14"
+                                  y1="0"
+                                  x2="14"
+                                  y2={isLast ? "18" : "36"}
+                                  stroke="#D9D9D9"
+                                  strokeWidth="3"
+                                  strokeLinecap="round"
+                                />
+                                <path
+                                  d="M14 18 Q14 28 2 28"
+                                  stroke="#D9D9D9"
+                                  strokeWidth="3"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
