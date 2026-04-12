@@ -83,6 +83,7 @@ const ManageRolesPage = () => {
       .map(
         (v: ApiUser): FrontEndUser => ({
           userId: (v.id || v.userId)!,
+          userId: (v.id || v.userId)!,
           firstName: v.firstName,
           lastName: v.lastName,
           emailAddress: v.emailAddress,
@@ -354,7 +355,7 @@ const ManageRolesPage = () => {
             Home
           </Link>
           {" / "}
-          <Link href="/admin/manage" className="hover:underline">
+          <Link href="/admin/manage/roles" className="hover:underline">
             Manage Roles
           </Link>
         </h1>
@@ -606,7 +607,7 @@ const ManageRolesPage = () => {
             },
             {
               label: "Remove",
-              variant: "danger",
+              variant: "primary",
               onClick: handleDeleteApproved,
               disabled: isLoading,
             },

@@ -3,11 +3,11 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState, use } from "react";
 import EventSignUpForm from "@/components/common/forms/EventSignUpForm";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+
 interface RegisterPageProps {
   params: Promise<{ id: string }>;
 }
 
-// 1. Define proper types so we don't use 'any'
 interface UserData {
   id: string;
   firstName: string;
@@ -27,11 +27,11 @@ interface PositionData {
   id: string;
   position: string;
   description: string;
-  event?: EventData; // Optional in case the fetch fails or data is partial
+  event?: EventData;
 }
 
 interface PageData {
-  user: UserData;
+  user: UserData | null; // Allow null here
   position: PositionData;
 }
 
@@ -44,23 +44,30 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded && user?.id) {
+    // Only wait for Clerk to finish checking auth status (isLoaded), don't require user.id
+    if (isLoaded) {
       const fetchData = async () => {
         try {
-          const [userRes, posRes] = await Promise.all([
-            fetch(`/api/users?id=${user.id}`),
-            fetch(`/api/eventPosition?id=${positionId}`),
-          ]);
+          // 1. Always fetch the position data
+          const posRes = await fetch(`/api/eventPosition?id=${positionId}`);
+          if (!posRes.ok) throw new Error("Position not found");
+          const positionData = await posRes.json();
 
-          if (userRes.ok && posRes.ok) {
-            const userData = await userRes.json();
-            const positionData = await posRes.json();
-
-            setData({ user: userData, position: positionData });
+          // 2. Only fetch user data if they are logged in
+          let userData = null;
+          if (user?.id) {
+            const userRes = await fetch(`/api/users?id=${user.id}`);
+            if (userRes.ok) {
+              userData = await userRes.json();
+            }
           }
+
+          // 3. Set the data so the form can render
+          setData({ user: userData, position: positionData });
         } catch (error) {
           console.error("Data fetch failed", error);
         } finally {
+          // Stop loading no matter what
           setLoading(false);
         }
       };
@@ -68,20 +75,14 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     }
   }, [isLoaded, user?.id, positionId]);
 
-  if (!isLoaded || loading)
-    return <BasicSkeleton />;
-  if (!data)
-    return <div className="text-center p-10">Error loading details.</div>;
+  if (!isLoaded || loading) return <BasicSkeleton />;
+  if (!data) return <div className="text-center p-10">Error loading details.</div>;
 
-  // --- Helper to format dates ---
-  // The DB returns ISO strings (e.g. "2025-01-01T00:00:00.000Z")
-  // Allow 'dateStr' to be undefined
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "TBD";
     return new Date(dateStr).toLocaleDateString("en-US");
   };
 
-  // Allow 'timeStr' to be undefined
   const formatTime = (timeStr?: string) => {
     if (!timeStr) return "TBD";
     return new Date(timeStr).toLocaleTimeString("en-US", {
@@ -93,10 +94,9 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <EventSignUpForm
-        userData={data?.user}
-        positionData={data?.position} // Pass the position object directly
-        // 👇 PASS THE DATA HERE
-        eventName={data?.position?.event?.name}
+        userData={data.user} // This will now be null if unauthenticated, triggering your modal
+        positionData={data.position}
+        eventName={data.position.event?.name}
         eventDate={formatDate(data.position.event?.date)}
         eventTime={formatTime(data.position.event?.time)}
       />
