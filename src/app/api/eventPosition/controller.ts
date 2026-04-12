@@ -37,6 +37,11 @@ export const updateEventPosition = async (
   });
 };
 
+// Fetch all event positions
+export const getAllPositions = async () => {
+  return prisma.eventPosition.findMany();
+};
+
 // Delete eventPosition
 export const deleteEventPosition = async (id: string) => {
   return prisma.eventPosition.delete({ where: { id } });

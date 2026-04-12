@@ -8,6 +8,7 @@ import Link from "next/link";
 import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
+import DatePicker from "@/components/DatePicker";
 
 type SignupFormData = {
   firstName: string;
@@ -35,12 +36,32 @@ const SignupForm = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const [dob, setDob] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(null);
+  if (!isLoaded) return <BasicSkeleton />;
+
+  const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
+    null
+  );
+  const todayYmd = new Date().toISOString().slice(0, 10);
 
   if (!isLoaded) return <BasicSkeleton />;
 
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
+
+  // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -75,9 +96,22 @@ const SignupForm = () => {
     const confirmPassword = formData.get("confirm-password") as string;
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
+    const dob = formData.get("dob") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
+    }
+
+    if (dob && dob > todayYmd) {
+      setError("Date of birth cannot be in the future");
       setLoading(false);
       return;
     }
@@ -101,7 +135,7 @@ const SignupForm = () => {
         });
 
         if (!r2Res.ok) throw new Error("Failed to upload image");
-        uploadedImageUrl = publicUrl;
+        uploadedImageUrl = normalizeProfileImageUrl(publicUrl) || "";
       }
 
       await signUp.create({
@@ -190,6 +224,30 @@ const SignupForm = () => {
       setLoading(false);
     }
   };
+
+  function handleDateSelect(date: Date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
+
+    setDob(formattedDate);
+    setShowDatePicker(false);
+  }
+
+  function formatDateForDisplay(dateString: string) {
+    if (!dateString) return "";
+
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  }
 
   // --- RENDER: VERIFICATION FORM ---
   if (pendingVerification) {
@@ -365,21 +423,48 @@ const SignupForm = () => {
           />
         </div>
 
-        {/* DOB */}
-        <div className="flex flex-col items-start">
+        <div className="relative flex flex-col items-start">
           <label
             htmlFor="dob"
             className="text-base font-normal text-medium-gray mb-1"
           >
             Date of Birth
           </label>
-          <input
-            name="dob"
-            id="dob"
-            type="date"
-            required
-            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-          />
+          <button
+            type="button"
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="w-full h-[43px] rounded-lg border border-medium-gray px-3 text-left text-base text-medium-gray bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+          >
+            {dob ? formatDateForDisplay(dob) : "Select date"}
+          </button>
+
+          {showDatePicker && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowDatePicker(false)}
+              />
+
+              {/* DatePicker */}
+              <div className="absolute top-full left-0 mt-2 z-50">
+                <DatePicker
+                  selectedDate={
+                    dob
+                      ? (() => {
+                          const [year, month, day] = dob.split("-").map(Number);
+                          return new Date(Date.UTC(year, month - 1, day));
+                        })()
+                      : null
+                  }
+                  onDateChange={handleDateSelect}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Hidden input so FormData still works */}
+          <input type="hidden" name="dob" value={dob} required />
         </div>
 
         {/* Languages */}
@@ -510,6 +595,7 @@ const SignupForm = () => {
             className="hidden"
           />
 
+          {/* Clickable Circle Image */}
           <div
             onClick={() => fileInputRef.current?.click()}
             className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-200 flex-shrink-0"
@@ -545,12 +631,16 @@ const SignupForm = () => {
           >
             Create password
           </label>
+          <p className="text-sm text-medium-gray mb-2">
+            Must be at least 8 characters.
+          </p>
           <input
             name="password"
             id="password"
             type="password"
             required
             className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            minLength={8}
           />
         </div>
 
@@ -567,6 +657,7 @@ const SignupForm = () => {
             type="password"
             required
             className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            minLength={8}
           />
         </div>
       </div>

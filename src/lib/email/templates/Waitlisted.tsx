@@ -9,7 +9,7 @@ import {
   Img,
 } from "@react-email/components";
 
-const BASE_URL = "https://boston-community-pediatrics.vercel.app";
+const BASE_URL = "https://boston-community-pediatrics-5ntupemwm.vercel.app/";
 const PLACEHOLDER_EVENT_IMAGE_URL = `${BASE_URL}/event1.jpg`;
 
 interface WaitlistedProps {

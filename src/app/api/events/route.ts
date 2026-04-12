@@ -20,6 +20,17 @@ function toMidnight(date: string) {
   return new Date(`${date}T00:00:00`);
 }
 
+function generateDateRange(start: string, end: string): Date[] {
+  const dates: Date[] = [];
+  const cur = new Date(`${start}T00:00:00`);
+  const last = new Date(`${end}T00:00:00`);
+  while (cur <= last) {
+    dates.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return dates;
+}
+
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -67,9 +78,8 @@ export async function POST(req: NextRequest) {
 
     const data = parse.data;
 
-    // Event-level start/end
-    const eventStart = combineDateTime(data.date, data.startTime);
-    const eventEnd = combineDateTime(data.date, data.endTime);
+    const eventStart = combineDateTime(data.startDate, data.startTime);
+    const eventEnd = combineDateTime(data.endDate, data.endTime);
 
     const prismaData = {
       name: data.title,
@@ -85,18 +95,18 @@ export async function POST(req: NextRequest) {
       country: "USA",
       zipCode: data.zip,
 
-      // your Prisma schema uses DateTime[]
-      date: [toMidnight(data.date)],
+      date: generateDateRange(data.startDate, data.endDate),
 
       positions: {
         create: data.positions.map((p) => {
-          const posDate = p.sameAsDate ? data.date : p.date;
+          const posStartDate = p.sameAsDate ? data.startDate : p.startDate;
+          const posEndDate = p.sameAsDate ? data.endDate : p.endDate;
 
           const posStartT = p.sameAsTime ? data.startTime : p.startTime;
           const posEndT = p.sameAsTime ? data.endTime : p.endTime;
 
-          const posStart = combineDateTime(posDate, posStartT);
-          const posEnd = combineDateTime(posDate, posEndT);
+          const posStart = combineDateTime(posStartDate, posStartT);
+          const posEnd = combineDateTime(posEndDate, posEndT);
 
           const line1 = p.sameAsAddress ? data.address : p.address;
           const line2 = (p.sameAsAddress ? data.apt : p.apt) || null;
@@ -107,7 +117,7 @@ export async function POST(req: NextRequest) {
           return {
             position: p.name,
             description: p.description || "",
-            date: toMidnight(posDate),
+            date: toMidnight(posStartDate),
             startTime: posStart,
             endTime: posEnd,
             totalSlots: Number(p.participants || 0),
@@ -161,6 +171,14 @@ export async function PUT(req: NextRequest) {
 // DELETE handler
 export async function DELETE(req: NextRequest) {
   try {
+    // Make sure only admins can send emails
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (currentUser.role !== UserRole.ADMIN) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

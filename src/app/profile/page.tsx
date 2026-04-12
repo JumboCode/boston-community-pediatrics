@@ -105,6 +105,18 @@ export default function ProfilePage() {
   const [modalButtons, setModalButtons] = useState<ModalButton[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
+  const normalizeProfileImageUrl = (value?: string | null) => {
+    if (!value) return value ?? null;
+    if (!value.startsWith("http")) return value;
+    try {
+      const url = new URL(value);
+      url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+      return url.toString();
+    } catch {
+      return value;
+    }
+  };
+
   // 1. Fetch User Phone Number
   useEffect(() => {
     async function fetchUserData() {
@@ -118,7 +130,7 @@ export default function ProfilePage() {
           setDbFirstName(userData.firstName ?? "");
           setDbLastName(userData.lastName ?? "");
           if (userData.profileImage) {
-            setProfileImageUrl(userData.profileImage);
+            setProfileImageUrl(normalizeProfileImageUrl(userData.profileImage));
           }
         }
       } catch (err) {
@@ -250,75 +262,6 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  // const handleDeleteEvent = (eventId: string, registrationId?: string) => {
-  //   setModalTitle("Delete Event?");
-  //   setModalMessage(
-  //     "ADMIN ACTION: This will permanently DELETE the entire event. Are you sure?"
-  //   );
-
-  //   setModalButtons([
-  //     {
-  //       label: "Cancel",
-  //       variant: "secondary",
-  //       onClick: () => setModalOpen(false),
-  //     },
-  //     {
-  //       label: "Delete",
-  //       variant: "danger",
-  //       loading: modalLoading,
-  //       onClick: async () => {
-  //         try {
-  //           setModalLoading(true);
-
-  //           if (eventId.startsWith("evt-") || eventId === "demo-event") {
-  //             setModalTitle("Demo Event Deleted");
-  //             setModalMessage("This was a demo event.");
-  //             setModalButtons([
-  //               { label: "Close", onClick: () => setModalOpen(false) },
-  //             ]);
-  //             return;
-  //           }
-
-  //           const res = await fetch(`/api/events?id=${eventId}`, {
-  //             method: "DELETE",
-  //           });
-
-  //           if (res.ok) {
-  //             if (registrationId) {
-  //               setMyEvents((prev) =>
-  //                 prev.filter((evt) => evt.id !== registrationId)
-  //               );
-  //             }
-
-  //             setModalTitle("Event Deleted");
-  //             setModalMessage("Event successfully deleted.");
-  //             setModalButtons([
-  //               { label: "Close", onClick: () => setModalOpen(false) },
-  //             ]);
-  //           } else {
-  //             const err = await res.json();
-  //             setModalTitle("Error");
-  //             setModalMessage(err.error || "Failed to delete event.");
-  //             setModalButtons([
-  //               { label: "Close", onClick: () => setModalOpen(false) },
-  //             ]);
-  //           }
-  //         } catch {
-  //           setModalTitle("Error");
-  //           setModalMessage("An error occurred while deleting the event.");
-  //           setModalButtons([
-  //             { label: "Close", onClick: () => setModalOpen(false) },
-  //           ]);
-  //         } finally {
-  //           setModalLoading(false);
-  //         }
-  //       },
-  //     },
-  //   ]);
-
-  //   setModalOpen(true);
-  // };
-
   // Wait for Clerk, event data (loading), and the user's role from the DB
   if (!isLoaded || loading) {
     return <ProfilePageSkeleton />;
@@ -378,8 +321,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Name & Role */}
-          <div className="text-center text-white mb-10">
-            <h1 className="text-[32px] font-bold">
+          <div className="text-center text-white mb-10 w-full max-w-[760px]">
+            <h1
+              title={`${firstName} ${lastName} • Admin`}
+              className="text-[32px] font-bold max-w-full truncate whitespace-nowrap"
+            >
               {firstName} {lastName} &bull; Admin
             </h1>
             <p className="text-[18px] mt-1">Member since {memberSince}</p>
@@ -416,7 +362,6 @@ export default function ProfilePage() {
     );
   }
 
- 
   // --- VOLUNTEER LAYOUT (Original) ---
   return (
     <main className="min-h-screen p-8">
@@ -436,8 +381,12 @@ export default function ProfilePage() {
             />
           </div>
           <div className="flex flex-col items-center space-y-[1px] mb-6">
-            <div className="text-[24px] font-bold text-white">{firstName} {lastName}</div>
-            <div className="text-[16px] text-white">Member since {memberSince}</div>
+            <div className="text-[24px] font-bold text-white">
+              {firstName} {lastName}
+            </div>
+            <div className="text-[16px] text-white">
+              Member since {memberSince}
+            </div>
           </div>
           <div className="flex flex-col space-y-2 mb-6">
             <div className="flex justify-between">
@@ -447,13 +396,25 @@ export default function ProfilePage() {
             <div className="flex flex-row justify-between items-center gap-4">
               <div className="text-[16px] text-white">Email</div>
               <div className="flex items-center gap-2 min-w-0">
-                <div title={emailAddress} className="text-[16px] text-white truncate">{emailAddress}</div>
+                <div
+                  title={emailAddress}
+                  className="text-[16px] text-white truncate"
+                >
+                  {emailAddress}
+                </div>
                 <button
                   onClick={() => navigator.clipboard.writeText(emailAddress)}
                   className="text-white/70 hover:text-white transition flex-shrink-0"
                   aria-label="Copy email"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                   </svg>
@@ -463,7 +424,9 @@ export default function ProfilePage() {
           </div>
           <div className="flex justify-center gap-4">
             <button className="h-[44px] w-[113px] rounded-lg bg-white text-black hover:bg-gray-300">
-              <div className="text-[16px]"><Link href="/profile/edit">Edit details</Link></div>
+              <div className="text-[16px]">
+                <Link href="/profile/edit">Edit details</Link>
+              </div>
             </button>
             <button
               className="h-[44px] w-[113px] rounded-lg bg-bcp-blue text-white hover:bg-gray-600 cursor-pointer"
@@ -477,7 +440,9 @@ export default function ProfilePage() {
 
       {/* UPCOMING EVENTS */}
       <div className="mt-4 md:mt-[142px] ml-0 md:ml-[120px] flex items-center gap-3 px-4 md:px-0">
-        <div className="h-[36.19] w-[283px] text-[28px] font-bold">Upcoming Events</div>
+        <div className="h-[36.19] w-[283px] text-[28px] font-bold">
+          Upcoming Events
+        </div>
       </div>
 
       <div className="mt-6 md:mt-[54px] ml-0 md:ml-[120px] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[50px] max-w-full md:max-w-[800px] px-4 md:px-0">
@@ -486,7 +451,10 @@ export default function ProfilePage() {
         ) : (
           upcoming.map((reg) => {
             const event = reg.position.event;
-            const firstDate = event.date && event.date.length > 0 ? new Date(event.date[0]) : new Date();
+            const firstDate =
+              event.date && event.date.length > 0
+                ? new Date(event.date[0])
+                : new Date();
             return (
               <ProfileEventCard
                 key={reg.id}
@@ -522,24 +490,42 @@ export default function ProfilePage() {
           />
         </div>
         <div className="mt-40 flex flex-col items-center space-y-[1px]">
-          <div className="text-[24px] font-bold text-white">{firstName} {lastName}</div>
-          <div className="text-[16px] text-white">Member since {memberSince}</div>
+          <div className="text-[24px] font-bold text-white">
+            {firstName} {lastName}
+          </div>
+          <div className="text-[16px] text-white">
+            Member since {memberSince}
+          </div>
         </div>
         <div className="mt-6 flex flex-col space-y-2">
           <div className="flex justify-between">
             <div className="ml-[25px] text-[16px] text-white">Phone number</div>
-            <div className="mr-[25px] text-[16px] text-white">{phoneNumber}</div>
+            <div className="mr-[25px] text-[16px] text-white">
+              {phoneNumber}
+            </div>
           </div>
           <div className="flex flex-row justify-between items-center gap-10">
             <div className="ml-[25px] text-[16px] text-white">Email</div>
             <div className="flex items-center gap-2 mr-[25px] min-w-0">
-              <div title={emailAddress} className="text-[16px] text-white truncate">{emailAddress}</div>
+              <div
+                title={emailAddress}
+                className="text-[16px] text-white truncate"
+              >
+                {emailAddress}
+              </div>
               <button
                 onClick={() => navigator.clipboard.writeText(emailAddress)}
                 className="text-white/70 hover:text-white transition flex-shrink-0"
                 aria-label="Copy email"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
@@ -549,7 +535,9 @@ export default function ProfilePage() {
         </div>
         <div className="flex justify-center gap-4 mt-[30.82px]">
           <button className="h-[44px] w-[113px] rounded-lg bg-white text-black hover:bg-gray-300">
-            <div className="text-[16px]"><Link href="/profile/edit">Edit details</Link></div>
+            <div className="text-[16px]">
+              <Link href="/profile/edit">Edit details</Link>
+            </div>
           </button>
           <button
             className="h-[44px] w-[113px] rounded-lg bg-bcp-blue text-white hover:bg-gray-600 cursor-pointer"
@@ -567,34 +555,59 @@ export default function ProfilePage() {
         <div className="w-full md:w-[690px] rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="grid grid-cols-[60px_1fr_1fr_60px] md:grid-cols-[80px_1.5fr_1.5fr_80px] border-b border-gray-200 bg-white py-4 px-4">
             <div className=""></div>
-            <div className="text-left text-[14px] font-medium text-gray-900">Event</div>
-            <div className="text-left text-[14px] font-medium text-gray-900">Position</div>
-            <div className="text-center text-[14px] font-medium text-gray-900">Hours</div>
+            <div className="text-left text-[14px] font-medium text-gray-900">
+              Event
+            </div>
+            <div className="text-left text-[14px] font-medium text-gray-900">
+              Position
+            </div>
+            <div className="text-center text-[14px] font-medium text-gray-900">
+              Hours
+            </div>
           </div>
 
           <div className="max-h-[320px] overflow-y-auto">
             {past.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">No past events found.</div>
+              <div className="p-8 text-center text-gray-500">
+                No past events found.
+              </div>
             ) : (
               past.map((reg) => {
                 const dateObj = new Date(reg.position.event.date[0]);
-                const month = dateObj.toLocaleString("default", { month: "short" }).toUpperCase();
+                const month = dateObj
+                  .toLocaleString("default", { month: "short" })
+                  .toUpperCase();
                 const day = dateObj.getDate().toString().padStart(2, "0");
                 const start = new Date(reg.position.event.startTime).getTime();
                 const end = new Date(reg.position.endTime).getTime();
-                const hoursVal = !isNaN(end - start) ? (end - start) / (1000 * 60 * 60) : 0;
-                const hoursDisplay = hoursVal % 1 === 0 ? hoursVal.toString() : hoursVal.toFixed(1);
+                const hoursVal = !isNaN(end - start)
+                  ? (end - start) / (1000 * 60 * 60)
+                  : 0;
+                const hoursDisplay =
+                  hoursVal % 1 === 0
+                    ? hoursVal.toString()
+                    : hoursVal.toFixed(1);
 
                 return (
                   <Link href={`/event/${reg.position.event.id}`} key={reg.id}>
                     <div className="grid grid-cols-[60px_1fr_1fr_60px] md:grid-cols-[80px_1.5fr_1.5fr_80px] items-center border-b border-gray-100 py-4 px-4 last:border-0 hover:bg-gray-50 transition-colors">
                       <div className="flex flex-col items-center justify-center leading-none">
-                        <span className="text-[11px] font-bold uppercase text-gray-500">{month}</span>
-                        <span className="text-[22px] font-bold text-black">{day}</span>
+                        <span className="text-[11px] font-bold uppercase text-gray-500">
+                          {month}
+                        </span>
+                        <span className="text-[22px] font-bold text-black">
+                          {day}
+                        </span>
                       </div>
-                      <div className="text-[14px] md:text-[16px] font-medium text-black truncate pr-2">{reg.position.event.name}</div>
-                      <div className="text-[12px] md:text-[14px] text-gray-600 truncate pr-2">{reg.position.position}</div>
-                      <div className="text-[14px] font-medium text-black text-center">{hoursDisplay}</div>
+                      <div className="text-[14px] md:text-[16px] font-medium text-black truncate pr-2">
+                        {reg.position.event.name}
+                      </div>
+                      <div className="text-[12px] md:text-[14px] text-gray-600 truncate pr-2">
+                        {reg.position.position}
+                      </div>
+                      <div className="text-[14px] font-medium text-black text-center">
+                        {hoursDisplay}
+                      </div>
                     </div>
                   </Link>
                 );
