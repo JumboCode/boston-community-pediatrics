@@ -41,6 +41,11 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   }
 
   const isPast = new Date() > new Date(endTime);
+  const filledSpots = volunteers.reduce(
+    (acc, v) => acc + 1 + (v.guests?.length ?? 0),
+    0
+  );
+  const isFull = filledSpots >= totalSpots;
 
   return (
     <div className="max-w-[1000px] flex">
@@ -93,7 +98,8 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
           <RegisterButton
             disabled={isPast}
             positionId={positionId}
-          ></RegisterButton>
+            isFull={isFull}
+          />
         )}
       </div>
 
