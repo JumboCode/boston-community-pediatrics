@@ -41,10 +41,15 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
   }
 
   const isPast = new Date() > new Date(endTime);
+  const filledSpots = volunteers.reduce(
+    (acc, v) => acc + 1 + (v.guests?.length ?? 0),
+    0
+  );
+  const isFull = filledSpots >= totalSpots;
 
   return (
-    <div className="max-w-[1000px] flex">
-      <div className="w-[750px] relative p-[20px] border-b border-r border-gray-300">
+    <div className="w-full max-w-[1000px] flex flex-col md:flex-row">
+      <div className="w-full md:w-[750px] relative p-[20px] border-b border-gray-300 md:border-r">
         <div className="text-bcp-blue text-[22px] font-medium font-avenir leading-[1.25]">
           {positionTitle}
         </div>
@@ -93,18 +98,19 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
           <RegisterButton
             disabled={isPast}
             positionId={positionId}
-          ></RegisterButton>
+            isFull={isFull}
+          />
         )}
       </div>
 
-      <div className="border-b border-gray-300 w-[250px] p-[20px]">
-        <div className="text-bcp-blue text-[22px] font-medium font-avenir text-right">
+      <div className="border-b border-gray-300 w-full md:w-[250px] p-[20px]">
+        <div className="text-bcp-blue text-[22px] font-medium font-avenir md:text-right">
           {volunteers.reduce((acc, v) => acc + 1 + (v.guests?.length ?? 0), 0)}/
           {totalSpots} Spots Filled
         </div>
 
         {error && (
-          <p className="text-red-500 text-right mt-2 text-sm">
+          <p className="text-red-500 md:text-right mt-2 text-sm">
             Failed to load volunteers
           </p>
         )}

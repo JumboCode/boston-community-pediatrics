@@ -40,6 +40,7 @@ export async function createUser(data: User) {
       state: data.state,
       zipCode: data.zipCode,
       role: (data.role as UserRole) || "VOLUNTEER",
+      profileImage: data.profileImage ?? null,
       speaksSpanish: data.speaksSpanish ?? null,
     },
   });
@@ -57,6 +58,8 @@ export async function updateUserProfile(
     state?: string;
     zipCode?: string;
     dateOfBirth?: Date;
+    profileImage?: string | null;
+    speaksSpanish?: boolean | null;
   }
 ) {
   return prisma.user.update({

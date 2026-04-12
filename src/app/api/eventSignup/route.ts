@@ -10,6 +10,7 @@ import {
   getUsersByPositionId,
   updateEventSignup,
   deleteEventSignup,
+  getAllSignups,
 } from "./controller";
 
 import { decrementEventPositionCount } from "../eventPosition/controller";
@@ -57,10 +58,8 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventSignups, { status: 200 });
     } else {
-      return NextResponse.json(
-        { error: "Missing event or position Id" },
-        { status: 400 }
-      );
+      const all = await getAllSignups();
+      return NextResponse.json(all, { status: 200 });
     }
   } catch (err) {
     console.error(err);
@@ -86,6 +85,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     // SECURITY END
+
+    // Validate guest phone numbers
+    for (const guest of guests) {
+      if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+        return NextResponse.json(
+          { error: "Guest phone number must contain only numbers" },
+          { status: 400 }
+        );
+      }
+    }
 
     // Get position and count current signups
     const [position] = await Promise.all([
@@ -211,6 +220,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
     const data = await req.json();
+
+    // Validate guest phone numbers if guests are being updated
+    if (data.guests) {
+      for (const guest of data.guests) {
+        if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+          return NextResponse.json(
+            { error: "Guest phone number must contain only numbers" },
+            { status: 400 }
+          );
+        }
+      }
+    }
 
     let isAdmin = false;
     const user = await getCurrentUser();

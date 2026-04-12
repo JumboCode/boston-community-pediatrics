@@ -87,22 +87,22 @@ const Home: React.FC = () => {
         <Image src={homepage} alt="Homepage Image" className="w-full" />
 
         <Image
-          src={welcome}
-          alt="Welcome Message"
-          className="absolute left-0 top-[40%] origin-left"
-          style={{ transform: `scale(${scale})` }}
-        />
+  src={welcome}
+  alt="Welcome Message"
+  className="absolute left-0 top-[40%] origin-left"
+  style={{ transform: isMobile ? `scale(${scale * 1.8})` : `scale(${scale})` }}
+/>
 
         <div
-          className="absolute left-1/2 top-[70%] origin-center transition-transform duration-150"
-          style={{ transform: `translateX(-50%) scale(${scale})` }}
-        >
-          <Button
-            label="Volunteer"
-            onClick={() => router.push("/event")}
-            altStyle="w-[525px] h-[70px] text-white bg-bcp-blue rounded-lg font-large flex items-center justify-center hover:bg-light-bcp-blue"
-          />
-        </div>
+  className="absolute left-1/2 top-[70%] origin-center transition-transform duration-150"
+  style={{ transform: `translateX(-50%) scale(${isMobile ? scale * 1.8 : scale})` }}
+>
+  <Button
+    label="Volunteer"
+    onClick={() => router.push("/event")}
+    altStyle="w-[550px] h-[70px] text-white bg-bcp-blue rounded-lg font-large flex items-center justify-center hover:bg-light-bcp-blue"
+  />
+</div>
       </div>
 
       <div className="flex items-center my-10 justify-center w-[90%] mx-auto">

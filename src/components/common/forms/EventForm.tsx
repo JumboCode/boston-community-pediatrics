@@ -1,5 +1,8 @@
 "use client";
-import { eventSchema } from "@/lib/schemas/eventSchema";
+import {
+  eventSchema,
+  EVENT_FIELD_LIMITS,
+} from "@/lib/schemas/eventSchema";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect, type ChangeEvent } from "react";
@@ -13,10 +16,16 @@ import { getPublicURL } from "@/lib/r2";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 import DateRangePicker from "@/components/RangeCalendar";
 
+function sanitizeZipInput(value: string) {
+  return value
+    .replace(/\D/g, "")
+    .slice(0, EVENT_FIELD_LIMITS.zipMaxDigits);
+}
+
 // API shapes used by this component
 type APIPosition = Partial<{
   id: string;
-  position: string;
+  position: string;  
   date: string | Date;
   startTime: string | Date;
   endTime: string | Date;
@@ -89,6 +98,8 @@ const createStaticImageData = (url: string): StaticImageData =>
     blurWidth: 0,
     blurHeight: 0,
   }) as StaticImageData;
+
+const todayYmd = () => new Date().toISOString().slice(0, 10);
 
 const parseInputDate = (value: string): Date | null => {
   if (!value) return null;
@@ -636,6 +647,7 @@ const EventForm = () => {
     className,
     error,
     onClearError,
+    maxLength,
   }: {
     id: string;
     label: string;
@@ -648,9 +660,10 @@ const EventForm = () => {
     className?: string;
     error?: string;
     onClearError?: () => void;
+    maxLength?: number;
   }) => (
-    <div className="flex flex-col">
-      <div className="mt-10 flex items-center justify-between">
+    <div className="flex flex-col w-full">
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-2">
         <label
           htmlFor={id}
           className="mb-1 text-base font-normal text-medium-gray"
@@ -676,19 +689,26 @@ const EventForm = () => {
         type={type}
         value={disabled ? fallbackValue : value}
         disabled={disabled}
+        min={type === "date" ? todayYmd() : undefined}
+        maxLength={maxLength}
         onChange={(e) => {
           onChange(e.target.value);
           onClearError?.();
         }}
         className={
           className ||
-          `w-[588px] h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-           ${
-             error
-               ? "border-red-500 focus:ring-red-500/30"
-               : "border-medium-gray focus:ring-bcp-blue/30"
-           }
-           disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+          `block w-full min-w-0 md:w-[588px] h-[43px] appearance-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
+          ${
+            error
+              ? "border-red-500 focus:ring-red-500/30"
+              : "border-medium-gray focus:ring-bcp-blue/30"
+          }
+          disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+        }
+        style={
+          type === "date"
+            ? { WebkitAppearance: "none", appearance: "none" }
+            : undefined
         }
       />
       {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
@@ -717,7 +737,7 @@ const EventForm = () => {
         apt: p.addressLine2 ?? undefined,
         city: p.city ?? "",
         state: p.state ?? "",
-        zip: p.zipCode ?? "",
+        zip: sanitizeZipInput(String(p.zipCode ?? "")),
         participants: p.totalSlots != null ? String(p.totalSlots) : "",
         sameAsDate: false,
         sameAsTime: false,
@@ -750,7 +770,7 @@ const EventForm = () => {
         apt: result.addressLine2 ?? undefined,
         city: result.city ?? "",
         state: result.state ?? "",
-        zip: result.zipCode ?? "",
+        zip: sanitizeZipInput(String(result.zipCode ?? "")),
       });
       setIsLoading(false);
 
@@ -796,7 +816,7 @@ const EventForm = () => {
   if(isLoading) return <BasicSkeleton />;
 
   return (
-    <div className="relative mt-[120px] mb-[138px] flex w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white">
+    <div className="relative mt-[120px] mb-[138px] flex w-full max-w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white overflow-hidden">
       {/* back arrow */}
       <div className="mt-[28px] flex w-full justify-start pl-[30px]">
         <Link href="/event" className="cursor-pointer">
@@ -813,9 +833,9 @@ const EventForm = () => {
       </h1>
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
-        <div className="mt-[26px] flex h-[212px] justify-center origin-top scale-[0.588]">
-          <Carousel images={carouselImages} />
-        </div>
+        <div className="mt-[26px] w-full px-[30px]">
+  <Carousel images={carouselImages} />
+</div>
         <input
           ref={fileInputRef}
           type="file"
@@ -834,9 +854,9 @@ const EventForm = () => {
       </div>
 
       {/* event form fields */}
-      <div className="mx-[102px] flex flex-col">
+      <div className="px-4 md:px-0 md:mx-[102px] flex flex-col w-full md:w-[588px] min-w-0">
         {/* event title */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-title"
             className="mt-[24px] mb-1 text-base font-normal text-medium-gray"
@@ -847,11 +867,12 @@ const EventForm = () => {
             id="event-title"
             type="text"
             value={event.title}
+            maxLength={EVENT_FIELD_LIMITS.title}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, title: e.target.value }));
               clearError("title");
             }}
-            className={`w-[588px] h-[43px] ${inputClass("title")}`}
+            className={`w-full md:w-[588px] h-[43px] ${inputClass("title")}`}
           />
           <ErrorText k="title" />
         </div>
@@ -918,7 +939,7 @@ const EventForm = () => {
           )}
         </div>
         {/* event description */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-description"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -928,16 +949,17 @@ const EventForm = () => {
           <textarea
             id="event-description"
             value={event.description}
+            maxLength={EVENT_FIELD_LIMITS.description}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, description: e.target.value }));
               clearError("description");
             }}
-            className={`w-[588px] h-[175px] ${textareaClass("description")}`}
+            className={`w-full md:w-[588px] h-[175px] ${textareaClass("description")}`}
           />
           <ErrorText k="description" />
         </div>
         {/* link to resources */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-resources"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -946,10 +968,17 @@ const EventForm = () => {
           </label>
           <input
             id="event-resources"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            placeholder="https://…"
             value={event.resourcesLink || ""}
+            maxLength={EVENT_FIELD_LIMITS.resourcesLink}
             onChange={(e) => {
-              setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }));
+              setEvent((prev) => ({
+                ...prev,
+                resourcesLink: e.target.value,
+              }));
               clearError("resourcesLink");
             }}
             className={`w-[588px] h-[43px] ${inputClass("resourcesLink")}`}
@@ -957,7 +986,7 @@ const EventForm = () => {
           <ErrorText k="resourcesLink" />
         </div>
         {/* event street */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-street"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -967,16 +996,17 @@ const EventForm = () => {
           <input
             id="event-street"
             value={event.address}
+            maxLength={EVENT_FIELD_LIMITS.address}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, address: e.target.value }));
               clearError("address");
             }}
-            className={`w-[588px] h-[43px] ${inputClass("address")}`}
+            className={`w-full md:w-[588px] h-[43px] ${inputClass("address")}`}
           />
           <ErrorText k="address" />
         </div>
         {/* event apt */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-apt"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -986,14 +1016,15 @@ const EventForm = () => {
           <input
             id="event-apt"
             value={event.apt}
+            maxLength={EVENT_FIELD_LIMITS.apt}
             onChange={(e) =>
               setEvent((prev) => ({ ...prev, apt: e.target.value }))
             }
-            className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
         {/* event city */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start w-full">
           <label
             htmlFor="event-city"
             className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -1003,17 +1034,18 @@ const EventForm = () => {
           <input
             id="event-city"
             value={event.city}
+            maxLength={EVENT_FIELD_LIMITS.city}
             onChange={(e) => {
               setEvent((prev) => ({ ...prev, city: e.target.value }));
               clearError("city");
             }}
-            className={`w-[588px] h-[43px] ${inputClass("city")}`}
+            className={`w-full md:w-[588px] h-[43px] ${inputClass("city")}`}
           />
           <ErrorText k="city" />
         </div>
         {/* event state / zip */}
-        <div className="flex flex-row gap-[60px]">
-          <div className="flex flex-col items-start">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
+          <div className="flex flex-col items-start w-full">
             <label
               htmlFor="event-state"
               className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -1023,15 +1055,16 @@ const EventForm = () => {
             <input
               id="event-state"
               value={event.state}
+              maxLength={EVENT_FIELD_LIMITS.state}
               onChange={(e) => {
                 setEvent((prev) => ({ ...prev, state: e.target.value }));
                 clearError("state");
               }}
-              className={`w-[264px] h-[43px] ${inputClass("state")}`}
+              className={`w-full md:w-[264px] h-[43px] ${inputClass("state")}`}
             />
             <ErrorText k="state" />
           </div>
-          <div className="flex flex-col items-start">
+          <div className="flex flex-col items-start w-full">
             <label
               htmlFor="event-zip"
               className="mb-1 mt-[40px] text-base font-normal text-medium-gray"
@@ -1041,12 +1074,17 @@ const EventForm = () => {
             <input
               id="event-zip"
               inputMode="numeric"
+              autoComplete="postal-code"
               value={event.zip}
+              maxLength={EVENT_FIELD_LIMITS.zipMaxDigits}
               onChange={(e) => {
-                setEvent((prev) => ({ ...prev, zip: e.target.value }));
+                setEvent((prev) => ({
+                  ...prev,
+                  zip: sanitizeZipInput(e.target.value),
+                }));
                 clearError("zip");
               }}
-              className={`w-[264px] h-[43px] ${inputClass("zip")}`}
+              className={`w-full md:w-[264px] h-[43px] ${inputClass("zip")}`}
             />
             <ErrorText k="zip" />
           </div>
@@ -1058,7 +1096,7 @@ const EventForm = () => {
             {/* horizontal line */}
             <div className="mt-[40px] mb-[40px] w-full border-t border-[#D7D7D7]" />
             {/* position name */}
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start w-full">
               <label
                 htmlFor={`position-name-${index}`}
                 className="mb-1 text-[16px] text-base font-normal text-medium-gray"
@@ -1069,17 +1107,18 @@ const EventForm = () => {
                 id={`position-name-${index}`}
                 type="text"
                 value={position.name}
+                maxLength={EVENT_FIELD_LIMITS.positionName}
                 onChange={(e) => {
                   handlePositionChange(index, "name", e.target.value);
                   clearError(`positions.${index}.name`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.name`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
               />
               <ErrorText k={`positions.${index}.name`} />
             </div>
             {/* position date & time */}
             <div className="flex flex-col">
-              <div className="mt-10 flex items-center justify-between">
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-2">
                 <label className="mb-1 text-base font-normal text-medium-gray">
                   Position date &amp; time
                 </label>
@@ -1200,11 +1239,12 @@ const EventForm = () => {
               <textarea
                 id={`position-description-${index}`}
                 value={position.description}
+                maxLength={EVENT_FIELD_LIMITS.description}
                 onChange={(e) => {
                   handlePositionChange(index, "description", e.target.value);
                   clearError(`positions.${index}.description`);
                 }}
-                className={`w-[588px] h-[175px] ${textareaClass(`positions.${index}.description`)}`}
+                className={`w-full md:w-[588px] h-[175px] ${textareaClass(`positions.${index}.description`)}`}
               />
               <ErrorText k={`positions.${index}.description`} />
             </div>
@@ -1220,6 +1260,7 @@ const EventForm = () => {
               onChange={(val) => handlePositionChange(index, "address", val)}
               error={errors[`positions.${index}.address`]}
               onClearError={() => clearError(`positions.${index}.address`)}
+              maxLength={EVENT_FIELD_LIMITS.address}
             />
             {/* position apt */}
             <div className="flex flex-col">
@@ -1236,10 +1277,11 @@ const EventForm = () => {
                   position.sameAsAddress ? event.apt || "" : position.apt || ""
                 }
                 disabled={position.sameAsAddress}
+                maxLength={EVENT_FIELD_LIMITS.apt}
                 onChange={(e) =>
                   handlePositionChange(index, "apt", e.target.value)
                 }
-                className="w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
+                className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
               />
             </div>
             {/* position city */}
@@ -1255,20 +1297,20 @@ const EventForm = () => {
                 type="text"
                 value={position.sameAsAddress ? event.city : position.city}
                 disabled={position.sameAsAddress}
+                maxLength={EVENT_FIELD_LIMITS.city}
                 onChange={(e) => {
                   handlePositionChange(index, "city", e.target.value);
                   clearError(`positions.${index}.city`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(
-                  `positions.${index}.city`,
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.city`,
                   "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                 )}`}
               />
               <ErrorText k={`positions.${index}.city`} />
             </div>
             {/* position state / zip */}
-            <div className="flex flex-row gap-[60px]">
-              <div className="flex flex-col items-start">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
+              <div className="flex flex-col items-start w-full">
                 <label
                   htmlFor={`position-state-${index}`}
                   className="mb-1 mt-10 text-base font-normal text-medium-gray"
@@ -1280,18 +1322,18 @@ const EventForm = () => {
                   type="text"
                   value={position.sameAsAddress ? event.state : position.state}
                   disabled={position.sameAsAddress}
+                  maxLength={EVENT_FIELD_LIMITS.state}
                   onChange={(e) => {
                     handlePositionChange(index, "state", e.target.value);
                     clearError(`positions.${index}.state`);
                   }}
-                  className={`w-[264px] h-[43px] ${inputClass(
-                    `positions.${index}.state`,
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.state`,
                     "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
                 <ErrorText k={`positions.${index}.state`} />
               </div>
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start w-full">
                 <label
                   htmlFor={`position-zip-${index}`}
                   className="mb-1 mt-10 text-base font-normal text-medium-gray"
@@ -1301,14 +1343,20 @@ const EventForm = () => {
                 <input
                   id={`position-zip-${index}`}
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
                   value={position.sameAsAddress ? event.zip : position.zip}
                   disabled={position.sameAsAddress}
+                  maxLength={EVENT_FIELD_LIMITS.zipMaxDigits}
                   onChange={(e) => {
-                    handlePositionChange(index, "zip", e.target.value);
+                    handlePositionChange(
+                      index,
+                      "zip",
+                      sanitizeZipInput(e.target.value),
+                    );
                     clearError(`positions.${index}.zip`);
                   }}
-                  className={`w-[264px] h-[43px] ${inputClass(
-                    `positions.${index}.zip`,
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.zip`,
                     "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
@@ -1326,12 +1374,16 @@ const EventForm = () => {
               <input
                 id={`position-participants-${index}`}
                 type="number"
+                min={1}
+                max={
+                  10 ** EVENT_FIELD_LIMITS.participantsMaxDigits - 1
+                }
                 value={position.participants}
                 onChange={(e) => {
                   handlePositionChange(index, "participants", e.target.value);
                   clearError(`positions.${index}.participants`);
                 }}
-                className={`w-[588px] h-[43px] ${inputClass(`positions.${index}.participants`)}`}
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.participants`)}`}
               />
               <ErrorText k={`positions.${index}.participants`} />
             </div>
@@ -1340,16 +1392,16 @@ const EventForm = () => {
       </div>
 
       {/* position buttons */}
-      <div className="mt-[56px] mb-[71px] flex flex-col items-center">
-        <div className="flex flex-row items-center">
+      <div className="mt-[56px] mb-[71px] flex flex-col items-center w-full px-4 md:px-0">
+        <div className="flex flex-col md:flex-row items-center gap-3">
           <Button
             label="Remove position"
-            altStyle="bg-white text-bcp-blue text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2] mr-[11px]"
+            altStyle="bg-white text-bcp-blue text-[16px] w-[153px] h-[44px] font-medium rounded-lg hover:bg-[#f2f2f2]"
             onClick={removePosition}
           />
           <Button
             label="+ Add another position"
-            altStyle="bg-[#CAD1D4] text-black text-[16px] w-[201px] h-[44px] font-medium rounded-lg hover:bg-[#b9c0c3] ml-[11px]"
+            altStyle="bg-[#CAD1D4] text-black text-[16px] w-[201px] h-[44px] font-medium rounded-lg hover:bg-[#b9c0c3]"
             onClick={addPosition}
           />
         </div>
@@ -1360,15 +1412,15 @@ const EventForm = () => {
 
       {/* bottom buttons */}
       <div className="mt-[56px] mb-[71px] flex flex-col items-center">
-        <div className="flex flex-row items-center">
+        <div className="flex flex-col md:flex-row items-center gap-3">
           <Button
             label="Save as draft"
-            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2] mr-[15px]"
+            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2]"
           />
           <Button
             onClick={handleCreateEvent}
             label="Submit"
-            altStyle="bg-bcp-blue text-white text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80] ml-[15px]"
+            altStyle="bg-bcp-blue text-white text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80]"
           />
         </div>
       </div>
