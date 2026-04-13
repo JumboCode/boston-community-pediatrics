@@ -43,10 +43,19 @@ const Modal = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white w-[792px] rounded-lg border border-black p-8 shadow-xl flex flex-col ${
+        className={`bg-white w-[792px] rounded-lg border border-black p-8 shadow-xl flex flex-col relative ${
           layout === "center" ? "items-center text-center" : ""
         }`}
       >
+        {/* X Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors text-2xl font-light leading-none"
+          aria-label="Close modal"
+        >
+          ×
+        </button>
+
         {title && <h2 className="text-4xl mb-4">{title}</h2>}
 
         {description && (
