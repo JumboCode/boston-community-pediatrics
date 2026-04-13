@@ -49,6 +49,7 @@ model Event {
   lng           Float?
   addressLine1  String          @default("")
   addressLine2  String?
+  resourcesLink String?
   images        String[]
   pinned        Boolean         @default(false)
   imagesDeleted Boolean         @default(false)

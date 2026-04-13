@@ -441,7 +441,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         </div>
 
         {/* Volunteer Table */}
-        <table className="w-full table-fixed border-white-700 text-bcp-blue">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[890px] table-fixed border-white-700 text-bcp-blue">
           <colgroup>
             <col style={{ width: "60px" }} />
             <col style={{ width: "200px" }} />
@@ -596,7 +597,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
 
         {anySelected && (
           <div className="border-t border-gray-200 bg-gray-50 w-full">
@@ -624,7 +626,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </h1>
             </div>
 
-            <table className="w-full table-fixed border-white-700 text-bcp-blue">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[890px] table-fixed border-white-700 text-bcp-blue">
               <colgroup>
                 <col style={{ width: "60px" }} />
                 <col style={{ width: "200px" }} />
@@ -783,7 +786,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   </tr>
                 )}
               </tbody>
-            </table>
+              </table>
+            </div>
 
             {anyWaitlistSelected && (
               <div className="border-t border-gray-200 bg-gray-50 w-full">

@@ -1,22 +1,51 @@
 "use client";
 
 import { useState } from "react";
+import { useSignIn } from "@clerk/nextjs";
 import Button from "../common/buttons/Button";
 import arrowLeft from "@/assets/icons/arrow-left.svg";
 import Link from "next/link";
 
 export default function ForgotPasswordForm() {
-  // set this with backend logic
+  const { isLoaded, signIn } = useSignIn();
+  const [email, setEmail] = useState("");
   const [isError, setIsError] = useState(false);
+  const [errorText, setErrorText] = useState("");
   const [sentEmail, setSentEmail] = useState(false);
 
   const handleContinue = async () => {
-    // setIsError(setEmail());
-    setSentEmail(true);
+    if (!isLoaded || !signIn) return;
+
+    setIsError(false);
+    setErrorText("");
+
+    try {
+      await signIn.create({
+        strategy: "reset_password_email_code",
+        identifier: email.trim(),
+      });
+      setSentEmail(true);
+    } catch (err: unknown) {
+      const clerkError = err as {
+        errors?: Array<{ code?: string; message?: string; longMessage?: string }>;
+      };
+      const firstError = clerkError.errors?.[0];
+      const code = firstError?.code ?? "";
+
+      // Clerk returns identifier-related error codes when no account exists.
+      if (code.includes("identifier") || code.includes("not_found")) {
+        setErrorText("There is no account associated with this email");
+      } else {
+        setErrorText(firstError?.message || "Unable to send reset email");
+      }
+      setIsError(true);
+    }
   };
 
   return !sentEmail ? (
-    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-[792px] pt-[50px] px-[48px] pb-[60px] box-border">
+    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg md:w-[792px] pt-[50px] px-6 md:px-[102px] pb-[60px] box-border">
+      {/*<div className="w-full md:w-[792px] pt-[50px] px-6 md:px-[102px]">*/}
+      
       <div className="flex flex-col items-center w-full gap-6">
         <div className="relative flex items-center w-full justify-center">
           <Link href="/login">
@@ -40,6 +69,15 @@ export default function ForgotPasswordForm() {
       <div className="pt-[48px] flex flex-col w-full gap-2.5 px-[54px]">
         <input
           placeholder="Email"
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (isError) {
+              setIsError(false);
+              setErrorText("");
+            }
+          }}
           required
           className={
             isError
@@ -48,16 +86,18 @@ export default function ForgotPasswordForm() {
           }
         />
         {isError ? (
-          <div className="text-base text-[#E10000]">
-            There is no account associated with this email
-          </div>
+          <div className="text-base text-[#E10000]">{errorText}</div>
         ) : (
           <></>
         )}
       </div>
 
       {/* Button Placeholder */}
-      <Button label="Continue" onClick={handleContinue} />
+      <Button
+        label="Continue"
+        onClick={handleContinue}
+        disabled={!email.trim() || !isLoaded}
+      />
     </div>
   ) : (
     // After email sent

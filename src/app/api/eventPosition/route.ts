@@ -5,6 +5,7 @@ import {
   updateEventPosition,
   deleteEventPosition,
   getPositionById,
+  getAllPositions,
 } from "./controller";
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
@@ -39,7 +40,9 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventPositions, { status: 200 });
     } else {
-      return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
+      const all = await getAllPositions();
+      return NextResponse.json(all, { status: 200 });
+      // return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);

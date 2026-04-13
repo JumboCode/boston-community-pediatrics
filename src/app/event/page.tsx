@@ -65,6 +65,7 @@ export default async function EventsPage() {
 
   return (
     <div className="w-full flex flex-col items-center">
+    
       {/* Hero */}
       <div className="w-full overflow-hidden">
         <Image
@@ -72,7 +73,7 @@ export default async function EventsPage() {
           alt="Event Image"
           width={1920}
           height={600}
-          className="w-full h-96 object-cover"
+          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover"
         />
       </div>
 
@@ -104,7 +105,8 @@ export default async function EventsPage() {
         {error ? (
           <p className="text-red-600 font-medium">{error}</p>
         ) : featuredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-12">
             {featuredEvents.map((event) => {
               return (
                 <EventCard
@@ -135,7 +137,7 @@ export default async function EventsPage() {
         {regularEvents.length === 0 ? (
           <p className="text-gray-500">No events available.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {regularEvents.map((event) => {
               return (
                 <EventCard
