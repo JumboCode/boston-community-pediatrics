@@ -1,5 +1,5 @@
 "use client";
-import bcp_logo from "@/assets/icons/BCP.svg";
+import bcp_logo from "@/assets/icons/BCPlogo.png";
 import blankProfile from "@/assets/icons/Group 1.svg";
 import Image from "next/image";
 import Link from "next/link";
