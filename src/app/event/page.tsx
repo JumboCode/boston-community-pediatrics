@@ -135,7 +135,12 @@ export default async function EventsPage() {
         </h2>
 
         {regularEvents.length === 0 ? (
-          <p className="text-gray-500">No events available.</p>
+          <p className="text-gray-500">
+            {featuredEvents.length > 0
+            ?"Refer to Featured Opportunities."
+          : "No events available."}
+          
+            </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {regularEvents.map((event) => {
