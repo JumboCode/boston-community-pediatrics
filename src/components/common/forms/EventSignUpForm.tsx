@@ -91,7 +91,14 @@ export default function EventSignUpForm({
 
   const addGuest = () => {
     const newGuest: Guest = {
-      id: crypto.randomUUID(),
+      //id: crypto.randomUUID()
+
+      //crypto doesn't work on mobile so we need to do math.random
+      id: typeof crypto.randomUUID === 'function' 
+      ? crypto.randomUUID() 
+
+      : Math.random().toString(36).substring(2, 11),
+      
 
       firstName: "",
       lastName: "",
@@ -246,10 +253,10 @@ export default function EventSignUpForm({
               {eventName}
             </p>
             <p>
-              <span className="font-bold text-gray-900">Date:</span> {eventDate}
+              <span className="font-bold text-gray-900">Date:</span> {eventDate || "not found"}
             </p>
             <p>
-              <span className="font-bold text-gray-900">Time:</span> {eventTime}
+              <span className="font-bold text-gray-900">Time:</span> {eventTime || "not found"}
             </p>
             <p>
               <span className="font-bold text-gray-900">Total Group:</span>{" "}
@@ -277,7 +284,7 @@ export default function EventSignUpForm({
 
   if (isSuccess) {
     return (
-      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
+      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300 overflow-hidden">
         <h2 className="text-3xl font-bold mb-2">Registration Confirmed!</h2>
         <p className="text-blue-100 mb-8">
           A confirmation has been sent to your email.
@@ -286,7 +293,7 @@ export default function EventSignUpForm({
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
             EVENT
           </div>
-          <div className="space-y-1 text-sm flex-1">
+          <div className="space-y-1 text-sm flex-1 min-w-0">
             <p>
               <span className="font-bold text-gray-900">Event:</span>{" "}
               {eventName}
@@ -297,7 +304,7 @@ export default function EventSignUpForm({
             <p>
               <span className="font-bold text-gray-900">Time:</span> {eventTime}
             </p>
-            <p>
+            <p className="leading">
               <span className="font-bold text-gray-900">Total Group:</span>{" "}
               {1 + guests.length} (You + {guests.length} guests)
             </p>
