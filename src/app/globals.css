@@ -34,3 +34,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+a, button, [role="button"], select, label, input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
+}a, button, [role="button"], select, label, input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
+}
