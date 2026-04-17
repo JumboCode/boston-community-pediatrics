@@ -129,6 +129,25 @@ const formatTimeForDisplay = (hhmm: string) => {
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 };
 
+const toLocalYmd = (value: string | Date | undefined | null): string => {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const toLocalHhmm = (value: string | Date | undefined | null): string => {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+};
+
 const formatDateTimeRangeLabel = (
   startDate: string,
   endDate: string,
@@ -743,18 +762,10 @@ const EventForm = () => {
       arr.map((p: APIPosition) => ({
         id: p.id ?? undefined,
         name: p.position ?? "",
-        startDate: p.startTime
-          ? new Date(p.startTime).toISOString().slice(0, 10)
-          : "",
-        endDate: p.endTime
-          ? new Date(p.endTime).toISOString().slice(0, 10)
-          : "",
-        startTime: p.startTime
-          ? new Date(p.startTime).toISOString().slice(11, 16)
-          : "",
-        endTime: p.endTime
-          ? new Date(p.endTime).toISOString().slice(11, 16)
-          : "",
+        startDate: toLocalYmd(p.startTime),
+        endDate: toLocalYmd(p.endTime),
+        startTime: toLocalHhmm(p.startTime),
+        endTime: toLocalHhmm(p.endTime),
         description: p.description ?? "",
         address: p.addressLine1 ?? "",
         apt: p.addressLine2 ?? undefined,
@@ -775,18 +786,10 @@ const EventForm = () => {
 
       setEvent({
         title: result.name ?? "",
-        startDate: result.startTime
-          ? new Date(result.startTime).toISOString().slice(0, 10)
-          : "",
-        endDate: result.endTime
-          ? new Date(result.endTime).toISOString().slice(0, 10)
-          : "",
-        startTime: result.startTime
-          ? new Date(result.startTime).toISOString().slice(11, 16)
-          : "",
-        endTime: result.endTime
-          ? new Date(result.endTime).toISOString().slice(11, 16)
-          : "",
+        startDate: toLocalYmd(result.startTime),
+        endDate: toLocalYmd(result.endTime),
+        startTime: toLocalHhmm(result.startTime),
+        endTime: toLocalHhmm(result.endTime),
         description: result.description ?? "",
         resourcesLink: result.resourcesLink ?? undefined,
         address: result.addressLine1 ?? "",
