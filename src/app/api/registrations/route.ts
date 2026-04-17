@@ -15,6 +15,7 @@ interface GuestInput {
   phoneNumber?: string | null;
   relationship?: string | null;
   dateOfBirth?: string | null;
+  speaksSpanish: boolean | false,
 }
 
 const tz = "America/New_York";
@@ -245,6 +246,7 @@ export async function POST(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
+                speaksSpanish: guest.speaksSpanish || false,
               })),
             },
           },
@@ -280,6 +282,7 @@ export async function POST(req: NextRequest) {
               phoneNumber: guest.phoneNumber || null,
               relation: guest.relationship || null,
               dateOfBirth: guest.dateOfBirth || null,
+              speaksSpanish: guest.speaksSpanish || false,
             })),
           },
         },
@@ -408,6 +411,7 @@ export async function PUT(req: NextRequest) {
           const updatedSignup = await tx.eventSignup.update({
             where: { id },
             data: {
+              comments: comments || null,
               hasGuests: (guests?.length ?? 0) > 0,
               guests: {
                 create: (guests ?? []).map((guest: GuestInput) => ({
@@ -418,6 +422,7 @@ export async function PUT(req: NextRequest) {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
+                  speaksSpanish: guest.speaksSpanish || false,
                 })),
               },
             },
@@ -471,6 +476,7 @@ export async function PUT(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
+                speaksSpanish: guest.speaksSpanish || false,
               })),
             },
           },
@@ -565,6 +571,7 @@ export async function PUT(req: NextRequest) {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
+                  speaksSpanish: guest.speaksSpanish || false,
                 })),
               },
             },
@@ -608,6 +615,7 @@ export async function PUT(req: NextRequest) {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
+                speaksSpanish: guest.speaksSpanish || false,
               })),
             },
           },

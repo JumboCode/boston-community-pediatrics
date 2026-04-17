@@ -145,6 +145,7 @@ export async function POST(req: NextRequest) {
               emailAddress: guest.emailAddress || null,
               phoneNumber: guest.phoneNumber || null,
               relation: guest.relation || null,
+              speaksSpanish: guest.speaksSpanish || false,
             })),
           },
         },
@@ -176,6 +177,8 @@ export async function POST(req: NextRequest) {
               lastName: guest.lastName,
               email: guest.emailAddress || null,
               relation: guest.relation || null,
+              speaksSpanish: guest.speaksSpanish || false,
+
             })),
           },
         },

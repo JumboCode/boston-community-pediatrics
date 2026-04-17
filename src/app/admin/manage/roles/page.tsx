@@ -144,14 +144,14 @@ const ManageRolesPage = () => {
     // Apply sorting
     if (sortOption === "NAME_AZ") {
       list.sort((a, b) => {
-        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
-        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
+        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
         return aName.localeCompare(bName);
       });
     } else if (sortOption === "NAME_ZA") {
       list.sort((a, b) => {
-        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
-        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
+        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
         return bName.localeCompare(aName);
       });
     } else if (sortOption === "DATE_NEWEST") {
@@ -528,7 +528,9 @@ const ManageRolesPage = () => {
                       {p.role === "VOLUNTEER" ? (
                         <button
                           type="button"
-                          onClick={() => router.push(`/admin/manage/${p.userId}`)}
+                          onClick={() =>
+                            router.push(`/admin/manage/${p.userId}`)
+                          }
                           className="hover:underline text-left"
                         >
                           {p.firstName} {p.lastName}

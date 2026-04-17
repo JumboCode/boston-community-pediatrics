@@ -652,7 +652,8 @@ const ManageEventsPage = () => {
       {showDeleteConfirm && (
         <Modal
           open={showDeleteConfirm}
-          title={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}          onClose={() => setShowDeleteConfirm(false)}
+          title={`Remove ${pendingCount} event${pendingCount === 1 ? "" : "s"}?`}
+          onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {
               label: "Cancel",
