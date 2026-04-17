@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function to12h(hhmm: string): string {
   if (!hhmm) return "12:00 AM";
@@ -380,17 +380,70 @@ interface TimeInputProps {
 
 function TimeInput({ value, onChange }: TimeInputProps) {
   const [time, period] = value.split(" ");
-  const [hour, minute] = time.split(":");
+  const [propHour, propMinute] = time.split(":");
+
+  const [hourDraft, setHourDraft] = useState(propHour);
+  const [minuteDraft, setMinuteDraft] = useState(propMinute);
+
+  useEffect(() => {
+    setHourDraft(propHour);
+  }, [propHour]);
+
+  useEffect(() => {
+    setMinuteDraft(propMinute);
+  }, [propMinute]);
+
+  const commitHour = (raw: string) => {
+    if (raw === "") {
+      setHourDraft(propHour);
+      return;
+    }
+    let n = Number(raw);
+    if (Number.isNaN(n)) {
+      setHourDraft(propHour);
+      return;
+    }
+    if (n < 1) n = 1;
+    if (n > 12) n = 12;
+    const padded = String(n).padStart(2, "0");
+    setHourDraft(padded);
+    onChange("hour", padded);
+  };
+
+  const commitMinute = (raw: string) => {
+    if (raw === "") {
+      setMinuteDraft(propMinute);
+      return;
+    }
+    let n = Number(raw);
+    if (Number.isNaN(n)) {
+      setMinuteDraft(propMinute);
+      return;
+    }
+    if (n < 0) n = 0;
+    if (n > 59) n = 59;
+    const padded = String(n).padStart(2, "0");
+    setMinuteDraft(padded);
+    onChange("minute", padded);
+  };
 
   return (
     <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1">
       <input
         type="text"
-        value={hour}
+        inputMode="numeric"
+        value={hourDraft}
+        onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => {
-          const val = e.target.value.replace(/\D/g, "");
-          if (val === "" || (Number(val) >= 1 && Number(val) <= 12)) {
-            onChange("hour", val.padStart(2, "0"));
+          const val = e.target.value.replace(/\D/g, "").slice(0, 2);
+          setHourDraft(val);
+        }}
+        onBlur={(e) => commitHour(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commitHour(e.currentTarget.value);
+            e.currentTarget.blur();
           }
         }}
         className="w-6 bg-transparent text-center text-sm font-medium outline-none"
@@ -399,11 +452,19 @@ function TimeInput({ value, onChange }: TimeInputProps) {
       <span className="text-sm font-medium">:</span>
       <input
         type="text"
-        value={minute}
+        inputMode="numeric"
+        value={minuteDraft}
+        onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => {
-          const val = e.target.value.replace(/\D/g, "");
-          if (val === "" || (Number(val) >= 0 && Number(val) <= 59)) {
-            onChange("minute", val.padStart(2, "0"));
+          const val = e.target.value.replace(/\D/g, "").slice(0, 2);
+          setMinuteDraft(val);
+        }}
+        onBlur={(e) => commitMinute(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commitMinute(e.currentTarget.value);
+            e.currentTarget.blur();
           }
         }}
         className="w-6 bg-transparent text-center text-sm font-medium outline-none"

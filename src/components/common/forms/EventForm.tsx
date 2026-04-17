@@ -121,6 +121,29 @@ const formatDateForDisplay = (value: string) => {
   });
 };
 
+const formatTimeForDisplay = (hhmm: string) => {
+  if (!hhmm) return "";
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+};
+
+const formatDateTimeRangeLabel = (
+  startDate: string,
+  endDate: string,
+  startTime: string,
+  endTime: string
+) => {
+  if (!startDate) return "Select dates & times";
+  const startDateStr = formatDateForDisplay(startDate);
+  const startTimeStr = startTime ? `, ${formatTimeForDisplay(startTime)}` : "";
+  if (!endDate) return `${startDateStr}${startTimeStr}`;
+  const endDateStr = formatDateForDisplay(endDate);
+  const endTimeStr = endTime ? `, ${formatTimeForDisplay(endTime)}` : "";
+  return `${startDateStr}${startTimeStr} – ${endDateStr}${endTimeStr}`;
+};
+
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -893,11 +916,7 @@ const EventForm = () => {
                   : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
               }`}
             >
-              {event.startDate && event.endDate
-                ? `${formatDateForDisplay(event.startDate)} – ${formatDateForDisplay(event.endDate)}`
-                : event.startDate
-                  ? formatDateForDisplay(event.startDate)
-                  : "Select dates & times"}
+              {formatDateTimeRangeLabel(event.startDate, event.endDate, event.startTime, event.endTime)}
             </button>
             {showEventDatePicker && (
               <>
@@ -1152,8 +1171,8 @@ const EventForm = () => {
 
               {position.sameAsDate && position.sameAsTime ? (
                 <div className="w-[588px] h-[43px] rounded-lg border border-medium-gray px-3 flex items-center text-base text-medium-gray bg-light-gray cursor-not-allowed">
-                  {event.startDate && event.endDate
-                    ? `${formatDateForDisplay(event.startDate)} – ${formatDateForDisplay(event.endDate)}`
+                  {event.startDate
+                    ? formatDateTimeRangeLabel(event.startDate, event.endDate, event.startTime, event.endTime)
                     : "Same as event"}
                 </div>
               ) : (
@@ -1175,11 +1194,7 @@ const EventForm = () => {
                         : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
                     }`}
                   >
-                    {position.startDate && position.endDate
-                      ? `${formatDateForDisplay(position.startDate)} – ${formatDateForDisplay(position.endDate)}`
-                      : position.startDate
-                        ? formatDateForDisplay(position.startDate)
-                        : "Select dates & times"}
+                    {formatDateTimeRangeLabel(position.startDate, position.endDate, position.startTime, position.endTime)}
                   </button>
                   {openPositionDatePicker === index && (
                     <>
