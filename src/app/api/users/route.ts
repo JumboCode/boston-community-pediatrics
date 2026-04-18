@@ -1,12 +1,13 @@
 // src/app/api/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import {
   createUser,
   getUserById,
   getUsers,
   updateUserProfile,
 } from "./controller";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, route } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
 function isFutureDate(value?: string | null) {
@@ -116,39 +117,46 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const { user } = await req.json();
-    user.profileImage = normalizeProfileImageUrl(user.profileImage);
+export const POST = route(async (req: NextRequest) => {
+  // This route CREATES the DB user, so we can't use requireUser() (which
+  // assumes the user already exists). Fall back to Clerk's auth() directly.
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    // Validate phone number
-    if (!user.phoneNumber || !/^[0-9]+$/.test(user.phoneNumber)) {
-      return NextResponse.json(
-        { error: "Phone number is required and must contain only numbers" },
-        { status: 400 }
-      );
-    }
+  const { user } = await req.json();
+  user.profileImage = normalizeProfileImageUrl(user.profileImage);
 
-    if (isFutureDate(user.dateOfBirth)) {
-      return NextResponse.json(
-        { error: "Date of birth cannot be in the future" },
-        { status: 400 }
-      );
-    }
-
-    const newUser = await createUser(user);
-    if (!newUser) {
-      return NextResponse.json({ error: "User not created" }, { status: 500 });
-    }
-    return NextResponse.json(newUser, { status: 201 });
-  } catch (error) {
-    console.error("Error:", error);
+  if (!user.phoneNumber || !/^[0-9]+$/.test(user.phoneNumber)) {
     return NextResponse.json(
-      { error: "Failed to create user" },
-      { status: 500 }
+      { error: "Phone number is required and must contain only numbers" },
+      { status: 400 }
     );
   }
-}
+
+  if (isFutureDate(user.dateOfBirth)) {
+    return NextResponse.json(
+      { error: "Date of birth cannot be in the future" },
+      { status: 400 }
+    );
+  }
+
+  // Force server-side values for identity & role so the client cannot:
+  //   - create a row with someone else's Clerk id
+  //   - promote themselves to ADMIN by sending role: "ADMIN"
+  const safeUser = {
+    ...user,
+    id: clerkUserId,
+    role: UserRole.VOLUNTEER,
+  };
+
+  const newUser = await createUser(safeUser);
+  if (!newUser) {
+    return NextResponse.json({ error: "User not created" }, { status: 500 });
+  }
+  return NextResponse.json(newUser, { status: 201 });
+});
 
 export async function PUT(req: NextRequest) {
   try {
