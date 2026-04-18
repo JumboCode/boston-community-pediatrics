@@ -11,6 +11,7 @@ import { getPublicURL } from "@/lib/r2";
 import Link from "next/link";
 import Image from "next/image";
 import arrowLeft from "@/assets/icons/arrow-left.svg";
+import EventNotFoundModal from "@/components/common/EventNotFoundModal";
 
 export default async function EventDetailsPage(props: {
   params: { id: string };
@@ -25,7 +26,7 @@ export default async function EventDetailsPage(props: {
     const user = await getCurrentUser();
 
     if (!event) {
-      return <p>Event does not exist</p>;
+      return <EventNotFoundModal />;
     }
 
     const isExpired = new Date(event.endTime) < new Date();
@@ -35,7 +36,10 @@ export default async function EventDetailsPage(props: {
 
     return (
       <div className="relative">
-        <Link href="/event" className="absolute top-6 left-4 sm:top-10 sm:left-12">
+        <Link
+          href="/event"
+          className="absolute top-6 left-4 sm:top-10 sm:left-12"
+        >
           <Image src={arrowLeft} alt="Back to events" className="w-8 h-8" />
         </Link>
         <div className="flex flex-col justify-center items-center">

@@ -146,7 +146,10 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                   <div key={volunteer.signupId}>
                     {/* Main volunteer row */}
                     <div className="flex items-center gap-2 justify-end">
-                      <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                      <span
+                        className="text-bcp-blue text-[15px] font-normal font-avenir truncate max-w-[180px]"
+                        title={`${volunteer.firstName} ${volunteer.lastName}`}
+                      >
                         {volunteer.firstName} {volunteer.lastName}
                       </span>
                       <Image
@@ -154,7 +157,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                         height={28}
                         src={avatarSrc}
                         alt="Profile"
-                        className="rounded-full object-cover relative z-10"
+                        className="rounded-full object-cover relative z-10 flex-shrink-0"
                         unoptimized={
                           typeof avatarSrc === "string" &&
                           avatarSrc.startsWith("http")
@@ -175,7 +178,10 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                               className="flex items-center justify-end"
                               style={{ height: 36 }}
                             >
-                              <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                              <span
+                                className="text-bcp-blue text-[15px] font-normal font-avenir truncate max-w-[180px]"
+                                title={`${guest.firstName} ${guest.lastName}`}
+                              >
                                 {guest.firstName} {guest.lastName}
                               </span>
                             </div>
