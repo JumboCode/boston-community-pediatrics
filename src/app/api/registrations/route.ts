@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { requireSelfOrAdmin, requireUser, route } from "@/lib/auth";
 import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
 import { sendWaitlisted } from "@/lib/email/sendWaitlisted";
 import { sendRemoved } from "@/lib/email/sendRemoved";
@@ -156,22 +158,32 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
 // ==========================================
 // POST: Create New Registration
 // ==========================================
-export async function POST(req: NextRequest) {
+export const POST = route(async (req: NextRequest) => {
+  const { userId, positionId, comments, guests } = await req.json();
+
+  if (!userId || typeof userId !== "string") {
+    return NextResponse.json(
+      { error: "userId is required" },
+      { status: 400 }
+    );
+  }
+
+  // Caller may only register themselves; admins may register anyone.
+  await requireSelfOrAdmin(userId);
+
+  // 1. LIMIT CHECK
+  if (guests && guests.length > MAX_GUESTS) {
+    return NextResponse.json(
+      {
+        error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  const spotsNeeded = 1 + (guests?.length || 0);
+
   try {
-    const { userId, positionId, comments, guests } = await req.json();
-
-    // 1. LIMIT CHECK
-    if (guests && guests.length > MAX_GUESTS) {
-      return NextResponse.json(
-        {
-          error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const spotsNeeded = 1 + (guests?.length || 0);
-
     const result = await prisma.$transaction(async (tx) => {
       // 2. DUPLICATE CHECK
       const existingSignup = await tx.eventSignup.findFirst({
@@ -329,35 +341,60 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // ==========================================
 // PUT: Update Existing Registration
 // ==========================================
-export async function PUT(req: NextRequest) {
+export const PUT = route(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Missing registration ID" },
+      { status: 400 }
+    );
+  }
+
+  const { guests, comments } = await req.json();
+
+  // 1. LIMIT CHECK
+  if (guests && guests.length > MAX_GUESTS) {
+    return NextResponse.json(
+      {
+        error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  // Ownership/admin check before mutating anything. The id may belong to
+  // either an EventSignup or an EventWaitlist row.
+  const caller = await requireUser();
+  const isAdmin = caller.role === UserRole.ADMIN;
+  const [signupOwner, waitlistOwner] = await Promise.all([
+    prisma.eventSignup.findUnique({
+      where: { id },
+      select: { userId: true },
+    }),
+    prisma.eventWaitlist.findUnique({
+      where: { id },
+      select: { userId: true },
+    }),
+  ]);
+  const ownerId = signupOwner?.userId ?? waitlistOwner?.userId;
+  if (!signupOwner && !waitlistOwner) {
+    return NextResponse.json(
+      { error: "Registration not found" },
+      { status: 404 }
+    );
+  }
+  if (ownerId !== caller.id && !isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing registration ID" },
-        { status: 400 }
-      );
-    }
-
-    const { guests, comments } = await req.json();
-
-    // 1. LIMIT CHECK
-    if (guests && guests.length > MAX_GUESTS) {
-      return NextResponse.json(
-        {
-          error: `Guest limit exceeded. Maximum ${MAX_GUESTS} guests allowed.`,
-        },
-        { status: 400 }
-      );
-    }
-
     const result = await prisma.$transaction(async (tx) => {
       const emails: PendingEmail[] = [];
 
@@ -633,17 +670,25 @@ export async function PUT(req: NextRequest) {
       { status }
     );
   }
-}
+});
 
 // ==========================================
 // GET: Fetch Registration(s)
 // ==========================================
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
-    const positionId = searchParams.get("positionId");
+export const GET = route(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("userId");
+  const positionId = searchParams.get("positionId");
 
+  if (!userId) {
+    return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+  }
+
+  // Both scenarios are scoped to userId; only the user themselves or an
+  // admin may read their registrations.
+  await requireSelfOrAdmin(userId);
+
+  try {
     // ---------------------------------------------------------
     // SCENARIO A: Fetch ONE registration (Used by Register Page)
     // ---------------------------------------------------------
@@ -753,25 +798,50 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // ... (Your existing GET, POST, PUT code) ...
 
 // ==========================================
 // DELETE: Remove Registration & Auto-Promote
 // ==========================================
-export async function DELETE(req: NextRequest) {
+export const DELETE = route(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Missing registration ID" },
+      { status: 400 }
+    );
+  }
+
+  // Ownership/admin check before mutating anything. The id may belong to
+  // either an EventSignup or an EventWaitlist row, so we look in both.
+  const caller = await requireUser();
+  const isAdmin = caller.role === UserRole.ADMIN;
+  const [signupOwner, waitlistOwner] = await Promise.all([
+    prisma.eventSignup.findUnique({
+      where: { id },
+      select: { userId: true },
+    }),
+    prisma.eventWaitlist.findUnique({
+      where: { id },
+      select: { userId: true },
+    }),
+  ]);
+  const ownerId = signupOwner?.userId ?? waitlistOwner?.userId;
+  if (!signupOwner && !waitlistOwner) {
+    return NextResponse.json(
+      { error: "Registration not found" },
+      { status: 404 }
+    );
+  }
+  if (ownerId !== caller.id && !isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing registration ID" },
-        { status: 400 }
-      );
-    }
-
     const result = await prisma.$transaction(async (tx) => {
       const emails: PendingEmail[] = [];
 
@@ -983,4 +1053,4 @@ export async function DELETE(req: NextRequest) {
       { status: is404 ? 404 : 500 }
     );
   }
-}
+});
