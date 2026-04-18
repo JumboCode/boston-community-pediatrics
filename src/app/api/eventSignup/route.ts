@@ -15,7 +15,7 @@ import {
 
 import { decrementEventPositionCount } from "../eventPosition/controller";
 import { UserRole } from "@prisma/client";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, requireOwnerOrAdmin, route } from "@/lib/auth";
 
 // GET handler
 export async function GET(req: NextRequest) {
@@ -256,52 +256,21 @@ export async function PUT(req: NextRequest) {
 }
 
 // DELETE handler
-export async function DELETE(req: NextRequest) {
-  try {
-    let isAdmin = false;
-    const currentUser = await getCurrentUser();
+export const DELETE = route(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
 
-    if (currentUser) {
-      if (currentUser.role === UserRole.ADMIN) {
-        isAdmin = true;
-      }
-    }
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
-
-    // SECURITY START: Fetch the signup first to see who owns it
-    const signup = await prisma.eventSignup.findUnique({
-      where: { id }
-    });
-
-    if (!signup) {
-      return NextResponse.json({ error: "Signup not found" }, { status: 404 });
-    }
-
-    // Check if the current user owns this specific signup, or is an admin
-    if (!currentUser || (currentUser.id !== signup.userId && !isAdmin)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    // SECURITY END
-
-    if (currentUser?.id != id && !isAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    const deletedEventSignup = await deleteEventSignup(id);
-
-    // 3. Decrement numSignups
-    await decrementEventPositionCount(deletedEventSignup.positionId);
-    return NextResponse.json(deletedEventSignup, { status: 201 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Failed to delete event signup" },
-      { status: 500 }
-    );
+  if (!id) {
+    return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
-}
+
+  const { resource: signup } = await requireOwnerOrAdmin(() =>
+    prisma.eventSignup.findUnique({ where: { id } })
+  );
+
+  const deletedEventSignup = await deleteEventSignup(signup.id);
+
+  // Decrement numSignups after removing signup and guests
+  await decrementEventPositionCount(deletedEventSignup.positionId);
+  return NextResponse.json(deletedEventSignup, { status: 201 });
+});
