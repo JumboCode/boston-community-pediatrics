@@ -7,7 +7,11 @@ import {
   getUsers,
   updateUserProfile,
 } from "./controller";
-import { getCurrentUser, route } from "@/lib/auth";
+import {
+  requireAdmin,
+  requireSelfOrAdmin,
+  route,
+} from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
 function isFutureDate(value?: string | null) {
@@ -32,24 +36,17 @@ function normalizeProfileImageUrl(value?: string | null) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export const GET = route(async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
   const id: string | undefined = searchParams.get("id") || undefined;
-
-  // this cuz we just want ids for send email stuff
   const list = searchParams.get("list");
+
+  // Minimal user list (id + name + email) used by the admin email composer.
   if (list === "1") {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (currentUser.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireAdmin();
 
     const users = await getUsers();
 
-    // return minimal fields only
     const minimal = users.map((u) => ({
       id: u.id,
       firstName: u.firstName,
@@ -67,55 +64,28 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(minimal, { status: 200 });
   }
 
+  // Single user by id: caller must be that user or an admin.
   if (id) {
-    try {
-      const user = await getUserById(id);
-      if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
+    await requireSelfOrAdmin(id);
 
-      let isAdmin = false;
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        if (currentUser.role === UserRole.ADMIN) {
-          isAdmin = true;
-        }
-      }
-      if (currentUser?.id != user.id && !isAdmin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-
-      return NextResponse.json(user, { status: 200 });
-    } catch (error) {
-      console.error("Error:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch user" },
-        { status: 500 }
-      );
+    const user = await getUserById(id);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    return NextResponse.json(user, { status: 200 });
   }
 
-  try {
-    const currentUser = await getCurrentUser();
+  // Full user list: admin only. The previous `if (currentUser && ...)` form
+  // let unauthenticated callers fall through and read every user; using
+  // requireAdmin() makes that impossible.
+  await requireAdmin();
 
-    if (currentUser && currentUser.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const users = await getUsers();
-    if (!users) {
-      return NextResponse.json({ error: "Users not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(users, { status: 200 });
-  } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch users" },
-      { status: 500 }
-    );
+  const users = await getUsers();
+  if (!users) {
+    return NextResponse.json({ error: "Users not found" }, { status: 404 });
   }
-}
+  return NextResponse.json(users, { status: 200 });
+});
 
 export const POST = route(async (req: NextRequest) => {
   // This route CREATES the DB user, so we can't use requireUser() (which
@@ -158,77 +128,76 @@ export const POST = route(async (req: NextRequest) => {
   return NextResponse.json(newUser, { status: 201 });
 });
 
-export async function PUT(req: NextRequest) {
-  try {
-    const { id, body } = await req.json();
-    body.profileImage = normalizeProfileImageUrl(body.profileImage);
-    let isAdmin = false;
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-      if (currentUser.role === UserRole.ADMIN) {
-        isAdmin = true;
-      }
-    } else return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    if (currentUser?.id != id && !isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+export const PUT = route(async (req: NextRequest) => {
+  const payload = await req.json();
+  const id = payload?.id as string | undefined;
+  const body = payload?.body as Record<string, unknown> | undefined;
 
-    // Validate phone number if it's being updated and is different from current
-    if (body.phoneNumber !== undefined) {
-      // Fetch current user to check if phone is actually changing
-      const existingUser = await getUserById(id);
-      if (!existingUser) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
-
-      // Only validate if the phone number is actually changing
-      if (body.phoneNumber !== existingUser.phoneNumber) {
-        if (!body.phoneNumber || !/^[0-9]+$/.test(body.phoneNumber)) {
-          return NextResponse.json(
-            { error: "Phone number must contain only numbers" },
-            { status: 400 }
-          );
-        }
-      }
-    }
-
-    if (body.dateOfBirth !== undefined && isFutureDate(body.dateOfBirth)) {
-      return NextResponse.json(
-        { error: "Date of birth cannot be in the future" },
-        { status: 400 }
-      );
-    }
-
-    let filteredBody = body;
-    // Non-admins can only update certain fields
-    if (!isAdmin) {
-      const allowedFields = [
-        "firstName",
-        "lastName",
-        "phoneNumber",
-        "dateOfBirth",
-        "streetAddress",
-        "city",
-        "state",
-        "country",
-        "zipCode",
-        "profileImage",
-        "speaksSpanish",
-      ];
-      filteredBody = Object.fromEntries(
-        Object.entries(body).filter(([key]) => allowedFields.includes(key))
-      );
-    }
-    const updatedUser = await updateUserProfile(id, filteredBody);
-    if (!updatedUser) {
-      return NextResponse.json({ error: "User not updated" }, { status: 404 });
-    }
-    return NextResponse.json(updatedUser, { status: 200 });
-  } catch (error) {
-    console.error("Error:", error);
+  if (!id || !body || typeof body !== "object") {
     return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 }
+      { error: "id and body are required" },
+      { status: 400 }
     );
   }
-}
+
+  const currentUser = await requireSelfOrAdmin(id);
+  const isAdmin = currentUser.role === UserRole.ADMIN;
+
+  body.profileImage = normalizeProfileImageUrl(
+    body.profileImage as string | null | undefined
+  );
+
+  // Validate phone number if it's being updated and is different from current
+  if (body.phoneNumber !== undefined) {
+    const existingUser = await getUserById(id);
+    if (!existingUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (body.phoneNumber !== existingUser.phoneNumber) {
+      if (!body.phoneNumber || !/^[0-9]+$/.test(String(body.phoneNumber))) {
+        return NextResponse.json(
+          { error: "Phone number must contain only numbers" },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
+  if (
+    body.dateOfBirth !== undefined &&
+    isFutureDate((body.dateOfBirth as string | null | undefined) ?? undefined)
+  ) {
+    return NextResponse.json(
+      { error: "Date of birth cannot be in the future" },
+      { status: 400 }
+    );
+  }
+
+  let filteredBody = body;
+  // Non-admins can only update certain fields
+  if (!isAdmin) {
+    const allowedFields = [
+      "firstName",
+      "lastName",
+      "phoneNumber",
+      "dateOfBirth",
+      "streetAddress",
+      "city",
+      "state",
+      "country",
+      "zipCode",
+      "profileImage",
+      "speaksSpanish",
+    ];
+    filteredBody = Object.fromEntries(
+      Object.entries(body).filter(([key]) => allowedFields.includes(key))
+    );
+  }
+
+  const updatedUser = await updateUserProfile(id, filteredBody);
+  if (!updatedUser) {
+    return NextResponse.json({ error: "User not updated" }, { status: 404 });
+  }
+  return NextResponse.json(updatedUser, { status: 200 });
+});
