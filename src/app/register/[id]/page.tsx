@@ -19,14 +19,18 @@ interface UserData {
 
 interface EventData {
   name: string;
-  date: string;
-  time: string;
+  date?: string | string[];
+  startTime?: string;
+  endTime?: string;
 }
 
 interface PositionData {
   id: string;
   position: string;
   description: string;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
   event?: EventData;
 }
 
@@ -78,18 +82,61 @@ export default function RegisterPage({ params }: RegisterPageProps) {
   if (!isLoaded || loading) return <BasicSkeleton />;
   if (!data) return <div className="text-center p-10">Error loading details.</div>;
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "TBD";
-    return new Date(dateStr).toLocaleDateString("en-US");
+  const toDate = (value?: string | Date | null) => {
+    if (!value) return null;
+    const d = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
   };
 
-  const formatTime = (timeStr?: string) => {
-    if (!timeStr) return "TBD";
-    return new Date(timeStr).toLocaleTimeString("en-US", {
+  const formatDate = (value?: string | Date | null) => {
+    const d = toDate(value);
+    if (!d) return "TBD";
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (value?: string | Date | null) => {
+    const d = toDate(value);
+    if (!d) return "";
+    return d.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
     });
   };
+
+  const isSameCalendarDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const pos = data.position;
+  const evt = pos.event;
+
+  const startDt =
+    toDate(pos.startTime) ??
+    toDate(pos.date) ??
+    toDate(evt?.startTime) ??
+    toDate(Array.isArray(evt?.date) ? evt?.date[0] : evt?.date);
+  const endDt = toDate(pos.endTime) ?? toDate(evt?.endTime);
+
+  let eventDateLabel = "TBD";
+  let eventTimeLabel = "TBD";
+
+  if (startDt && endDt) {
+    if (isSameCalendarDay(startDt, endDt)) {
+      eventDateLabel = formatDate(startDt);
+      eventTimeLabel = `${formatTime(startDt)} – ${formatTime(endDt)}`;
+    } else {
+      eventDateLabel = `${formatDate(startDt)} – ${formatDate(endDt)}`;
+      eventTimeLabel = `${formatTime(startDt)} – ${formatTime(endDt)}`;
+    }
+  } else if (startDt) {
+    eventDateLabel = formatDate(startDt);
+    eventTimeLabel = formatTime(startDt) || "TBD";
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -97,8 +144,8 @@ export default function RegisterPage({ params }: RegisterPageProps) {
         userData={data.user} // This will now be null if unauthenticated, triggering your modal
         positionData={data.position}
         eventName={data.position.event?.name}
-        eventDate={formatDate(data.position.event?.date)}
-        eventTime={formatTime(data.position.event?.time)}
+        eventDate={eventDateLabel}
+        eventTime={eventTimeLabel}
       />
     </div>
   );
