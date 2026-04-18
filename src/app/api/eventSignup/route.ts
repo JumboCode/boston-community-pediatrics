@@ -15,60 +15,61 @@ import {
 
 import { decrementEventPositionCount } from "../eventPosition/controller";
 import { UserRole } from "@prisma/client";
-import { getCurrentUser, requireOwnerOrAdmin, route } from "@/lib/auth";
+import {
+  getCurrentUser,
+  requireAdmin,
+  requireSelfOrAdmin,
+  requireOwnerOrAdmin,
+  route,
+} from "@/lib/auth";
 
 // GET handler
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const eventId = searchParams.get("eventId");
-    const positionId = searchParams.get("positionId");
-    const userId = searchParams.get("userId");
+export const GET = route(async (req: NextRequest) => {
+  const { searchParams } = new URL(req.url);
+  const eventId = searchParams.get("eventId");
+  const positionId = searchParams.get("positionId");
+  const userId = searchParams.get("userId");
 
-    let isAdmin = false;
-    const user = await getCurrentUser();
+  const user = await getCurrentUser();
+  const isAdmin = user?.role === UserRole.ADMIN;
 
-    if (user) {
-      if (user.role === UserRole.ADMIN) {
-        isAdmin = true;
-      }
-    }
-    if (userId) {
-      const signups = await getSignupsByUserId(userId);
-      return NextResponse.json(signups);
-    }
-    if (positionId) {
-      const users = await getUsersByPositionId(positionId, isAdmin);
-      if (!users)
-        return NextResponse.json(
-          { error: "Event signups not found" },
-          { status: 404 }
-        );
-      return NextResponse.json(users, { status: 200 });
-    } else if (eventId) {
-      if (!isAdmin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-
-      const eventSignups = await getSignupsByEventId(eventId);
-      if (!eventSignups)
-        return NextResponse.json(
-          { error: "Event signups not found" },
-          { status: 404 }
-        );
-      return NextResponse.json(eventSignups, { status: 200 });
-    } else {
-      const all = await getAllSignups();
-      return NextResponse.json(all, { status: 200 });
-    }
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Failed to fetch event signups" },
-      { status: 500 }
-    );
+  // Signup history should only be visible to the owner or an admin.
+  if (userId) {
+    await requireSelfOrAdmin(userId);
+    const signups = await getSignupsByUserId(userId);
+    return NextResponse.json(signups, { status: 200 });
   }
-}
+
+  // Position roster stays as-is: admins get full details, non-admins get
+  // the public-safe shape from getUsersByPositionId(..., false).
+  if (positionId) {
+    const users = await getUsersByPositionId(positionId, isAdmin);
+    if (!users) {
+      return NextResponse.json(
+        { error: "Event signups not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(users, { status: 200 });
+  }
+
+  if (eventId) {
+    await requireAdmin();
+    const eventSignups = await getSignupsByEventId(eventId);
+    if (!eventSignups) {
+      return NextResponse.json(
+        { error: "Event signups not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(eventSignups, { status: 200 });
+  }
+
+  // No filters means all signups; admin only.
+  await requireAdmin();
+  const all = await getAllSignups();
+  return NextResponse.json(all, { status: 200 });
+});
 
 // POST handler
 // Updated POST handler with guest support
@@ -203,57 +204,33 @@ export async function POST(req: NextRequest) {
 }
 
 // PUT handler
-export async function PUT(req: NextRequest) {
-  try {
+export const PUT = route(async (req: NextRequest) => {
+  // Admin-only endpoint
+  await requireAdmin();
 
-    // SECURITY START: Only admins can PUT
-    const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: "Forbidden: Admins only" }, { status: 403 });
-    }
-    // SECURITY END
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
 
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
-    const data = await req.json();
-
-    // Validate guest phone numbers if guests are being updated
-    if (data.guests) {
-      for (const guest of data.guests) {
-        if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
-          return NextResponse.json(
-            { error: "Guest phone number must contain only numbers" },
-            { status: 400 }
-          );
-        }
-      }
-    }
-
-    let isAdmin = false;
-    const user = await getCurrentUser();
-    if (user) {
-      if (user.role === UserRole.ADMIN) {
-        isAdmin = true;
-      }
-    }
-    if (user?.id != data.userId || !isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const updatedEventSignup = await updateEventSignup(id, data);
-    return NextResponse.json(updatedEventSignup, { status: 201 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Failed to update event signup" },
-      { status: 500 }
-    );
+  if (!id) {
+    return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
-}
+  const data = await req.json();
+
+  // Validate guest phone numbers if guests are being updated
+  if (data.guests) {
+    for (const guest of data.guests) {
+      if (guest.phoneNumber && !/^[0-9]*$/.test(guest.phoneNumber)) {
+        return NextResponse.json(
+          { error: "Guest phone number must contain only numbers" },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
+  const updatedEventSignup = await updateEventSignup(id, data);
+  return NextResponse.json(updatedEventSignup, { status: 201 });
+});
 
 // DELETE handler
 export const DELETE = route(async (req: NextRequest) => {
