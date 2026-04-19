@@ -31,20 +31,25 @@ const SignupForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emptyFields, setEmptyFields] = useState<Set<string>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const [dob, setDob] = useState("");
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [pendingVerification, setPendingVerification] = useState(false);
-  const [code, setCode] = useState("");
-  if (!isLoaded) return <BasicSkeleton />;
-
   const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
     null
   );
+  const [dob, setDob] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
+  if (!isLoaded) return <BasicSkeleton />;
+  
+
+  
   const todayYmd = new Date().toISOString().slice(0, 10);
 
   if (!isLoaded) return <BasicSkeleton />;
@@ -87,9 +92,7 @@ const SignupForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLoaded) return;
-    setLoading(true);
-    setError("");
-
+    
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -97,6 +100,26 @@ const SignupForm = () => {
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
     const dob = formData.get("dob") as string;
+    const phone = formData.get("phone") as string;
+
+    // Validate required fields
+    const newEmptyFields = new Set<string>();
+    if (!firstName) newEmptyFields.add("firstName");
+    if (!lastName) newEmptyFields.add("lastName");
+    if (!email) newEmptyFields.add("email");
+    if (!phone) newEmptyFields.add("phone");
+    if (!dob) newEmptyFields.add("dob");
+    if (!password) newEmptyFields.add("password");
+    if (!confirmPassword) newEmptyFields.add("confirmPassword");
+
+    if (newEmptyFields.size > 0) {
+      setEmptyFields(newEmptyFields);
+      return;
+    }
+
+    setEmptyFields(new Set());
+    setLoading(true);
+    setError("");
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -104,8 +127,10 @@ const SignupForm = () => {
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    // Enhanced password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError("Password must contain at least one uppercase letter, one lowercase letter, one number, and be at least 8 characters long");
       setLoading(false);
       return;
     }
@@ -163,9 +188,10 @@ const SignupForm = () => {
       });
 
       setPendingVerification(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Signup error:", err);
-      setError(err?.errors?.[0]?.message || "Error creating account");
+      const error = err as { errors?: Array<{ message: string }> };
+      setError(error?.errors?.[0]?.message || "Error creating account");
     } finally {
       setLoading(false);
     }
@@ -368,9 +394,15 @@ const SignupForm = () => {
             <input
               name="first-name"
               id="first-name"
-              required
-              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+                emptyFields.has("firstName")
+                  ? "border-red-500 focus:ring-red-200"
+                  : "border-medium-gray focus:border-bcp-blue"
+              }`}
             />
+            {emptyFields.has("firstName") && (
+              <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            )}
           </div>
 
           <div className="flex flex-col items-start flex-1">
@@ -383,9 +415,15 @@ const SignupForm = () => {
             <input
               name="last-name"
               id="last-name"
-              required
-              className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+              className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+                emptyFields.has("lastName")
+                  ? "border-red-500 focus:ring-red-200"
+                  : "border-medium-gray focus:border-bcp-blue"
+              }`}
             />
+            {emptyFields.has("lastName") && (
+              <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            )}
           </div>
         </div>
 
@@ -401,9 +439,15 @@ const SignupForm = () => {
             name="email"
             id="email"
             type="email"
-            required
-            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+              emptyFields.has("email")
+                ? "border-red-500 focus:ring-red-200"
+                : "border-medium-gray focus:border-bcp-blue"
+            }`}
           />
+          {emptyFields.has("email") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
         </div>
 
         {/* Phone */}
@@ -418,9 +462,15 @@ const SignupForm = () => {
             name="phone"
             id="phone"
             type="tel"
-            required
-            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+              emptyFields.has("phone")
+                ? "border-red-500 focus:ring-red-200"
+                : "border-medium-gray focus:border-bcp-blue"
+            }`}
           />
+          {emptyFields.has("phone") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
         </div>
 
         <div className="relative flex flex-col items-start">
@@ -434,10 +484,18 @@ const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className="w-full h-[43px] rounded-lg border border-medium-gray px-3 text-left text-base text-medium-gray bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className={`w-full h-[43px] rounded-lg border px-3 text-left text-base text-medium-gray bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+              emptyFields.has("dob")
+                ? "border-red-500 focus:ring-red-200"
+                : "border-medium-gray focus:border-bcp-blue"
+            }`}
           >
             {dob ? formatDateForDisplay(dob) : "Select date"}
           </button>
+
+          {emptyFields.has("dob") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
 
           {showDatePicker && (
             <>
@@ -465,7 +523,7 @@ const SignupForm = () => {
           )}
 
           {/* Hidden input so FormData still works */}
-          <input type="hidden" name="dob" value={dob} required />
+          <input type="hidden" name="dob" value={dob} />
         </div>
 
         {/* Languages */}
@@ -633,16 +691,41 @@ const SignupForm = () => {
             Create password
           </label>
           <p className="text-sm text-medium-gray mb-2">
-            Must be at least 8 characters.
+            Must contain at least one uppercase letter, one lowercase letter, one number, and be at least 8 characters long.
           </p>
-          <input
-            name="password"
-            id="password"
-            type="password"
-            required
-            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            minLength={8}
-          />
+          <div className="relative w-full">
+            <input
+              name="password"
+              id="password"
+              type={showPassword ? "text" : "password"}
+              className={`w-full h-[43px] rounded-lg border p-3 pr-10 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+                emptyFields.has("password")
+                  ? "border-red-500 focus:ring-red-200"
+                  : "border-medium-gray focus:border-bcp-blue"
+              }`}
+              minLength={8}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medium-gray hover:text-gray-700"
+            >
+              {showPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {emptyFields.has("password") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
         </div>
 
         <div className="flex flex-col items-start">
@@ -652,14 +735,39 @@ const SignupForm = () => {
           >
             Confirm password
           </label>
-          <input
-            name="confirm-password"
-            id="confirm-password"
-            type="password"
-            required
-            className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-            minLength={8}
-          />
+          <div className="relative w-full">
+            <input
+              name="confirm-password"
+              id="confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              className={`w-full h-[43px] rounded-lg border p-3 pr-10 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+                emptyFields.has("confirmPassword")
+                  ? "border-red-500 focus:ring-red-200"
+                  : "border-medium-gray focus:border-bcp-blue"
+              }`}
+              minLength={8}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medium-gray hover:text-gray-700"
+            >
+              {showConfirmPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {emptyFields.has("confirmPassword") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
         </div>
       </div>
 

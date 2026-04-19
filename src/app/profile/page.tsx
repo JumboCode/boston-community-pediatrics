@@ -185,6 +185,7 @@ export default function ProfilePage() {
         }
       } catch (err) {
         console.error("Failed to load profile data", err);
+        console.log("FAILURE BLAH BLAH\N\N\N\N\N");
       } finally {
         setLoading(false);
       }

@@ -22,6 +22,7 @@ export default function EditProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [emptyFields, setEmptyFields] = useState<Set<string>>(new Set());
   const todayYmd = new Date().toISOString().slice(0, 10);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -159,6 +160,20 @@ export default function EditProfilePage() {
   // --- SUBMIT ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    // Validate required fields
+    const newEmptyFields = new Set<string>();
+    if (!form.firstName) newEmptyFields.add("firstName");
+    if (!form.lastName) newEmptyFields.add("lastName");
+    if (!form.phone) newEmptyFields.add("phone");
+    if (!form.dob) newEmptyFields.add("dob");
+
+    if (newEmptyFields.size > 0) {
+      setEmptyFields(newEmptyFields);
+      return;
+    }
+
+    setEmptyFields(new Set());
     setSaving(true);
     setError("");
 
@@ -264,8 +279,15 @@ export default function EditProfilePage() {
                   name="firstName"
                   value={form.firstName}
                   onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  className={`w-full border rounded-md px-3 py-2 text-sm ${
+                    emptyFields.has("firstName")
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
+                {emptyFields.has("firstName") && (
+                  <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+                )}
               </div>
 
               <div>
@@ -274,8 +296,15 @@ export default function EditProfilePage() {
                   name="lastName"
                   value={form.lastName}
                   onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  className={`w-full border rounded-md px-3 py-2 text-sm ${
+                    emptyFields.has("lastName")
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
+                {emptyFields.has("lastName") && (
+                  <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+                )}
               </div>
             </div>
 
@@ -297,8 +326,15 @@ export default function EditProfilePage() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                className="w-full border rounded-md px-3 py-2 text-sm"
+                className={`w-full border rounded-md px-3 py-2 text-sm ${
+                  emptyFields.has("phone")
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
               />
+              {emptyFields.has("phone") && (
+                <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+              )}
             </div>
 
             {/* DOB with Custom DatePicker */}
@@ -307,10 +343,18 @@ export default function EditProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className="w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
+                className={`w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors ${
+                  emptyFields.has("dob")
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
               >
                 {form.dob ? formatDateForDisplay(form.dob) : "Select date"}
               </button>
+
+              {emptyFields.has("dob") && (
+                <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+              )}
 
               {showDatePicker && (
                 <>
