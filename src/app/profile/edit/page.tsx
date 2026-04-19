@@ -122,6 +122,10 @@ export default function EditProfilePage() {
     if (file) {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file)); // Local preview
+      console.log("in handlefilechange, Selected file:", file);
+      console.log("Preview URL:", URL.createObjectURL(file));
+      // Set profileimagekey to file name for now; will be replaced with actual URL after upload in handleSubmit
+      setForm((prev) => ({ ...prev, profileImageKey: file.name}));
     }
   }
 
@@ -160,13 +164,24 @@ export default function EditProfilePage() {
   // --- SUBMIT ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     // Validate required fields
     const newEmptyFields = new Set<string>();
     if (!form.firstName) newEmptyFields.add("firstName");
     if (!form.lastName) newEmptyFields.add("lastName");
     if (!form.phone) newEmptyFields.add("phone");
     if (!form.dob) newEmptyFields.add("dob");
+
+    if (form.profileImageKey) {
+      console.log("Current profileImageKey in form:", form.profileImageKey);
+    } else {
+      console.log("No profileImageKey currently set in form.");
+    }
+    if (selectedFile) {
+      console.log("A new file has been selected for upload:", selectedFile);
+    } else {
+      console.log("No new file selected for upload.");
+    }
 
     if (newEmptyFields.size > 0) {
       setEmptyFields(newEmptyFields);
@@ -184,7 +199,15 @@ export default function EditProfilePage() {
     }
 
     try {
-      let finalImageUrl = normalizeProfileImageUrl(form.profileImageKey) || "";
+      let finalImageUrl = form.profileImageKey
+        ? normalizeProfileImageUrl(form.profileImageKey)
+        : selectedFile
+          ? previewUrl || ""
+          : null;
+      console.log(
+        "submitting, Final Image URL/Key being saved to DB:",
+        finalImageUrl
+      );
 
       // 1. Upload new image if selected
       if (selectedFile) {
@@ -206,6 +229,7 @@ export default function EditProfilePage() {
           }
 
           finalImageUrl = normalizeProfileImageUrl(publicUrl) || "";
+          setForm((prev) => ({ ...prev, profileImageKey: publicUrl }));
         }
       }
 
@@ -286,7 +310,9 @@ export default function EditProfilePage() {
                   }`}
                 />
                 {emptyFields.has("firstName") && (
-                  <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    Please complete this field
+                  </p>
                 )}
               </div>
 
@@ -303,7 +329,9 @@ export default function EditProfilePage() {
                   }`}
                 />
                 {emptyFields.has("lastName") && (
-                  <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    Please complete this field
+                  </p>
                 )}
               </div>
             </div>
@@ -333,7 +361,9 @@ export default function EditProfilePage() {
                 }`}
               />
               {emptyFields.has("phone") && (
-                <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+                <p className="text-red-500 text-sm mt-1">
+                  Please complete this field
+                </p>
               )}
             </div>
 
@@ -344,16 +374,16 @@ export default function EditProfilePage() {
                 type="button"
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className={`w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors ${
-                  emptyFields.has("dob")
-                    ? "border-red-500"
-                    : "border-gray-300"
+                  emptyFields.has("dob") ? "border-red-500" : "border-gray-300"
                 }`}
               >
                 {form.dob ? formatDateForDisplay(form.dob) : "Select date"}
               </button>
 
               {emptyFields.has("dob") && (
-                <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+                <p className="text-red-500 text-sm mt-1">
+                  Please complete this field
+                </p>
               )}
 
               {showDatePicker && (
