@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
@@ -417,8 +417,8 @@ const ManageRolesPage = () => {
               <option value="NAME_ZA">Name (Z–A)</option>
               <option value="ADMIN">Admin</option>
               <option value="VOLUNTEER">Volunteer</option>
-              <option value="DATE_NEWEST">Date Created (Newest)</option>
-              <option value="DATE_OLDEST">Date Created (Oldest)</option>
+              <option value="DATE_NEWEST">Newest</option>
+              <option value="DATE_OLDEST">Oldest</option>
             </select>
           </div>
         </div>

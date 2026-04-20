@@ -13,6 +13,23 @@ import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
 
+interface Signup {
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  isGuest: boolean;
+}
+
+interface Waitlist {
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  isGuest?: boolean;
+  positionId?: string;
+}
+
 interface EventProps {
   eventId: string;
   eventName: string;
@@ -39,8 +56,8 @@ interface EventProps {
     city: string;
     state: string;
     zipCode: string;
-    signups: any[];
-    waitlist: any[];
+    signups: Signup[];
+    waitlist: Waitlist[];
   }[];
 }
 
