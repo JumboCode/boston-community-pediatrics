@@ -10,6 +10,25 @@ import {
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
+function isSameLocalDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function assertSingleDay(payload: { startTime?: unknown; endTime?: unknown }) {
+  if (!payload?.startTime || !payload?.endTime) return null;
+  const start = new Date(payload.startTime as string | number | Date);
+  const end = new Date(payload.endTime as string | number | Date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  if (!isSameLocalDay(start, end)) {
+    return "Positions cannot span multiple days";
+  }
+  return null;
+}
+
 // GET handler
 export async function GET(req: NextRequest) {
   try {
@@ -68,7 +87,12 @@ export async function POST(req: NextRequest) {
     if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    
+
+    const spanError = assertSingleDay(data);
+    if (spanError) {
+      return NextResponse.json({ error: spanError }, { status: 400 });
+    }
+
     const newEventPosition = await createEventPosition(data);
     return NextResponse.json(newEventPosition, { status: 201 });
   } catch (err) {
@@ -102,6 +126,12 @@ export async function PUT(req: NextRequest) {
     }
 
     const data = await req.json();
+
+    const spanError = assertSingleDay(data);
+    if (spanError) {
+      return NextResponse.json({ error: spanError }, { status: 400 });
+    }
+
     const updatedEventPosition = await updateEventPosition(id, data);
     return NextResponse.json(updatedEventPosition, { status: 201 });
   } catch (err) {

@@ -142,14 +142,21 @@ const formatDateTimeRangeLabel = (
   startTime: string,
   endTime: string
 ) => {
-  if (!startDate) return "Select dates & times";
+  if (!startDate) return "Select date range and time range";
   const startDateStr = formatDateForDisplay(startDate);
-  const startTimeStr = startTime ? ` ${formatTimeForDisplay(startTime)}` : "";
-  const startLabel = `${startDateStr}${startTimeStr ? "," : ""}${startTimeStr}`;
-  if (!endDate) return startLabel;
-  const endDateStr = formatDateForDisplay(endDate);
-  const endTimeStr = endTime ? ` ${formatTimeForDisplay(endTime)}` : "";
-  return `${startLabel} – ${endDateStr}${endTimeStr ? "," : ""}${endTimeStr}`;
+  const endDateStr = endDate ? formatDateForDisplay(endDate) : "";
+  const dateRange = endDate ? `${startDateStr} - ${endDateStr}` : startDateStr;
+
+  if (!startTime && !endTime) return dateRange;
+
+  const startTimeStr = startTime ? formatTimeForDisplay(startTime) : "";
+  const endTimeStr = endTime ? formatTimeForDisplay(endTime) : "";
+  const timeRange =
+    startTimeStr && endTimeStr
+      ? `${startTimeStr} - ${endTimeStr}`
+      : startTimeStr || endTimeStr;
+
+  return `${dateRange}, ${timeRange}`;
 };
 
 const formatPositionDateTimeLabel = (
@@ -261,6 +268,29 @@ const EventForm = () => {
     },
   ]);
   const [originalPositionIds, setOriginalPositionIds] = useState<string[]>([]);
+
+  const isEventMultiDay = Boolean(
+    event.startDate && event.endDate && event.startDate !== event.endDate
+  );
+  const SAME_AS_EVENT_DISABLED_TOOLTIP =
+    "Positions cannot span multiple days";
+
+  // If the event becomes multi-day, any position currently marked "same as event"
+  // must stop following the event (positions are single-day only).
+  useEffect(() => {
+    if (!isEventMultiDay) return;
+    setPositions((prev) => {
+      let changed = false;
+      const next = prev.map((p) => {
+        if (p.sameAsDate || p.sameAsTime) {
+          changed = true;
+          return { ...p, sameAsDate: false, sameAsTime: false };
+        }
+        return p;
+      });
+      return changed ? next : prev;
+    });
+  }, [isEventMultiDay]);
 
   const clearError = (key: string) => {
     setErrors((prev) => {
@@ -1146,19 +1176,36 @@ const EventForm = () => {
                 <label className="mb-1 text-base font-normal text-medium-gray">
                   Position date &amp; time
                 </label>
-                <div className="mb-1 flex items-center gap-[11px]">
+                <div
+                  className="mb-1 flex items-center gap-[11px]"
+                  title={
+                    isEventMultiDay ? SAME_AS_EVENT_DISABLED_TOOLTIP : undefined
+                  }
+                >
                   <Button
                     label="Same as event"
-                    altStyle="bg-transparent text-medium-gray font-medium px-0 hover:bg-transparent focus:outline-none"
+                    disabled={isEventMultiDay}
+                    altStyle={`bg-transparent font-medium px-0 hover:bg-transparent focus:outline-none ${
+                      isEventMultiDay
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-medium-gray"
+                    }`}
                     onClick={() => {
+                      if (isEventMultiDay) return;
                       toggleSameAsDate(index);
                       toggleSameAsTime(index);
                     }}
                   />
                   <input
                     type="checkbox"
-                    checked={position.sameAsDate && position.sameAsTime}
+                    disabled={isEventMultiDay}
+                    checked={
+                      !isEventMultiDay &&
+                      position.sameAsDate &&
+                      position.sameAsTime
+                    }
                     onChange={() => {
+                      if (isEventMultiDay) return;
                       const next = !(
                         position.sameAsDate && position.sameAsTime
                       );
@@ -1172,7 +1219,11 @@ const EventForm = () => {
                         clearError(`positions.${index}.positionTime`);
                       }
                     }}
-                    className="h-[16px] w-[16px] cursor-pointer accent-bcp-blue"
+                    className={`h-[16px] w-[16px] accent-bcp-blue ${
+                      isEventMultiDay
+                        ? "cursor-not-allowed opacity-50"
+                        : "cursor-pointer"
+                    }`}
                   />
                 </div>
               </div>
