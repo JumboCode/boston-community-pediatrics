@@ -40,11 +40,10 @@ const SignupForm = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  if (!isLoaded) return <BasicSkeleton />;
-
   const [savedFormData, setSavedFormData] = useState<SignupFormData | null>(
     null
   );
+
   const todayYmd = new Date().toISOString().slice(0, 10);
 
   if (!isLoaded) return <BasicSkeleton />;
@@ -122,6 +121,7 @@ const SignupForm = () => {
       if (selectedFile) {
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileType: selectedFile.type }),
         });
 
@@ -189,6 +189,8 @@ const SignupForm = () => {
 
       const clerkUserId = completeSignUp.createdUserId;
 
+      await setActive({ session: completeSignUp.createdSessionId });
+
       if (clerkUserId && savedFormData) {
         const dbResponse = await fetch("/api/users", {
           method: "POST",
@@ -216,7 +218,6 @@ const SignupForm = () => {
         if (!dbResponse.ok) console.error("Failed to sync user to DB");
       }
 
-      await setActive({ session: completeSignUp.createdSessionId });
       router.push("/event");
     } catch {
       setError("Verification failed");
@@ -602,7 +603,8 @@ const SignupForm = () => {
             className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-200 flex-shrink-0"
           >
             {previewUrl ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={previewUrl}
                 alt="Preview"
                 className="w-full h-full object-cover"
