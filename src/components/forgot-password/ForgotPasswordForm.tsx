@@ -84,8 +84,8 @@ export default function ForgotPasswordForm() {
       if (result.status === "complete") {
         // Auto-login the user
         await setActive({ session: result.createdSessionId });
-        // Redirect to home
-        router.push("/home");
+        // Redirect to event
+        router.push("/event");
       } else {
         setIsError(true);
         setErrorText("Unable to complete password reset.");
