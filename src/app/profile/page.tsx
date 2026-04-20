@@ -92,8 +92,8 @@ export default function ProfilePage() {
   }, [isLoaded, isSignedIn, router]);
 
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [phoneNumber, setPhoneNumber] = useState<string>("—");
+  const [roleLoading, setRoleLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true); const [phoneNumber, setPhoneNumber] = useState<string>("—");
   const [userRole, setUserRole] = useState<string>("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [dbFirstName, setDbFirstName] = useState<string>("");
@@ -134,6 +134,9 @@ export default function ProfilePage() {
         }
       } catch (err) {
         console.error("Failed to load user data:", err);
+      } finally {
+        // 👇 THIS WAS THE MISSING LINE 👇
+        setRoleLoading(false);
       }
     }
 
@@ -182,7 +185,7 @@ export default function ProfilePage() {
       } catch (err) {
         console.error("Failed to load profile data", err);
       } finally {
-        setLoading(false);
+        setEventsLoading(false);
       }
     }
 
@@ -258,8 +261,12 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  if (!isLoaded || loading) {
-    return <ProfilePageSkeleton />;
+  if (!isLoaded || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bcp-blue"></div>
+      </div>
+    );
   }
 
   const firstName =
@@ -351,6 +358,10 @@ export default function ProfilePage() {
         </div>
       </main>
     );
+  }
+
+  if (eventsLoading) {
+    return <ProfilePageSkeleton />;
   }
 
   return (
@@ -541,10 +552,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-     
-         
-   <div className="hidden lg:block">
-    <div className="w-full rounded-2xl bg-light-bcp-blue px-6 py-8">
+
+
+          <div className="hidden lg:block">
+            <div className="w-full rounded-2xl bg-light-bcp-blue px-6 py-8">
               <div className="flex justify-center mb-4">
                 <Image
                   src={profileImageUrl ?? blankProfile}
@@ -615,9 +626,9 @@ export default function ProfilePage() {
                 >
                   Log Out
                 </button>
-            
-                </div>
+
               </div>
+            </div>
           </div>
         </div>
 
@@ -630,7 +641,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      
+
     </main>
   );
 }
