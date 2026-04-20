@@ -123,7 +123,10 @@ export default function PositionDatePicker({
     const days: (number | null)[] = [];
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    while (days.length < 42) days.push(null);
+    let nextDay = 1;
+    while (days.length < 42) {
+      days.push(nextDay++);
+    }
     return days;
   };
 
@@ -138,8 +141,8 @@ export default function PositionDatePicker({
     onDateChange?.(ymd);
   };
 
-  const isSelected = (day: number | null) => {
-    if (day === null || !selectedDate) return false;
+  const isSelected = (day: number | null, isTrailing: boolean) => {
+    if (day === null || isTrailing || !selectedDate) return false;
     const sel = parseYmd(selectedDate);
     return (
       !!sel && new Date(viewYear, viewMonth, day).getTime() === sel.getTime()
@@ -193,30 +196,23 @@ export default function PositionDatePicker({
     >
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <button
             onClick={handlePrevMonth}
             disabled={viewYear === currentYear && viewMonth === currentMonth}
-            className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M10 12L6 8L10 4" />
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" />
             </svg>
           </button>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <div className="relative">
               <select
                 value={viewMonth}
                 onChange={(e) => setViewMonth(Number(e.target.value))}
-                className="appearance-none bg-gray-100 rounded-lg px-2 py-1 pr-6 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-200 outline-none"
+                className="appearance-none bg-gray-100 rounded-lg px-3 py-1.5 pr-8 font-medium text-gray-900 cursor-pointer hover:bg-gray-200 transition-colors outline-none"
               >
                 {getAvailableMonths().map((month) => (
                   <option
@@ -229,22 +225,19 @@ export default function PositionDatePicker({
                 ))}
               </select>
               <svg
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                width="10"
-                height="10"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+                className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                width="12"
+                height="12"
               >
-                <path d="M3 5L6 8L9 5" />
+                <path d="M3 5L6 8L9 5" stroke="currentColor" strokeWidth="2" />
               </svg>
             </div>
+
             <div className="relative">
               <select
                 value={viewYear}
                 onChange={(e) => setViewYear(Number(e.target.value))}
-                className="appearance-none bg-gray-100 rounded-lg px-2 py-1 pr-6 text-sm font-medium text-gray-900 cursor-pointer hover:bg-gray-200 outline-none"
+                className="appearance-none bg-gray-100 rounded-lg px-3 py-1.5 pr-8 font-medium text-gray-900 cursor-pointer hover:bg-gray-200 transition-colors outline-none"
               >
                 {yearOptions.map((year) => (
                   <option key={year} value={year}>
@@ -253,15 +246,11 @@ export default function PositionDatePicker({
                 ))}
               </select>
               <svg
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                width="10"
-                height="10"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+                className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                width="12"
+                height="12"
               >
-                <path d="M3 5L6 8L9 5" />
+                <path d="M3 5L6 8L9 5" stroke="currentColor" strokeWidth="2" />
               </svg>
             </div>
           </div>
@@ -269,42 +258,37 @@ export default function PositionDatePicker({
           <button
             onClick={handleNextMonth}
             disabled={viewYear === currentYear + 5 && viewMonth === 11}
-            className="w-7 h-7 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M6 4L10 8L6 12" />
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="2" />
             </svg>
           </button>
         </div>
 
-        {/* Days of week */}
-        <div className="grid grid-cols-7 mb-1">
+        {/* Days */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
           {daysOfWeek.map((day) => (
             <div
               key={day}
-              className="text-center text-xs font-medium text-gray-400 py-1"
+              className="text-center text-sm font-medium text-gray-400 py-2"
             >
               {day}
             </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 mb-3">
+        {/* Grid */}
+        <div className="grid grid-cols-7 gap-1 mb-3">
           {calendarDays.map((day, index) => {
-            const sel = isSelected(day);
             const isTrailing =
               day !== null &&
               index >=
                 getDaysInMonth(viewMonth, viewYear) +
                   getFirstDayOfMonth(viewMonth, viewYear);
+
+            const sel = isSelected(day, isTrailing);
+
             const isPast = day !== null && isPastDate(viewYear, viewMonth, day);
             const isTooFar =
               day !== null && isTooFarInFuture(viewYear, viewMonth, day);
@@ -318,12 +302,12 @@ export default function PositionDatePicker({
                 }
                 disabled={day === null || isDisabled}
                 className={`
-                  h-7 w-full flex items-center justify-center text-xs font-medium rounded-lg transition-all
-                  ${day === null ? "invisible" : ""}
-                  ${isDisabled ? "text-gray-300 cursor-not-allowed" : "text-gray-900"}
-                  ${!isDisabled && !sel ? "hover:bg-gray-100" : ""}
-                  ${sel ? "bg-bcp-blue text-white hover:bg-light-bcp-blue" : ""}
-                `}
+                h-10 flex items-center justify-center text-base font-medium rounded-xl transition-all
+                ${day === null ? "invisible" : ""}
+                ${isTrailing || isDisabled ? "text-gray-300 cursor-not-allowed" : "text-gray-700"}
+                ${!isTrailing && !isDisabled && !sel ? "hover:bg-gray-100" : ""}
+                ${sel ? "bg-bcp-blue text-white" : ""}
+              `}
               >
                 {day}
               </button>

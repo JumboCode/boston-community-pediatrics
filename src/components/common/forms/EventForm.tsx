@@ -175,7 +175,7 @@ const formatPositionDateTimeLabel = (
 
 // ─── Position time bounds check ────────────────────────────────────────────
 const POSITION_TIME_ERROR =
-  "Position time must fall within the event's start and end time.";
+  "Position time must fall within the event's start/end date and start/end time.";
 
 function isPositionOutOfBounds(
   p: PositionState,
@@ -186,23 +186,19 @@ function isPositionOutOfBounds(
     endTime: string;
   }
 ): boolean {
-  if (!event.startDate || !event.endDate || !event.startTime || !event.endTime)
-    return false;
+  if (!event.startTime || !event.endTime) return false;
 
-  const posStartDate = p.sameAsDate ? event.startDate : p.startDate;
-  const posEndDate = p.sameAsDate ? event.endDate : p.endDate;
   const posStartTime = p.sameAsTime ? event.startTime : p.startTime;
   const posEndTime = p.sameAsTime ? event.endTime : p.endTime;
+  const posDate = p.sameAsDate ? event.startDate : p.startDate;
 
-  if (!posStartDate || !posStartTime || !posEndDate || !posEndTime)
-    return false;
+  if (!posStartTime || !posEndTime || !posDate) return false;
 
-  const eventStart = new Date(`${event.startDate}T${event.startTime}:00`);
-  const eventEnd = new Date(`${event.endDate}T${event.endTime}:00`);
-  const posStart = new Date(`${posStartDate}T${posStartTime}:00`);
-  const posEnd = new Date(`${posEndDate}T${posEndTime}:00`);
+  // Date must fall within the event's date range
+  if (posDate < event.startDate || posDate > event.endDate) return true;
 
-  return posStart < eventStart || posEnd > eventEnd;
+  // Time must fall within the event's daily time window
+  return posStartTime < event.startTime || posEndTime > event.endTime;
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -272,8 +268,7 @@ const EventForm = () => {
   const isEventMultiDay = Boolean(
     event.startDate && event.endDate && event.startDate !== event.endDate
   );
-  const SAME_AS_EVENT_DISABLED_TOOLTIP =
-    "Positions cannot span multiple days";
+  const SAME_AS_EVENT_DISABLED_TOOLTIP = "Positions cannot span multiple days";
 
   // If the event becomes multi-day, any position currently marked "same as event"
   // must stop following the event (positions are single-day only).
