@@ -137,7 +137,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
               )}
             </div>
           ) : (
-            <div>
+            <div className="flex flex-col space-y-2">
               {volunteers.map((volunteer) => {
                 // Use profileImage URL directly, fall back to default icon
                 const avatarSrc = volunteer.profileImage ?? defaultPfp.src;
