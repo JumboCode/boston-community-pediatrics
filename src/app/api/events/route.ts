@@ -78,6 +78,23 @@ export async function POST(req: NextRequest) {
 
     const data = parse.data;
 
+    // Positions are single-day only. After resolving "same as event" date,
+    // reject any position that would span multiple days.
+    const invalidPositionIdx = data.positions.findIndex((p) => {
+      const posStartDate = p.sameAsDate ? data.startDate : p.startDate;
+      const posEndDate = p.sameAsDate ? data.endDate : p.endDate;
+      return posStartDate !== posEndDate;
+    });
+    if (invalidPositionIdx !== -1) {
+      return NextResponse.json(
+        {
+          error: "Positions cannot span multiple days",
+          positionIndex: invalidPositionIdx,
+        },
+        { status: 400 }
+      );
+    }
+
     const eventStart = combineDateTime(data.startDate, data.startTime);
     const eventEnd = combineDateTime(data.endDate, data.endTime);
 

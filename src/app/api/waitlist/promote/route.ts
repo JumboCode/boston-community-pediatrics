@@ -23,6 +23,8 @@ export const POST = route(async (req: Request) => {
         eventId: true,
         filledSlots: true,
         totalSlots: true,
+        startTime: true,
+        endTime: true,
       },
     });
 
@@ -42,6 +44,38 @@ export const POST = route(async (req: Request) => {
       return NextResponse.json(
         { error: "No waitlist entries found" },
         { status: 404 }
+      );
+    }
+
+    const overlappingUsers = await Promise.all(
+      waitlistRows
+        .filter((row) => Boolean(row.userId))
+        .map(async (row) => {
+          const overlap = await prisma.eventSignup.findFirst({
+            where: {
+              userId: row.userId!,
+              position: {
+                startTime: { lt: position.endTime },
+                endTime: { gt: position.startTime },
+              },
+            },
+            select: { id: true },
+          });
+          return overlap ? row.userId : null;
+        })
+    );
+
+    const conflictedUserIds = overlappingUsers.filter(
+      (id): id is string => Boolean(id)
+    );
+    if (conflictedUserIds.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "One or more selected users already have a signup that overlaps this time.",
+          conflictedUserIds,
+        },
+        { status: 409 }
       );
     }
 

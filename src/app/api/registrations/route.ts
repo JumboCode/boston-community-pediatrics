@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSelfOrAdmin, requireUser, route } from "@/lib/auth";
 import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
@@ -8,6 +8,7 @@ import { sendRemoved } from "@/lib/email/sendRemoved";
 
 // --- Configuration ---
 const MAX_GUESTS = 20;
+const TIME_OVERLAP_ERROR = "TIME_OVERLAP";
 
 // --- Interfaces ---
 interface GuestInput {
@@ -17,6 +18,7 @@ interface GuestInput {
   phoneNumber?: string | null;
   relationship?: string | null;
   dateOfBirth?: string | null;
+  speaksSpanish: boolean | false,
 }
 
 const tz = "America/New_York";
@@ -47,6 +49,24 @@ const formatLocation = (p: {
   const line2 = p.addressLine2 ? ` ${p.addressLine2}` : "";
   return `${p.addressLine1}${line2}, ${p.city}, ${p.state} ${p.zipCode}`;
 };
+
+async function findOverlappingSignup(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  startTime: Date,
+  endTime: Date
+) {
+  return tx.eventSignup.findFirst({
+    where: {
+      userId,
+      position: {
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+      },
+    },
+    select: { id: true },
+  });
+}
 
 type PendingEmail =
   | {
@@ -228,6 +248,16 @@ export const POST = route(async (req: NextRequest) => {
       });
       if (!position) throw new Error("Position not found");
 
+      const overlappingSignup = await findOverlappingSignup(
+        tx,
+        userId,
+        position.startTime,
+        position.endTime
+      );
+      if (overlappingSignup) {
+        throw new Error(TIME_OVERLAP_ERROR);
+      }
+
       // Changed because having only filledSlots wasn't updating correctly
       const actualFilled = await tx.eventSignup.findMany({
         where: { positionId },
@@ -257,6 +287,7 @@ export const POST = route(async (req: NextRequest) => {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
+                speaksSpanish: guest.speaksSpanish || false,
               })),
             },
           },
@@ -292,6 +323,7 @@ export const POST = route(async (req: NextRequest) => {
               phoneNumber: guest.phoneNumber || null,
               relation: guest.relationship || null,
               dateOfBirth: guest.dateOfBirth || null,
+              speaksSpanish: guest.speaksSpanish || false,
             })),
           },
         },
@@ -331,6 +363,16 @@ export const POST = route(async (req: NextRequest) => {
       return NextResponse.json(
         {
           error: "You are already registered or waitlisted for this position.",
+        },
+        { status: 409 }
+      );
+    }
+
+    if (error instanceof Error && error.message === TIME_OVERLAP_ERROR) {
+      return NextResponse.json(
+        {
+          error:
+            "You are already signed up for another position that overlaps this time.",
         },
         { status: 409 }
       );
@@ -445,6 +487,7 @@ export const PUT = route(async (req: NextRequest) => {
           const updatedSignup = await tx.eventSignup.update({
             where: { id },
             data: {
+              comments: comments || null,
               hasGuests: (guests?.length ?? 0) > 0,
               guests: {
                 create: (guests ?? []).map((guest: GuestInput) => ({
@@ -455,6 +498,7 @@ export const PUT = route(async (req: NextRequest) => {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
+                  speaksSpanish: guest.speaksSpanish || false,
                 })),
               },
             },
@@ -508,6 +552,7 @@ export const PUT = route(async (req: NextRequest) => {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
+                speaksSpanish: guest.speaksSpanish || false,
               })),
             },
           },
@@ -580,8 +625,15 @@ export const PUT = route(async (req: NextRequest) => {
         const willFit =
           position.filledSlots + newSpotsNeeded <= position.totalSlots;
 
+        const overlappingSignup = await findOverlappingSignup(
+          tx,
+          currentWaitlist.userId,
+          position.startTime,
+          position.endTime
+        );
+
         // SCENARIO 3: Now they FIT -> Move to Signup
-        if (willFit) {
+        if (willFit && !overlappingSignup) {
           // 1. Delete Waitlist Entry
           await tx.waitlistGuest.deleteMany({ where: { waitlistId: id } });
           await tx.eventWaitlist.delete({ where: { id } });
@@ -602,6 +654,7 @@ export const PUT = route(async (req: NextRequest) => {
                   phoneNumber: guest.phoneNumber || null,
                   relation: guest.relationship || null,
                   dateOfBirth: guest.dateOfBirth || null,
+                  speaksSpanish: guest.speaksSpanish || false,
                 })),
               },
             },
@@ -645,6 +698,7 @@ export const PUT = route(async (req: NextRequest) => {
                 email: guest.email || null,
                 relation: guest.relationship || null,
                 dateOfBirth: guest.dateOfBirth || null,
+                speaksSpanish: guest.speaksSpanish || false,
               })),
             },
           },
@@ -931,7 +985,21 @@ export const DELETE = route(async (req: NextRequest) => {
         let slotsAvailable = totalSlots - currentFilled;
 
         for (const candidate of waitlistCandidates) {
+          if (!candidate.userId) {
+            continue;
+          }
           const spotsNeeded = 1 + candidate.guests.length;
+          const candidateOverlap = await findOverlappingSignup(
+            tx,
+            candidate.userId,
+            positionDetails.startTime,
+            positionDetails.endTime
+          );
+
+          if (candidateOverlap) {
+            // Skip candidate if they already have an overlapping signup.
+            continue;
+          }
 
           if (spotsNeeded <= slotsAvailable) {
             // Move candidate to signup

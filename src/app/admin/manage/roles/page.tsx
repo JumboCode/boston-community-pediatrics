@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
@@ -47,9 +47,6 @@ const ManageRolesPage = () => {
 
   // search/dropdown helpers copied from admin/email/page.tsx
   const [searchQuery, setSearchQuery] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const [sortOption, setSortOption] = useState<
     | "NAME_AZ"
@@ -126,11 +123,6 @@ const ManageRolesPage = () => {
 
   const selectedCount = volunteers.filter((v) => v.selected).length;
 
-  const seenVolunteers = volunteers.filter((v) => {
-    const full = `${v.lastName} ${v.firstName} ${v.emailAddress}`.toLowerCase();
-    return full.includes(searchQuery.toLowerCase());
-  });
-
   const sortedVolunteers = useMemo(() => {
     let list = [...volunteers];
 
@@ -144,14 +136,14 @@ const ManageRolesPage = () => {
     // Apply sorting
     if (sortOption === "NAME_AZ") {
       list.sort((a, b) => {
-        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
-        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
+        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
         return aName.localeCompare(bName);
       });
     } else if (sortOption === "NAME_ZA") {
       list.sort((a, b) => {
-        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
-        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
+        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
         return bName.localeCompare(aName);
       });
     } else if (sortOption === "DATE_NEWEST") {
@@ -168,35 +160,18 @@ const ManageRolesPage = () => {
       });
     }
 
+    // ADD THIS: Apply search filtering
+    if (searchQuery) {
+      list = list.filter((v) => {
+        const full =
+          `${v.firstName} ${v.lastName} ${v.emailAddress}`.toLowerCase();
+        return full.includes(searchQuery.toLowerCase());
+      });
+    }
+
     return list;
-  }, [volunteers, sortOption]);
+  }, [volunteers, sortOption, searchQuery]); // Make sure searchQuery is in dependencies
 
-  function addVolunteer(id: string) {
-    toggleSelect(id);
-    setSearchQuery("");
-    setDropdownOpen(false);
-  }
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setDropdownOpen(false);
-        setSearchQuery("");
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (dropdownOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-  }, [dropdownOpen]);
   const copyEmailString = volunteers
     .filter((v) => v.selected)
     .map((v) => v.emailAddress)
@@ -373,84 +348,40 @@ const ManageRolesPage = () => {
 
         {/* search bar + sort dropdown copied/adapted from admin/email/page.tsx */}
         <div className="mb-4 flex items-center gap-4 w-full">
-          <div ref={containerRef} className="relative flex-1">
-            <div
-              className={`min-h-[44px] w-full rounded-lg border px-3 py-2
-                  flex flex-wrap gap-2 cursor-text focus-within:ring-2`}
-              onClick={() => setDropdownOpen(true)}
-            >
-              {volunteers
-                .filter((v) => v.selected)
-                .map((u) => (
-                  <span
-                    key={u.userId}
-                    className="flex items-center gap-1 border border-gray-400 
-                    rounded-full px-3 py-0.5 text-sm text-medium-black bg-white 
-                    whitespace-nowrap"
+          <div className="flex flex-1 min-h-[44px] rounded-lg border px-3 py-2 flex flex-wrap gap-2 focus-within:ring-2">
+            {/* Selected user chips */}
+            {volunteers
+              .filter((v) => v.selected)
+              .map((u) => (
+                <span
+                  key={u.userId}
+                  className="flex items-center gap-1 border border-gray-400 
+        rounded-full px-3 py-0.5 text-sm bg-white whitespace-nowrap"
+                >
+                  {u.lastName}, {u.firstName}
+                  <button
+                    type="button"
+                    onClick={() => toggleSelect(u.userId)}
+                    className="ml-1 text-gray-500 hover:text-red-500 leading-none"
+                    aria-label={`Remove ${u.firstName}`}
                   >
-                    {u.lastName}, {u.firstName}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelect(u.userId);
-                      }}
-                      className="ml-1 text-gray-500 hover:text-red-500 
-                      leading-none"
-                      aria-label={`Remove ${u.firstName}`}
-                    >
-                      x
-                    </button>
-                  </span>
-                ))}
-              <span className="flex-1 min-w-[4px]" />
-            </div>
+                    ×
+                  </button>
+                </span>
+              ))}
 
-            {dropdownOpen && (
-              <div
-                className="absolute z-50 left-0 right-0 bg-white border 
-                    border-medium-gray rounded-lg shadow-lg mt-1"
-              >
-                <div className="p-2 border-b border-gray-100">
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search by name or email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && seenVolunteers.length > 0) {
-                        addVolunteer(seenVolunteers[0].userId);
-                      }
-                    }}
-                    className="w-full border-none outline-none focus:ring-0 text-sm"
-                  />
-                </div>
-                {seenVolunteers.length === 0 && searchQuery ? (
-                  <div className="p-2 text-sm text-gray-500">No results</div>
-                ) : (
-                  <div className="max-h-[320px] overflow-y-auto">
-                    {seenVolunteers.map((u) => (
-                      <button
-                        key={u.userId}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          addVolunteer(u.userId);
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-100 text-left text-sm"
-                      >
-                        {u.lastName}, {u.firstName}{" "}
-                        <span className="text-gray-500">
-                          ({u.emailAddress})
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Actual input */}
+            <input
+              type="text"
+              placeholder={
+                volunteers.some((v) => v.selected)
+                  ? ""
+                  : "Search by name or email..."
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 min-w-[120px] text-sm outline-none"
+            />
           </div>
 
           {/* sort-by dropdown */}
@@ -478,8 +409,8 @@ const ManageRolesPage = () => {
               <option value="NAME_ZA">Name (Z–A)</option>
               <option value="ADMIN">Admin</option>
               <option value="VOLUNTEER">Volunteer</option>
-              <option value="DATE_NEWEST">Date Created (Newest)</option>
-              <option value="DATE_OLDEST">Date Created (Oldest)</option>
+              <option value="DATE_NEWEST">Newest</option>
+              <option value="DATE_OLDEST">Oldest</option>
             </select>
           </div>
         </div>
@@ -505,52 +436,62 @@ const ManageRolesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedVolunteers.map((p, i) => {
-                const rowNumber = i + 1;
+              {sortedVolunteers.length === 0 && searchQuery ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-400">
+                    No results
+                  </td>
+                </tr>
+              ) : (
+                sortedVolunteers.map((p, i) => {
+                  const rowNumber = i + 1;
 
-                return (
-                  <tr
-                    key={p.userId}
-                    className={`transition-colors duration-200 ${
-                      p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                    } border-t border-gray-300`}
-                  >
-                    <td className="py-3 px-6">{rowNumber}</td>
-                    <td className="py-3 px-4">
-                      {p.role === "VOLUNTEER" ? (
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/admin/manage/${p.userId}`)}
-                          className="hover:underline text-left"
-                        >
-                          {p.firstName} {p.lastName}
-                        </button>
-                      ) : (
-                        <span>
-                          {p.firstName} {p.lastName}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      {p.role
-                        .toLowerCase()
-                        .replace(/^\w/, (c) => c.toUpperCase())}
-                    </td>
+                  return (
+                    <tr
+                      key={p.userId}
+                      className={`transition-colors duration-200 ${
+                        p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
+                      } border-t border-gray-300`}
+                    >
+                      <td className="py-3 px-6">{rowNumber}</td>
+                      <td className="py-3 px-4">
+                        {p.role === "VOLUNTEER" ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(`/admin/manage/${p.userId}`)
+                            }
+                            className="hover:underline text-left"
+                          >
+                            {p.firstName} {p.lastName}
+                          </button>
+                        ) : (
+                          <span>
+                            {p.firstName} {p.lastName}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {p.role
+                          .toLowerCase()
+                          .replace(/^\w/, (c) => c.toUpperCase())}
+                      </td>
 
-                    <td className="py-3 px-4">{p.emailAddress}</td>
-                    <td className="py-3 px-4">{p.phoneNumber}</td>
-                    <td className="py-3 px-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={p.selected}
-                        onChange={() => toggleSelect(p.userId)}
-                        disabled={p.userId === currentUserId}
-                        className="w-5 h-5 accent-bcp-blue cursor-pointer"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+                      <td className="py-3 px-4">{p.emailAddress}</td>
+                      <td className="py-3 px-4">{p.phoneNumber}</td>
+                      <td className="py-3 px-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={p.selected}
+                          onChange={() => toggleSelect(p.userId)}
+                          disabled={p.userId === currentUserId}
+                          className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
