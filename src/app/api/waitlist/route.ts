@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { requireAdmin, route } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -18,7 +19,9 @@ export type WaitlistEntry = {
   profileImage?: string | null;
 };
 
-export async function GET(req: Request) {
+export const GET = route(async (req: Request) => {
+  await requireAdmin();
+
   const { searchParams } = new URL(req.url);
   const positionId = searchParams.get("positionId");
 
@@ -122,40 +125,27 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function DELETE(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+export const DELETE = route(async (req: Request) => {
+  await requireAdmin();
 
-    console.log("🗑️ Deleting waitlist entry:", id);
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Missing waitlist ID" },
-        { status: 400 }
-      );
-    }
-
-    // First, delete any associated guest records
-    await prisma.waitlistGuest.deleteMany({
-      where: { waitlistId: id },
-    });
-
-    // Then delete the waitlist entry
-    await prisma.eventWaitlist.delete({
-      where: { id },
-    });
-
-    console.log("Waitlist entry deleted:", id);
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("Error deleting waitlist entry:", error);
-    return NextResponse.json(
-      { error: "Failed to delete waitlist entry" },
-      { status: 500 }
-    );
+  if (!id) {
+    return NextResponse.json({ error: "Missing waitlist ID" }, { status: 400 });
   }
-}
+
+  // First, delete any associated guest records
+  await prisma.waitlistGuest.deleteMany({
+    where: { waitlistId: id },
+  });
+
+  // Then delete the waitlist entry
+  await prisma.eventWaitlist.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true }, { status: 200 });
+});

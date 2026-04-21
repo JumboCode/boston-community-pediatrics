@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { requireAdmin, route } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: Request) {
-  try {
+export const POST = route(async (req: Request) => {
+    await requireAdmin();
+
     const { positionId, waitlistIds } = (await req.json()) as {
       positionId: string;
       waitlistIds: string[];
@@ -142,11 +144,4 @@ export async function POST(req: Request) {
       promoted: waitlistRows.length,
       message: `Successfully promoted ${waitlistRows.length} user(s) from waitlist`,
     });
-  } catch (error) {
-    console.error("Error promoting waitlist users:", error);
-    return NextResponse.json(
-      { error: "Failed to promote waitlist users" },
-      { status: 500 }
-    );
-  }
-}
+});
