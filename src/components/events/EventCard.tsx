@@ -160,8 +160,8 @@ const EventCard = ({
   }, [modalMessage, closeModal]);
 
   return (
-    <div className="relative flex flex-col w-full rounded-2xl p-4 gap-2 shadow bg-really-light-gray">
-      <Link href={`/event/${id}`}>
+    <div className="relative flex flex-col w-full rounded-2xl shadow bg-really-light-gray">
+      <Link href={`/event/${id}`} className="flex flex-col p-4 gap-2">
         <Image
           src={image}
           alt={title}
@@ -169,28 +169,30 @@ const EventCard = ({
           height={600}
           className="w-full aspect-video object-cover rounded-xl"
         />
-      </Link>
 
-      {isAdmin && pinned && <PinnedIndicator />}
+        {isAdmin && pinned && <PinnedIndicator />}
 
-      <div className="flex items-start justify-between min-w-0">
-        <Link href={`/event/${id}`} className="min-w-0 flex-1">
+        <div className="flex items-start justify-between min-w-0">
           <h3 className="text-[20px] font-medium text-bcp-blue leading-tight truncate pr-2">
             {title}
           </h3>
-        </Link>
+        </div>
 
-        {isAdmin && <KebabMenu items={menuItems} />}
-      </div>
+        <div className="flex flex-col gap-1 text-[16px] text-black">
+          <p>{dateDisplay}</p>
+          <p className="line-clamp-1">{location}</p>
+        </div>
 
-      <div className="flex flex-col gap-1 text-[16px] text-black">
-        <p>{dateDisplay}</p>
-        <p className="line-clamp-1">{location}</p>
-      </div>
+        <div className="flex justify-between items-end mt-auto pb-1">
+          <p className="text-[14px] text-gray-500">{timeRange}</p>
+        </div>
+      </Link>
 
-      <div className="flex justify-between items-end mt-auto pb-1">
-        <p className="text-[14px] text-gray-500">{timeRange}</p>
-      </div>
+      {isAdmin && (
+        <div className="absolute top-6 right-6">
+          <KebabMenu items={menuItems} />
+        </div>
+      )}
 
       {modalMessage && modalTitle && (
         <Modal
@@ -232,6 +234,7 @@ const EventCard = ({
       )}
     </div>
   );
-};
+  };
+
 
 export default EventCard;

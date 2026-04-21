@@ -246,28 +246,20 @@ const ManageRolesPage = () => {
     }
 
     try {
-      const deletePromises = volunteersToDel.map(async (vol) => {
-        const res = await fetch(`/api/admin/users/${vol.userId}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id: vol.userId }),
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to delete user`);
-        }
-
-        return vol.userId;
+      const res = await fetch(`/api/admin/users/batch-delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: volunteersToDel.map((v) => v.userId),
+        }),
       });
 
-      await Promise.all(deletePromises);
+      if (!res.ok) {
+        throw new Error(`Failed to delete users`);
+      }
 
-      // Remove all selected entries from state
       setVolunteers((prev) => prev.filter((v) => !v.selected));
 
-      // Show success modal
       setShowDeleteConfirm(false);
       setModalTitle("Users Removed!");
       setModalMessage("Users successfully removed");
@@ -535,9 +527,9 @@ const ManageRolesPage = () => {
               />
 
               <Button
-                disabled={selectedCount <= 0}
+                disabled={selectedCount <= 0 || selectedCount > 3}
                 label="Remove"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e] disabled:bg-gray-400 disabled:hover:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-70"
                 onClick={handleDeleteConfirm}
               />
             </div>

@@ -299,6 +299,10 @@ const EventForm = () => {
   const [carouselImages, setCarouselImages] = useState<
     (StaticImageData | string)[]
   >([]);
+  const handleRemoveCurrentImage = (index: number) => {
+    setCarouselImages((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleAddPhotosClick = () => fileInputRef.current?.click();
 
@@ -490,7 +494,12 @@ const EventForm = () => {
         }
       });
 
-      // ── 2. Schema validation ──
+      // ── 2. Image presence validation ──
+      if (selectedFiles.length === 0 && carouselImages.length === 0) {
+        allErrors.images = "At least one image is required.";
+      }
+
+      // ── 3. Schema validation ──
       const formData = { ...event, positions: normalizedPositions };
       const parseResult = eventSchema.safeParse(formData);
 
@@ -868,7 +877,10 @@ const EventForm = () => {
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
         <div className="mt-[26px] w-full px-[30px]">
-          <Carousel images={carouselImages} />
+          <Carousel
+            images={carouselImages}
+            onRemove={handleRemoveCurrentImage}
+          />
         </div>
         <input
           ref={fileInputRef}
@@ -885,6 +897,9 @@ const EventForm = () => {
             onClick={handleAddPhotosClick}
           />
         </div>
+        {errors.images && (
+    <p className="mt-1 text-sm text-red-500">{errors.images}</p>
+  )}
       </div>
 
       {/* form fields */}

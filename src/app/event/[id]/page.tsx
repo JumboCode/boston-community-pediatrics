@@ -23,6 +23,7 @@ export default async function EventDetailsPage(props: {
       getEventById(eventId),
       getPositionsByEventId(eventId),
     ]);
+
     const user = await getCurrentUser();
 
     if (!event) {
@@ -158,7 +159,7 @@ export default async function EventDetailsPage(props: {
                 .filter(Boolean)
                 .join(", ");
 
-              if (user?.role == UserRole.ADMIN) {
+              if (user?.role === UserRole.ADMIN) {
                 return (
                   <EventAdminTable
                     key={item.id}

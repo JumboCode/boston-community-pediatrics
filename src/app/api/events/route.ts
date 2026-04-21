@@ -10,7 +10,7 @@ import {
 } from "./controller";
 import { Prisma, UserRole } from "@prisma/client";
 import { eventSchema } from "@/lib/schemas/eventSchema";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, requireAdmin, route } from "@/lib/auth";
 
 function combineDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00`);
@@ -164,27 +164,21 @@ export async function POST(req: NextRequest) {
 }
 
 // PUT handler
-export async function PUT(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+export const PUT = route(async (req: NextRequest) => {
+  await requireAdmin();
 
-    if (!id) {
-      return NextResponse.json({ error: "ID is required" }, { status: 400 });
-    }
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
 
-    const data = await req.json();
-    const updated = await updateEvent(id, data);
-
-    return NextResponse.json(updated, { status: 200 });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Failed to update event" },
-      { status: 500 }
-    );
+  if (!id) {
+    return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
-}
+
+  const data = await req.json();
+  const updated = await updateEvent(id, data);
+
+  return NextResponse.json(updated, { status: 200 });
+});
 
 // DELETE handler
 export async function DELETE(req: NextRequest) {
