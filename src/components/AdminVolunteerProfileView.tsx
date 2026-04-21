@@ -246,6 +246,7 @@ export default function AdminVolunteerProfileView({
                 totalSlots={reg.position.totalSlots}
                 userRole="ADMIN"
                 onRemove={() => handleRemoveRegistration(reg.id)}
+                  positionName={reg.position.position}
               />
             );
           })
