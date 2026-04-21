@@ -1,14 +1,14 @@
 "use client";
-
 import Image, { StaticImageData } from "next/image";
 import { useEffect, useState } from "react";
 import placeholder from "@/assets/images/image-place-holder.svg";
 
 interface CarouselProps {
   images: (StaticImageData | string)[];
+  onRemove?: (index: number) => void;
 }
 
-const Carousel = ({ images }: CarouselProps) => {
+const Carousel = ({ images, onRemove }: CarouselProps) => {
   const [index, setIndex] = useState(0);
   const slideCount = images.length;
   const hasImages = slideCount > 0;
@@ -33,7 +33,7 @@ const Carousel = ({ images }: CarouselProps) => {
   return (
     <div className="w-full max-w-[1000px] px-4 sm:px-0">
       {/* Image box */}
-      <div className="relative w-full h-[220px] sm:h-[360px] overflow-hidden bg-white">
+      <div className="relative w-full h-[220px] sm:h-[360px] bg-white">
         {hasImages ? (
           images.map((src, i) => (
             <div
@@ -47,7 +47,7 @@ const Carousel = ({ images }: CarouselProps) => {
                 src={getSrcKey(src)}
                 alt={`Slide ${i + 1}`}
                 fill
-                className="object-cover"
+                className="object-contain"
               />
             </div>
           ))
@@ -61,25 +61,39 @@ const Carousel = ({ images }: CarouselProps) => {
         )}
       </div>
 
-      {/* Dots */}
-      {showDots && (
-        <div className="mt-[24px] flex justify-center gap-3">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => goTo(i)}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-              className={`h-[10px] w-[10px] rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#7B8B97] ${
-                index === i ? "bg-[#7B8B97]" : "bg-[#CBD3D8]"
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={index === i}
-            />
-          ))}
-        </div>
-      )}
+      {/* Dots + Remove button */}
+<div className="mt-[24px] flex items-center justify-center relative min-h-[26px]">
+  {showDots && (
+    <div className="flex justify-center gap-3">
+      {images.map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => goTo(i)}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          className={`h-[10px] w-[10px] rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#7B8B97] ${
+            index === i ? "bg-[#7B8B97]" : "bg-[#CBD3D8]"
+          }`}
+          aria-label={`Go to slide ${i + 1}`}
+          aria-current={index === i}
+        />
+      ))}
+    </div>
+  )}
+  {onRemove && hasImages && (
+    <button
+      type="button"
+      onClick={() => {
+        onRemove(index);
+        setIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      }}
+      className="absolute right-4 text-sm border border-medium-gray rounded px-3 py-1 text-medium-gray hover:bg-gray-100"
+    >
+      Remove photo
+    </button>
+  )}
+</div>
     </div>
   );
 };

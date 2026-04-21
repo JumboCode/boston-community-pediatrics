@@ -22,6 +22,7 @@ export default async function EventDetailsPage(props: {
       getEventById(eventId),
       getPositionsByEventId(eventId),
     ]);
+
     const user = await getCurrentUser();
 
     if (!event) {
