@@ -9,6 +9,7 @@ import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
 import DatePicker from "@/components/DatePicker";
+import { profile } from "console";
 
 type SignupFormData = {
   firstName: string;
@@ -663,12 +664,16 @@ const SignupForm = () => {
               <Image
                 src={previewUrl}
                 alt="Preview"
+                width={264}
+                height={264}
                 className="w-full h-full object-cover"
               />
             ) : (
               <Image
                 src={ProfilePlaceholder}
-                alt="Placeholder"
+                alt="Preview"
+                width={264}
+                height={264}
                 className="w-full h-full object-cover"
               />
             )}

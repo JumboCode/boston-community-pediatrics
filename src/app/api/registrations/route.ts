@@ -639,13 +639,9 @@ export async function PUT(req: NextRequest) {
 // GET: Fetch Registration(s)
 // ==========================================
 export async function GET(req: NextRequest) {
-  console.log("Received GET request for registrations with URL:", req.url); // Debug log
-  console.log("\n\n\n\n\n\n\n");
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
-    console.log("Received userId for GET:", userId); // Debugging log
-    console.log("\n\n\n\n");
     const positionId = searchParams.get("positionId");
 
     // ---------------------------------------------------------
@@ -712,10 +708,6 @@ export async function GET(req: NextRequest) {
     // SCENARIO B: Fetch ALL registrations (Used by Profile Page)
     // ---------------------------------------------------------
     if (userId) {
-      // println for debugging - check if userId is being received correctly
-      console.log("Fetching registrations for userId:", userId);
-      console.log("Raw userId from query:", searchParams.get("userId"));
-      console.log("\n\n\n"); 
       const signups = await prisma.eventSignup.findMany({
         where: { userId },
         include: {
