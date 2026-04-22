@@ -11,7 +11,7 @@ const LoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  if(!isLoaded) return <BasicSkeleton/>;
+  if (!isLoaded) return <BasicSkeleton />;
 
   // --- 1. EMAIL/PASSWORD LOGIN ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -62,7 +62,7 @@ const LoginForm = () => {
   };
 
   return (
-<div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-full md:w-[792px] pt-[50px] px-6 md:px-[102px] pb-[60px] box-border">      <h1 className="text-bcp-blue text-[36px] font-medium m-0">Sign In</h1>
+    <div className="flex flex-col items-center gap-8 border border-medium-gray rounded-lg w-full md:w-[792px] pt-[50px] px-6 md:px-[102px] pb-[60px] box-border">      <h1 className="text-bcp-blue text-[36px] font-medium m-0">Sign In</h1>
 
       {/* Error Display */}
       {error && (
@@ -80,12 +80,11 @@ const LoginForm = () => {
           width="20"
           height="20"
           viewBox="0 0 24 24"
-          fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
             d="M23.52 12.29C23.52 11.43 23.47 10.51 23.3 9.60999H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.94 21.1C22.2 19.01 23.52 15.92 23.52 12.29Z"
-            fill="285F4"
+            fill="#4285F4"
           />
           <path
             d="M12 24C15.24 24 17.96 22.92 19.94 21.09L16.08 18.09C15.01 18.81 13.63 19.25 12 19.25C8.87 19.25 6.22 17.14 5.28 14.29L1.27 17.4C3.26 21.36 7.37 24 12 24Z"
@@ -100,6 +99,7 @@ const LoginForm = () => {
             fill="#EA4335"
           />
         </svg>
+
         Sign in with Google
       </button>
 

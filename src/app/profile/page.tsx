@@ -92,8 +92,8 @@ export default function ProfilePage() {
   }, [isLoaded, isSignedIn, router]);
 
   const [myEvents, setMyEvents] = useState<MyRegistration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [phoneNumber, setPhoneNumber] = useState<string>("—");
+  const [userDataLoading, setUserDataLoading] = useState(true);
+  const [registrationsLoading, setRegistrationsLoading] = useState(true); const [phoneNumber, setPhoneNumber] = useState<string>("—");
   const [userRole, setUserRole] = useState<string>("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [dbFirstName, setDbFirstName] = useState<string>("");
@@ -134,11 +134,17 @@ export default function ProfilePage() {
         }
       } catch (err) {
         console.error("Failed to load user data:", err);
+      } finally {
+        // Add this finally block!
+        setUserDataLoading(false);
       }
     }
 
     if (isLoaded && isSignedIn) {
       fetchUserData();
+    } else if (isLoaded && !isSignedIn) {
+      // Also stop loading if they aren't signed in (prevents infinite skeleton on redirect)
+      setUserDataLoading(false);
     }
   }, [user?.id, isLoaded, isSignedIn]);
 
@@ -182,7 +188,7 @@ export default function ProfilePage() {
       } catch (err) {
         console.error("Failed to load profile data", err);
       } finally {
-        setLoading(false);
+        setRegistrationsLoading(false);
       }
     }
 
@@ -258,7 +264,7 @@ export default function ProfilePage() {
     setModalOpen(true);
   };
 
-  if (!isLoaded || loading) {
+  if (!isLoaded || userDataLoading || registrationsLoading) {
     return <ProfilePageSkeleton />;
   }
 
@@ -541,10 +547,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-     
-         
-   <div className="hidden lg:block">
-    <div className="w-full rounded-2xl bg-light-bcp-blue px-6 py-8">
+
+
+          <div className="hidden lg:block">
+            <div className="w-full rounded-2xl bg-light-bcp-blue px-6 py-8">
               <div className="flex justify-center mb-4">
                 <Image
                   src={profileImageUrl ?? blankProfile}
@@ -615,9 +621,9 @@ export default function ProfilePage() {
                 >
                   Log Out
                 </button>
-            
-                </div>
+
               </div>
+            </div>
           </div>
         </div>
 
@@ -630,7 +636,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      
+
     </main>
   );
 }
