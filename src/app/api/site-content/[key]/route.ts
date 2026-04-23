@@ -75,3 +75,34 @@ export const PATCH = route(async function PATCH(
 
   return NextResponse.json(entry);
 });
+
+export const DELETE = route(async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ key: string }> }
+) {
+  await requireAdmin();
+
+  const { key } = await context.params;
+  if (!isSiteContentKey(key)) {
+    return NextResponse.json({ error: "Unknown key" }, { status: 404 });
+  }
+
+  const def = SITE_CONTENT_KEYS[key];
+  const existing = await prisma.siteContent.findUnique({ where: { key } });
+
+  if (!existing) {
+    return NextResponse.json({ ok: true, alreadyDefault: true });
+  }
+
+  await prisma.siteContent.delete({ where: { key } });
+
+  if (def.kind === "IMAGE" && existing.value) {
+    try {
+      await deleteObject(existing.value);
+    } catch (err) {
+      console.error("Failed to delete site-content R2 object:", err);
+    }
+  }
+
+  return NextResponse.json({ ok: true });
+});

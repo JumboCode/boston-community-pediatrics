@@ -21,6 +21,7 @@ interface SiteContentContextValue {
   loading: boolean;
   refresh: () => Promise<void>;
   setEntry: (entry: SiteContentEntry) => void;
+  removeEntry: (key: SiteContentKey) => void;
 }
 
 const SiteContentContext = createContext<SiteContentContextValue | null>(null);
@@ -61,9 +62,17 @@ export function SiteContentProvider({
     setContent((prev) => ({ ...prev, [entry.key]: entry }));
   }, []);
 
+  const removeEntry = useCallback((key: SiteContentKey) => {
+    setContent((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ content, loading, refresh, setEntry }),
-    [content, loading, refresh, setEntry]
+    () => ({ content, loading, refresh, setEntry, removeEntry }),
+    [content, loading, refresh, setEntry, removeEntry]
   );
 
   return (
@@ -84,7 +93,8 @@ export function useSiteContentContext(): SiteContentContextValue {
 }
 
 export function useSiteContent(key: SiteContentKey) {
-  const { content, loading, setEntry, refresh } = useSiteContentContext();
+  const { content, loading, setEntry, removeEntry, refresh } =
+    useSiteContentContext();
   const entry = content[key];
-  return { entry, loading, setEntry, refresh };
+  return { entry, loading, setEntry, removeEntry, refresh };
 }

@@ -41,7 +41,7 @@ export default function EditableImage({
   ...imageProps
 }: EditableImageProps) {
   const { isAdmin } = useIsAdmin();
-  const { entry, setEntry } = useSiteContent(contentKey);
+  const { entry, setEntry, removeEntry } = useSiteContent(contentKey);
   const [modalOpen, setModalOpen] = useState(false);
 
   const remoteUrl = entry?.url ?? null;
@@ -90,9 +90,14 @@ export default function EditableImage({
           contentKey={contentKey}
           currentSrc={remoteUrl ?? resolveStaticSrc(fallbackSrc)}
           alt={imageProps.alt}
+          hasCustomValue={Boolean(remoteUrl)}
           onClose={() => setModalOpen(false)}
           onSaved={(updated) => {
             setEntry(updated);
+            setModalOpen(false);
+          }}
+          onReset={() => {
+            removeEntry(contentKey);
             setModalOpen(false);
           }}
         />
@@ -113,6 +118,7 @@ interface ModalProps {
   contentKey: SiteContentKey;
   currentSrc: string | null;
   alt: string;
+  hasCustomValue: boolean;
   onClose: () => void;
   onSaved: (entry: {
     key: SiteContentKey;
@@ -120,18 +126,22 @@ interface ModalProps {
     value: string;
     url: string;
   }) => void;
+  onReset: () => void;
 }
 
 function EditableImageModal({
   contentKey,
   currentSrc,
   alt,
+  hasCustomValue,
   onClose,
   onSaved,
+  onReset,
 }: ModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
 
@@ -201,6 +211,33 @@ function EditableImageModal({
     }
   };
 
+  const handleReset = async () => {
+    if (
+      !window.confirm(
+        "Reset this image to the site default? The current image will be removed."
+      )
+    ) {
+      return;
+    }
+    setResetting(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/site-content/${encodeURIComponent(contentKey)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to reset image");
+      onReset();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const busy = saving || resetting;
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
@@ -260,21 +297,32 @@ function EditableImageModal({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-end gap-3 mt-2">
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 rounded-md border border-black bg-white text-black hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!file || saving}
-              className="px-4 py-2 rounded-md border border-black bg-[#234254] text-white hover:bg-[#1b3443] disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save changes"}
-            </button>
+          <div className="flex items-center gap-3 mt-2">
+            {hasCustomValue && (
+              <button
+                onClick={handleReset}
+                disabled={busy}
+                className="px-4 py-2 rounded-md border border-red-600 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                {resetting ? "Resetting..." : "Reset to default"}
+              </button>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <button
+                onClick={onClose}
+                disabled={busy}
+                className="px-4 py-2 rounded-md border border-black bg-white text-black hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!file || busy}
+                className="px-4 py-2 rounded-md border border-black bg-[#234254] text-white hover:bg-[#1b3443] disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save changes"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -29,7 +29,7 @@ export default function EditableText({
   as = "div",
 }: EditableTextProps) {
   const { isAdmin } = useIsAdmin();
-  const { entry, setEntry } = useSiteContent(contentKey);
+  const { entry, setEntry, removeEntry } = useSiteContent(contentKey);
   const [modalOpen, setModalOpen] = useState(false);
 
   const text = entry?.value ?? fallbackText;
@@ -54,10 +54,16 @@ export default function EditableText({
         <EditableTextModal
           contentKey={contentKey}
           initialText={text}
+          fallbackText={fallbackText}
+          hasCustomValue={Boolean(entry)}
           renderPrefix={renderPrefix}
           onClose={() => setModalOpen(false)}
           onSaved={(updated) => {
             setEntry(updated);
+            setModalOpen(false);
+          }}
+          onReset={() => {
+            removeEntry(contentKey);
             setModalOpen(false);
           }}
         />
@@ -69,6 +75,8 @@ export default function EditableText({
 interface ModalProps {
   contentKey: SiteContentKey;
   initialText: string;
+  fallbackText: string;
+  hasCustomValue: boolean;
   renderPrefix?: React.ReactNode;
   onClose: () => void;
   onSaved: (entry: {
@@ -77,17 +85,22 @@ interface ModalProps {
     value: string;
     url: null;
   }) => void;
+  onReset: () => void;
 }
 
 function EditableTextModal({
   contentKey,
   initialText,
+  fallbackText,
+  hasCustomValue,
   renderPrefix,
   onClose,
   onSaved,
+  onReset,
 }: ModalProps) {
   const [draft, setDraft] = useState(initialText);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
@@ -117,6 +130,34 @@ function EditableTextModal({
       setSaving(false);
     }
   };
+
+  const handleReset = async () => {
+    if (
+      !window.confirm(
+        "Reset this text to the site default? Your edits will be lost."
+      )
+    ) {
+      return;
+    }
+    setResetting(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/site-content/${encodeURIComponent(contentKey)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to reset text");
+      setDraft(fallbackText);
+      onReset();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const busy = saving || resetting;
 
   return (
     <div
@@ -162,21 +203,32 @@ function EditableTextModal({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-end gap-3 mt-2">
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 rounded-md border border-black bg-white text-black hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || draft === initialText}
-              className="px-4 py-2 rounded-md border border-black bg-[#234254] text-white hover:bg-[#1b3443] disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save changes"}
-            </button>
+          <div className="flex items-center gap-3 mt-2">
+            {hasCustomValue && (
+              <button
+                onClick={handleReset}
+                disabled={busy}
+                className="px-4 py-2 rounded-md border border-red-600 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                {resetting ? "Resetting..." : "Reset to default"}
+              </button>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <button
+                onClick={onClose}
+                disabled={busy}
+                className="px-4 py-2 rounded-md border border-black bg-white text-black hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={busy || draft === initialText}
+                className="px-4 py-2 rounded-md border border-black bg-[#234254] text-white hover:bg-[#1b3443] disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save changes"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
