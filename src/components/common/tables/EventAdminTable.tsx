@@ -609,7 +609,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             <div className="flex justify-between px-6 py-4">
               <Button
                 label="Send Email"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-dark-blue"
                 onClick={handleSendVolunteerEmail}
               />
               <Button
@@ -797,7 +797,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <div className="flex gap-3">
                     <Button
                       label="Send Email"
-                      altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                      altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-dark-blue"
                       onClick={handleSendWaitlistEmail}
                     />
                     <Button

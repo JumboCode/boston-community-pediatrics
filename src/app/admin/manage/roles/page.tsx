@@ -7,9 +7,6 @@ import ManageRolesSkeleton from "@/components/ui/skeleton/ManageRolesSkeleton";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { Inter } from "next/font/google";
-
-const inter = Inter({ subsets: ["latin"] });
 
 interface FrontEndUser {
   userId: string;
@@ -82,7 +79,6 @@ const ManageRolesPage = () => {
       .filter((v: ApiUser) => v.id || v.userId)
       .map(
         (v: ApiUser): FrontEndUser => ({
-          userId: (v.id || v.userId)!,
           userId: (v.id || v.userId)!,
           firstName: v.firstName,
           lastName: v.lastName,
@@ -348,14 +344,13 @@ const ManageRolesPage = () => {
 
   return (
     <>
-      {/* Inter font applied via className on outermost wrapper */}
-      <div className={`${inter.className} items-center justify-center p-6 ml-60 mr-60`}>
+      <div className="items-center justify-center p-6 lg:ml-60 lg:mr-60 mx-4">
         <h1 className="text-[16px] font-semibold mb-6 text-bcp-blue">
           <Link href="/" className="hover:underline">
             Home
           </Link>
           {" / "}
-          <Link href="/admin/manage/roles" className="hover:underline">
+          <Link href="/admin/manage" className="hover:underline">
             Manage Roles
           </Link>
         </h1>
@@ -470,7 +465,7 @@ const ManageRolesPage = () => {
 
         {/* Table — fixed layout so columns never shift */}
         <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto overflow-x-auto">
-          <table className="w-full min-w-[600px] table-fixed border-white-700 text-bcp-blue">
+          <table className="w-full table-fixed text-bcp-blue">
             <colgroup>
               {/* #   Name   Role   Email   Phone   Select */}
               <col className="w-[5%]" />
@@ -607,7 +602,7 @@ const ManageRolesPage = () => {
             },
             {
               label: "Remove",
-              variant: "primary",
+              variant: "danger",
               onClick: handleDeleteApproved,
               disabled: isLoading,
             },

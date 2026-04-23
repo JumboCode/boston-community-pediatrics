@@ -497,7 +497,7 @@ export default function EditProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-bcp-blue text-white px-6 py-2 rounded-md text-sm hover:bg-[#1b3443] disabled:opacity-50"
+                className="bg-bcp-blue text-white px-6 py-2 rounded-md text-sm hover:bg-dark-blue disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save details"}
               </button>

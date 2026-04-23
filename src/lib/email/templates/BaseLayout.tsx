@@ -68,7 +68,7 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
               width="100%"
               cellPadding="0"
               cellSpacing="0"
-              style={{ backgroundColor: "#234254" }}
+              style={{ backgroundColor: "bcp-blue" }}
             >
               <tr style={{ height: "48px" }}>
                 <td width="20%"></td>

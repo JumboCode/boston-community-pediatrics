@@ -24,6 +24,8 @@
   --color-white: #ffffff;
   --color-gray-border: #d9d9d9;
   --color-really-light-gray: #FAFAFA;
+  --color-dark-desaturated-blue: #34495e;
+  --color-dark-blue: #1b323e;
 }
 
 /* @media (prefers-color-scheme: dark) {
