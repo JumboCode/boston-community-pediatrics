@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Menu } from "@headlessui/react";
 import DropDownArrow from "@/assets/icons/drop-down-arrow.svg";
 import { useUser } from "@clerk/nextjs";
+import EditableImage from "./admin-editable/EditableImage";
 
 interface UserNavBarProps {
   profileImageUrl: string | null;
@@ -20,14 +21,18 @@ function AdminNavBar(props: UserNavBarProps) {
     <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
         <li>
-          <Link href="/" className="flex items-center gap-4">
-            <Image
-              src={bcp_logo}
-              alt="BCP Logo"
-              className="w-auto h-12"
-              priority
-            />
-          </Link>
+          <EditableImage
+            contentKey="navbar.logo"
+            fallbackSrc={bcp_logo}
+            alt="BCP Logo"
+            className="w-auto h-12"
+            priority
+            wrapperClassName="h-12 flex items-center gap-4"
+            pencilClassName="absolute -bottom-1.5 -right-1.5 z-10"
+            pencilSize="sm"
+            href="/"
+            linkClassName="flex items-center"
+          />
         </li>
         <li>
           <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
