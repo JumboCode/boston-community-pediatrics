@@ -123,7 +123,7 @@ export default function EditProfilePage() {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file)); // Local preview
       // Set profileimagekey to file name for now; will be replaced with actual URL after upload in handleSubmit
-      setForm((prev) => ({ ...prev, profileImageKey: file.name}));
+      setForm((prev) => ({ ...prev, profileImageKey: file.name }));
     }
   }
 
@@ -169,6 +169,31 @@ export default function EditProfilePage() {
     if (!form.lastName) newEmptyFields.add("lastName");
     if (!form.phone) newEmptyFields.add("phone");
     if (!form.dob) newEmptyFields.add("dob");
+
+    // Additional validations
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    if (phoneDigits.length > 15) {
+      setError("Phone number must be 15 digits or less.");
+      return;
+    }
+
+    if (form.address && form.address.length > 100) {
+      setError("Street address must be 100 characters or less.");
+      return;
+    }
+
+    if (form.state && form.state.length !== 2) {
+      setError("State must be exactly 2 characters.");
+      return;
+    }
+
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (form.zip && !zipRegex.test(form.zip)) {
+      setError(
+        "Zip code must be in 5-digit format (12345) or 9-digit format (12345-6789)."
+      );
+      return;
+    }
 
     if (newEmptyFields.size > 0) {
       setEmptyFields(newEmptyFields);
@@ -337,6 +362,7 @@ export default function EditProfilePage() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
+                maxLength={20} // Allow for formatting like (123) 456-7890
                 className={`w-full border rounded-md px-3 py-2 text-sm ${
                   emptyFields.has("phone")
                     ? "border-red-500"
@@ -435,6 +461,7 @@ export default function EditProfilePage() {
                 name="address"
                 value={form.address}
                 onChange={handleChange}
+                maxLength={100}
                 className="w-full border rounded-md px-3 py-2 text-sm"
               />
             </div>
@@ -456,6 +483,7 @@ export default function EditProfilePage() {
                   name="state"
                   value={form.state}
                   onChange={handleChange}
+                  maxLength={2}
                   className="w-full border rounded-md px-3 py-2 text-sm"
                 />
               </div>
@@ -468,6 +496,7 @@ export default function EditProfilePage() {
                   name="zip"
                   value={form.zip}
                   onChange={handleChange}
+                  maxLength={10}
                   className="w-full border rounded-md px-3 py-2 text-sm"
                 />
               </div>

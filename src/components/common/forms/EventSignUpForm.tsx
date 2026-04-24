@@ -64,7 +64,9 @@ export default function EventSignUpForm({
   );
   const [comment, setComment] = useState("");
   const [emptyFields, setEmptyFields] = useState<Set<string>>(new Set());
-  const [showDatePicker, setShowDatePicker] = useState<{ [guestId: string]: boolean }>({});
+  const [showDatePicker, setShowDatePicker] = useState<{
+    [guestId: string]: boolean;
+  }>({});
 
   // Use the URL directly — no getPublicURL needed
   const profileImageSrc = userData?.profileImage ?? blankProfile;
@@ -155,9 +157,7 @@ export default function EventSignUpForm({
 
     if (newEmptyFields.size > 0) {
       setEmptyFields(newEmptyFields);
-      setErrorMessage(
-        "Please fill in all required fields for guests."
-      );
+      setErrorMessage("Please fill in all required fields for guests.");
       window.scrollTo(0, 0);
       return;
     }
@@ -210,7 +210,7 @@ export default function EventSignUpForm({
         setIsSuccess(false);
         setWaitlistMessage(
           responseData.message ||
-          "Your update exceeded capacity, so you have been moved to the waitlist."
+            "Your update exceeded capacity, so you have been moved to the waitlist."
         );
       } else {
         setIsSuccess(true);
@@ -323,11 +323,14 @@ export default function EventSignUpForm({
         // 1. Changed 'absolute' to 'fixed'
         // 2. Removed 'rounded-xl' so it reaches the very corners of the screen
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-400/50 backdrop-blur-[2px]">
-
           {/* This is your actual modal card. Keep this one rounded! */}
           <div className="bg-white rounded-lg shadow-xl p-10 max-w-md w-full text-center mx-4 border border-gray-200">
-            <h2 className="text-3xl font-semibold text-[#34495e] mb-2">Sign in to Volunteer</h2>
-            <p className="text-gray-900 font-medium mb-8">Volunteers must have an account</p>
+            <h2 className="text-3xl font-semibold text-[#34495e] mb-2">
+              Sign in to Volunteer
+            </h2>
+            <p className="text-gray-900 font-medium mb-8">
+              Volunteers must have an account
+            </p>
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => router.back()}
@@ -336,7 +339,7 @@ export default function EventSignUpForm({
                 Cancel
               </button>
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push("/login")}
                 className="px-8 py-2.5 bg-[#34495e] text-white rounded font-medium hover:bg-[#2c3e50] transition"
               >
                 Log In
@@ -595,7 +598,9 @@ export default function EventSignUpForm({
                               })()
                             : null
                         }
-                        onDateChange={(date) => handleDateSelect(guest.id, date)}
+                        onDateChange={(date) =>
+                          handleDateSelect(guest.id, date)
+                        }
                       />
                     </div>
                   </>

@@ -9,7 +9,6 @@ import BackArrow from "@/assets/icons/arrow-left.svg";
 import ProfilePlaceholder from "@/assets/icons/pfp-placeholder.svg";
 import BasicSkeleton from "../ui/skeleton/BasicSkeleton";
 import DatePicker from "@/components/DatePicker";
-import { profile } from "console";
 
 type SignupFormData = {
   firstName: string;
@@ -48,9 +47,7 @@ const SignupForm = () => {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   if (!isLoaded) return <BasicSkeleton />;
-  
 
-  
   const todayYmd = new Date().toISOString().slice(0, 10);
 
   if (!isLoaded) return <BasicSkeleton />;
@@ -93,7 +90,7 @@ const SignupForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLoaded) return;
-    
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -102,6 +99,9 @@ const SignupForm = () => {
     const lastName = formData.get("last-name") as string;
     const dob = formData.get("dob") as string;
     const phone = formData.get("phone") as string;
+    const street = formData.get("street") as string;
+    const state = formData.get("state") as string;
+    const zip = formData.get("zip") as string;
 
     // Validate required fields
     const newEmptyFields = new Set<string>();
@@ -122,6 +122,53 @@ const SignupForm = () => {
     setLoading(true);
     setError("");
 
+    // Additional validations
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10) {
+      setError("Phone number must be at least 10 digits.");
+      setLoading(false);
+      return;
+    }
+    if (phoneDigits.length > 15) {
+      setError("Phone number must be 15 digits or less.");
+      setLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    if (email.length > 50) {
+      setError("Email address must be 50 characters or less.");
+      setLoading(false);
+      return;
+    }
+
+    if (street && street.length > 100) {
+      setError("Street address must be 100 characters or less.");
+      setLoading(false);
+      return;
+    }
+
+    if (state && state.length !== 2) {
+      setError("State must be exactly 2 characters.");
+      setLoading(false);
+      return;
+    }
+
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (zip && !zipRegex.test(zip)) {
+      setError(
+        "Zip code must be in 5-digit format (12345) or 9-digit format (12345-6789)."
+      );
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -131,7 +178,9 @@ const SignupForm = () => {
     // Enhanced password validation
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(password)) {
-      setError("Password must contain at least one uppercase letter, one lowercase letter, one number, and be at least 8 characters long");
+      setError(
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and be at least 8 characters long"
+      );
       setLoading(false);
       return;
     }
@@ -382,7 +431,6 @@ const SignupForm = () => {
 
       {/* Form fields */}
       <div className="flex flex-col gap-8 sm:gap-10 w-full px-4 sm:px-[102px]">
-
         {/* First / Last */}
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-[60px]">
           <div className="flex flex-col items-start flex-1">
@@ -402,7 +450,9 @@ const SignupForm = () => {
               }`}
             />
             {emptyFields.has("firstName") && (
-              <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+              <p className="text-red-500 text-sm mt-1">
+                Please complete this field
+              </p>
             )}
           </div>
 
@@ -423,7 +473,9 @@ const SignupForm = () => {
               }`}
             />
             {emptyFields.has("lastName") && (
-              <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+              <p className="text-red-500 text-sm mt-1">
+                Please complete this field
+              </p>
             )}
           </div>
         </div>
@@ -440,6 +492,7 @@ const SignupForm = () => {
             name="email"
             id="email"
             type="email"
+            maxLength={50}
             className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
               emptyFields.has("email")
                 ? "border-red-500 focus:ring-red-200"
@@ -447,7 +500,9 @@ const SignupForm = () => {
             }`}
           />
           {emptyFields.has("email") && (
-            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            <p className="text-red-500 text-sm mt-1">
+              Please complete this field
+            </p>
           )}
         </div>
 
@@ -463,6 +518,7 @@ const SignupForm = () => {
             name="phone"
             id="phone"
             type="tel"
+            maxLength={20}
             className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
               emptyFields.has("phone")
                 ? "border-red-500 focus:ring-red-200"
@@ -470,7 +526,9 @@ const SignupForm = () => {
             }`}
           />
           {emptyFields.has("phone") && (
-            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            <p className="text-red-500 text-sm mt-1">
+              Please complete this field
+            </p>
           )}
         </div>
 
@@ -495,7 +553,9 @@ const SignupForm = () => {
           </button>
 
           {emptyFields.has("dob") && (
-            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            <p className="text-red-500 text-sm mt-1">
+              Please complete this field
+            </p>
           )}
 
           {showDatePicker && (
@@ -579,6 +639,7 @@ const SignupForm = () => {
           <input
             name="street"
             id="street"
+            maxLength={100}
             className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
@@ -594,6 +655,7 @@ const SignupForm = () => {
           <input
             name="apt"
             id="apt"
+            maxLength={50}
             className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
@@ -609,6 +671,7 @@ const SignupForm = () => {
           <input
             name="city"
             id="city"
+            maxLength={50}
             className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
@@ -625,6 +688,7 @@ const SignupForm = () => {
             <input
               name="state"
               id="state"
+              maxLength={2}
               className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
@@ -639,6 +703,7 @@ const SignupForm = () => {
             <input
               name="zip"
               id="zip"
+              maxLength={10}
               inputMode="numeric"
               className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
@@ -696,7 +761,8 @@ const SignupForm = () => {
             Create password
           </label>
           <p className="text-sm text-medium-gray mb-2">
-            Must contain at least one uppercase letter, one lowercase letter, one number, and be at least 8 characters long.
+            Must contain at least one uppercase letter, one lowercase letter,
+            one number, and be at least 8 characters long.
           </p>
           <div className="relative w-full">
             <input
@@ -716,12 +782,26 @@ const SignupForm = () => {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medium-gray hover:text-gray-700"
             >
               {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                   <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
@@ -729,7 +809,9 @@ const SignupForm = () => {
             </button>
           </div>
           {emptyFields.has("password") && (
-            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            <p className="text-red-500 text-sm mt-1">
+              Please complete this field
+            </p>
           )}
         </div>
 
@@ -758,12 +840,26 @@ const SignupForm = () => {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medium-gray hover:text-gray-700"
             >
               {showConfirmPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                   <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
@@ -771,7 +867,9 @@ const SignupForm = () => {
             </button>
           </div>
           {emptyFields.has("confirmPassword") && (
-            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+            <p className="text-red-500 text-sm mt-1">
+              Please complete this field
+            </p>
           )}
         </div>
       </div>
