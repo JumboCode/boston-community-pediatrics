@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
 import { useRef } from "react";
+import DatePicker from "@/components/DatePicker";
 
 // --- Types ---
 interface Guest {
@@ -91,7 +92,14 @@ export default function EventSignUpForm({
 
   const addGuest = () => {
     const newGuest: Guest = {
-      id: crypto.randomUUID(),
+      //id: crypto.randomUUID()
+
+      //crypto doesn't work on mobile so we need to do math.random
+      id: typeof crypto.randomUUID === 'function' 
+      ? crypto.randomUUID() 
+
+      : Math.random().toString(36).substring(2, 11),
+      
 
       firstName: "",
       lastName: "",
@@ -126,6 +134,7 @@ export default function EventSignUpForm({
   const monthRef = useRef<HTMLInputElement | null>(null);
   const dayRef = useRef<HTMLInputElement | null>(null);
   const yearRef = useRef<HTMLInputElement | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
 
   const updateDOBField = (
     guestId: string,
@@ -214,7 +223,7 @@ export default function EventSignUpForm({
         setIsSuccess(false);
         setWaitlistMessage(
           responseData.message ||
-          "Your update exceeded capacity, so you have been moved to the waitlist."
+            "Your update exceeded capacity, so you have been moved to the waitlist."
         );
       } else {
         setIsSuccess(true);
@@ -246,10 +255,10 @@ export default function EventSignUpForm({
               {eventName}
             </p>
             <p>
-              <span className="font-bold text-gray-900">Date:</span> {eventDate}
+              <span className="font-bold text-gray-900">Date:</span> {eventDate || "not found"}
             </p>
             <p>
-              <span className="font-bold text-gray-900">Time:</span> {eventTime}
+              <span className="font-bold text-gray-900">Time:</span> {eventTime || "not found"}
             </p>
             <p>
               <span className="font-bold text-gray-900">Total Group:</span>{" "}
@@ -277,7 +286,7 @@ export default function EventSignUpForm({
 
   if (isSuccess) {
     return (
-      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
+      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300 overflow-hidden">
         <h2 className="text-3xl font-bold mb-2">Registration Confirmed!</h2>
         <p className="text-blue-100 mb-8">
           A confirmation has been sent to your email.
@@ -286,7 +295,7 @@ export default function EventSignUpForm({
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
             EVENT
           </div>
-          <div className="space-y-1 text-sm flex-1">
+          <div className="space-y-1 text-sm flex-1 min-w-0">
             <p>
               <span className="font-bold text-gray-900">Event:</span>{" "}
               {eventName}
@@ -297,7 +306,7 @@ export default function EventSignUpForm({
             <p>
               <span className="font-bold text-gray-900">Time:</span> {eventTime}
             </p>
-            <p>
+            <p className="leading">
               <span className="font-bold text-gray-900">Total Group:</span>{" "}
               {1 + guests.length} (You + {guests.length} guests)
             </p>
@@ -327,11 +336,14 @@ export default function EventSignUpForm({
         // 1. Changed 'absolute' to 'fixed'
         // 2. Removed 'rounded-xl' so it reaches the very corners of the screen
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-400/50 backdrop-blur-[2px]">
-
           {/* This is your actual modal card. Keep this one rounded! */}
           <div className="bg-white rounded-lg shadow-xl p-10 max-w-md w-full text-center mx-4 border border-gray-200">
-            <h2 className="text-3xl font-semibold text-dark-desaturated-blue mb-2">Sign in to Volunteer</h2>
-            <p className="text-gray-900 font-medium mb-8">Volunteers must have an account</p>
+            <h2 className="text-3xl font-semibold text-dark-desaturated-blue mb-2">
+              Sign in to Volunteer
+            </h2>
+            <p className="text-gray-900 font-medium mb-8">
+              Volunteers must have an account
+            </p>
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => router.back()}
@@ -340,7 +352,7 @@ export default function EventSignUpForm({
                 Cancel
               </button>
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push("/login")}
                 className="px-8 py-2.5 bg-dark-desaturated-blue text-white rounded font-medium hover:bg-[#2c3e50] transition"
               >
                 Log In
@@ -532,69 +544,82 @@ export default function EventSignUpForm({
               </div>
 
               {/* DOB */}
-              <div>
+              <div className="relative">
                 <label className="block text-xs text-gray-700 mb-2">
                   Participant’s Date of Birth
                 </label>
 
-                <div className="grid grid-cols-3 gap-6">
-                  {/* Month */}
-                  <input
-                    ref={monthRef}
-                    inputMode="numeric"
-                    maxLength={2}
-                    className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm outline-none focus:ring-1 focus:ring-light-bcp-blue"
-                    value={guest.month}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      updateDOBField(guest.id, "month", value);
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowDatePicker(
+                      showDatePicker === guest.id ? null : guest.id
+                    )
+                  }
+                  className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
+                >
+                  {guest.dateOfBirth
+                    ? (() => {
+                        const [year, month, day] = guest.dateOfBirth
+                          .split("-")
+                          .map(Number);
 
-                      if (value.length === 2) {
-                        dayRef.current?.focus();
-                      }
-                    }}
-                  />
+                        const date = new Date(Date.UTC(year, month - 1, day));
 
-                  {/* Day */}
-                  <input
-                    ref={dayRef}
-                    inputMode="numeric"
-                    maxLength={2}
-                    className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm outline-none focus:ring-1 focus:ring-light-bcp-blue"
-                    value={guest.day}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      updateDOBField(guest.id, "day", value);
+                        return date.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          timeZone: "UTC",
+                        });
+                      })()
+                    : "Select date"}
+                </button>
 
-                      if (value.length === 2) {
-                        yearRef.current?.focus();
+                {showDatePicker === guest.id && (
+                  <>
+                    {/* Backdrop */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() =>
+                        setShowDatePicker(
+                          showDatePicker === guest.id ? null : guest.id
+                        )
                       }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Backspace" && guest.day === "") {
-                        monthRef.current?.focus();
-                      }
-                    }}
-                  />
+                    />
 
-                  {/* Year */}
-                  <input
-                    ref={yearRef}
-                    inputMode="numeric"
-                    maxLength={4}
-                    className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm outline-none focus:ring-1 focus:ring-light-bcp-blue"
-                    value={guest.year}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      updateDOBField(guest.id, "year", value);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Backspace" && guest.year === "") {
-                        dayRef.current?.focus();
-                      }
-                    }}
-                  />
-                </div>
+                    {/* DatePicker */}
+                    <div className="absolute top-full left-0 mt-2 z-50">
+                      <DatePicker
+                        selectedDate={
+                          guest.dateOfBirth
+                            ? (() => {
+                                const [year, month, day] = guest.dateOfBirth
+                                  .split("-")
+                                  .map(Number);
+                                return new Date(Date.UTC(year, month - 1, day));
+                              })()
+                            : null
+                        }
+                        onDateChange={(date) => {
+                          const year = date.getUTCFullYear();
+                          const month = String(date.getUTCMonth() + 1).padStart(
+                            2,
+                            "0"
+                          );
+                          const day = String(date.getUTCDate()).padStart(
+                            2,
+                            "0"
+                          );
+
+                          const formatted = `${year}-${month}-${day}`;
+                          updateGuest(guest.id, "dateOfBirth", formatted);
+                          setShowDatePicker(null);
+                        }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Spanish */}

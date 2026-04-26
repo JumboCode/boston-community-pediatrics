@@ -11,6 +11,7 @@ import { getPublicURL } from "@/lib/r2";
 import Link from "next/link";
 import Image from "next/image";
 import arrowLeft from "@/assets/icons/arrow-left.svg";
+import EventNotFoundModal from "@/components/common/EventNotFoundModal";
 
 export default async function EventDetailsPage(props: {
   params: { id: string };
@@ -18,15 +19,15 @@ export default async function EventDetailsPage(props: {
   const { id: eventId } = await props.params;
 
   try {
-    // Fetch event and positions in parallel
     const [event, positions] = await Promise.all([
       getEventById(eventId),
-      getPositionsByEventId(eventId), // or fetch your API endpoint
+      getPositionsByEventId(eventId),
     ]);
+
     const user = await getCurrentUser();
 
     if (!event) {
-      return <p>Event does not exist</p>;
+      return <EventNotFoundModal />;
     }
 
     const isExpired = new Date(event.endTime) < new Date();
@@ -36,23 +37,26 @@ export default async function EventDetailsPage(props: {
 
     return (
       <div className="relative">
-        <Link href="/event" className="absolute top-10 left-12">
+        <Link
+          href="/event"
+          className="absolute top-6 left-4 sm:top-10 sm:left-12"
+        >
           <Image src={arrowLeft} alt="Back to events" className="w-8 h-8" />
         </Link>
         <div className="flex flex-col justify-center items-center">
-          <div className="pt-16 pb-12 flex flex-col items-center">
+          <div className="pt-16 pb-12 flex flex-col items-center w-full">
             {/* Carousel at the top */}
             <Carousel
               images={imageUrls.length > 0 ? imageUrls : [rectangleGray]}
             />
 
             {/* Event details */}
-            <section className="max-w-[1000px] mt-[56px]">
-              <h1 className="text-bcp-blue text-[40px] leading-[44px]">
+            <section className="w-full max-w-[1000px] mt-[56px] px-4 sm:px-6">
+              <h1 className="text-bcp-blue text-[28px] sm:text-[40px] leading-tight">
                 {event.name ? event.name : "Event Name"}
               </h1>
               {/* Date */}
-              <p className="mt-[8px] text-bcp-blue text-[28px] leading-[40px]">
+              <p className="mt-[8px] text-bcp-blue text-[20px] sm:text-[28px] leading-[40px]">
                 {(() => {
                   if (!event.startTime) return "Date unavailable";
 
@@ -88,7 +92,7 @@ export default async function EventDetailsPage(props: {
                 })()}
               </p>
               {/* Time */}
-              <p className="mt-[4px] text-bcp-blue text-[28px] leading-[40px]">
+              <p className="mt-[4px] text-bcp-blue text-[20px] sm:text-[28px] leading-[40px]">
                 {event.startTime && event.endTime
                   ? `${new Date(event.startTime).toLocaleTimeString("en-US", {
                       timeZone: "America/New_York",
@@ -105,7 +109,7 @@ export default async function EventDetailsPage(props: {
                   : "Time unavailable"}
               </p>
               {/* Address */}
-              <p className="mt-[4px] text-bcp-blue text-[20px] leading-[32px]">
+              <p className="mt-[4px] text-bcp-blue text-[16px] sm:text-[20px] leading-[32px]">
                 {[
                   event.addressLine1,
                   event.addressLine2,
@@ -118,6 +122,18 @@ export default async function EventDetailsPage(props: {
               <p className="mt-[32px] text-bcp-blue text-[16px] leading-[24px]">
                 {event.description}
               </p>
+              {event.resourcesLink && (
+                <div className="mt-[16px]">
+                  <a
+                    href={event.resourcesLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-bcp-blue text-[16px] leading-[24px] underline hover:text-blue-700"
+                  >
+                    Link to resources
+                  </a>
+                </div>
+              )}
               {isExpired && (
                 <p className="mt-6 text-gray-500 italic">
                   This event has already taken place and is no longer accepting
@@ -128,23 +144,22 @@ export default async function EventDetailsPage(props: {
           </div>
 
           <div
-            className={`flex flex-col items-center justify-center ${
+            className={`w-full flex flex-col items-center justify-center ${
               user?.role !== UserRole.ADMIN
                 ? "border border-gray-800 max-w-[1000px] m-10"
                 : "space-y-6 p-3"
             }`}
           >
             {positions.map((item: EventPosition) => {
-              // Format address
               const location = [
                 item.addressLine1,
-                item.addressLine2, // optional
+                item.addressLine2,
                 `${item.city} ${item.state} ${item.zipCode}`,
               ]
-                .filter(Boolean) // remove empty strings
+                .filter(Boolean)
                 .join(", ");
 
-              if (user?.role == UserRole.ADMIN) {
+              if (user?.role === UserRole.ADMIN) {
                 return (
                   <EventAdminTable
                     key={item.id}
@@ -155,7 +170,7 @@ export default async function EventDetailsPage(props: {
                     totalSlots={item.totalSlots}
                     positionId={item.id}
                     location={location}
-                    isAdmin={true} // ← ADD THIS LINE!
+                    isAdmin={true}
                   />
                 );
               } else {
@@ -173,7 +188,6 @@ export default async function EventDetailsPage(props: {
                 );
               }
             })}
-            {/* Bottom spacer */}
             <div></div>
           </div>
         </div>

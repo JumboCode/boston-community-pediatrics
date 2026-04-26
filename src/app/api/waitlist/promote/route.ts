@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { requireAdmin, route } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-export async function POST(req: Request) {
-  try {
+export const POST = route(async (req: Request) => {
+    await requireAdmin();
+
     const { positionId, waitlistIds } = (await req.json()) as {
       positionId: string;
       waitlistIds: string[];
@@ -21,6 +23,8 @@ export async function POST(req: Request) {
         eventId: true,
         filledSlots: true,
         totalSlots: true,
+        startTime: true,
+        endTime: true,
       },
     });
 
@@ -40,6 +44,38 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "No waitlist entries found" },
         { status: 404 }
+      );
+    }
+
+    const overlappingUsers = await Promise.all(
+      waitlistRows
+        .filter((row) => Boolean(row.userId))
+        .map(async (row) => {
+          const overlap = await prisma.eventSignup.findFirst({
+            where: {
+              userId: row.userId!,
+              position: {
+                startTime: { lt: position.endTime },
+                endTime: { gt: position.startTime },
+              },
+            },
+            select: { id: true },
+          });
+          return overlap ? row.userId : null;
+        })
+    );
+
+    const conflictedUserIds = overlappingUsers.filter(
+      (id): id is string => Boolean(id)
+    );
+    if (conflictedUserIds.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "One or more selected users already have a signup that overlaps this time.",
+          conflictedUserIds,
+        },
+        { status: 409 }
       );
     }
 
@@ -142,11 +178,4 @@ export async function POST(req: Request) {
       promoted: waitlistRows.length,
       message: `Successfully promoted ${waitlistRows.length} user(s) from waitlist`,
     });
-  } catch (error) {
-    console.error("Error promoting waitlist users:", error);
-    return NextResponse.json(
-      { error: "Failed to promote waitlist users" },
-      { status: 500 }
-    );
-  }
-}
+});

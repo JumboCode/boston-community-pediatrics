@@ -57,11 +57,13 @@ const EventAdminTable = (props: EventAdminTableProps) => {
     speaksSpanish: boolean;
     comment: string;
     memberSince?: number;
-    guestName?: string;
-    guestEmail?: string;
-    guestPhoneNumber?: string;
-    guestSpeaksSpanish?: boolean;
     profileImage?: string;
+    guests?: Array<{
+      name: string;
+      email: string;
+      phoneNumber: string;
+      speaksSpanish?: boolean;
+    }>;
   } | null>(null);
 
   const fetcher = async (url: string) => {
@@ -165,15 +167,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   const handleViewComment = (id: string) => {
     // Try to find in volunteers first
     let mainUser = volunteers.find((v) => v.signUpId === id && !v.isGuest);
-    let guest = volunteers.find((v) => v.signUpId === id && v.isGuest);
 
     // If not found in volunteers, try waitlist
     if (!mainUser) {
       mainUser = waitlist.find((v) => v.waitlistId === id && !v.isGuest);
-      guest = waitlist.find((v) => v.waitlistId === id && v.isGuest);
     }
 
     if (!mainUser || !mainUser.comments) return;
+
+    // Find ALL guests belonging to this user
+    const allGuests = volunteers
+      .filter((v) => v.signUpId === id && v.isGuest)
+      .concat(waitlist.filter((v) => v.waitlistId === id && v.isGuest));
 
     setSelectedUserData({
       userId: mainUser.userId,
@@ -186,13 +191,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
       ...(mainUser.memberSince && {
         memberSince: mainUser.memberSince,
       }),
-      ...(guest && {
-        guestName: `${guest.firstName} ${guest.lastName}`,
-        guestEmail: guest.emailAddress,
-        guestPhoneNumber: guest.phoneNumber,
-        guestSpeaksSpanish: guest.speaksSpanish,
-        profileImage: mainUser.profileImage ?? undefined,
-      }),
+      guests: allGuests.map((guest) => ({
+        name: `${guest.firstName} ${guest.lastName}`,
+        email: guest.emailAddress,
+        phoneNumber: guest.phoneNumber,
+        speaksSpanish: guest.speaksSpanish,
+      })),
     });
     setShowCommentModal(true);
   };
@@ -401,27 +405,17 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 {location ? location : "No location"}
               </p>
               <p className="text-[16px]">
-                {(() => {
-                  const s = new Date(startTime);
-                  const e = new Date(endTime);
-                  const sameDay = s.toDateString() === e.toDateString();
-                  const fmt = (d: Date) =>
-                    d.toLocaleTimeString("en-US", {
-                      timeZone: "America/New_York",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    });
-                  const fmtDate = (d: Date) =>
-                    d.toLocaleDateString("en-US", {
-                      timeZone: "America/New_York",
-                      month: "short",
-                      day: "numeric",
-                    });
-
-                  if (sameDay) return `${fmt(s)} - ${fmt(e)}`;
-                  return `${fmtDate(s)} ${fmt(s)} – ${fmtDate(e)} ${fmt(e)}`;
-                })()}
+                {new Date(startTime).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })}{" "}
+                -{" "}
+                {new Date(endTime).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
               </p>
             </div>
 
@@ -447,162 +441,164 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         </div>
 
         {/* Volunteer Table */}
-        <table className="w-full table-fixed border-white-700 text-bcp-blue">
-          <colgroup>
-            <col style={{ width: "60px" }} />
-            <col style={{ width: "200px" }} />
-            <col style={{ width: "220px" }} />
-            <col style={{ width: "140px" }} />
-            <col style={{ width: "50px" }} />
-            <col style={{ width: "120px" }} />
-            <col style={{ width: "100px" }} />
-          </colgroup>
-          <thead className="bg-white sticky top-0 z-10">
-            <tr className="text-left">
-              <th className="py-3 px-5 font-normal"></th>
-              <th className="py-3 px-4 font-normal">Name</th>
-              <th className="py-3 px-4 font-normal">Email</th>
-              <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-              <th className="py-3 px-4 font-normal"></th>
-              <th className="py-3 px-4 font-normal"></th>
-              <th className="py-3 px-4 font-normal">
-                <button
-                  onClick={toggleSelectAll}
-                  className="hover:underline transition-all duration-200"
-                >
-                  Select All
-                </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {volunteers.map((p, i) => {
-              const nextPerson = volunteers[i + 1];
-              const hasGuestBelow =
-                nextPerson && nextPerson.guestOf && !p.isGuest;
-              const rowNumber = i + 1;
-              const profileImage = p.profileImage;
-              return (
-                <tr
-                  key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : "")}
-                  className={`transition-colors duration-200 ${
-                    p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                  } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
-                    !hasGuestBelow && !p.isGuest
-                      ? "border-b border-gray-300"
-                      : ""
-                  } ${p.isGuest && !volunteers[i + 1]?.isGuest ? "border-b border-gray-300" : ""}`}
-                >
-                  <td className="py-3 px-6">{rowNumber}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {p.isGuest ? (
-                        <div className="flex items-center relative min-w-0">
-                          {" "}
-                          {/* Changed from items-start to items-center */}
-                          <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
-                            {profileImage && (
-                              <Image
-                                width={40}
-                                height={40}
-                                src={profileImage}
-                                alt="Profile"
-                                className="w-full h-full rounded-full object-cover"
-                                unoptimized={
-                                  typeof profileImage === "string" &&
-                                  profileImage.startsWith("http")
-                                }
-                              />
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[890px] table-fixed border-white-700 text-bcp-blue">
+            <colgroup>
+              <col style={{ width: "60px" }} />
+              <col style={{ width: "200px" }} />
+              <col style={{ width: "220px" }} />
+              <col style={{ width: "140px" }} />
+              <col style={{ width: "50px" }} />
+              <col style={{ width: "120px" }} />
+              <col style={{ width: "100px" }} />
+            </colgroup>
+            <thead className="bg-white sticky top-0 z-10">
+              <tr className="text-left">
+                <th className="py-3 px-5 font-normal"></th>
+                <th className="py-3 px-4 font-normal">Name</th>
+                <th className="py-3 px-4 font-normal">Email</th>
+                <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
+                <th className="py-3 px-4 font-normal"></th>
+                <th className="py-3 px-4 font-normal"></th>
+                <th className="py-3 px-4 font-normal">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="hover:underline transition-all duration-200"
+                  >
+                    Select All
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {volunteers.map((p, i) => {
+                const nextPerson = volunteers[i + 1];
+                const hasGuestBelow =
+                  nextPerson && nextPerson.guestOf && !p.isGuest;
+                const rowNumber = i + 1;
+                const profileImage = p.profileImage;
+                return (
+                  <tr
+                    key={p.signUpId + (p.isGuest ? `-guest-${p.userId}` : "")}
+                    className={`transition-colors duration-200 ${
+                      p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
+                    } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
+                      !hasGuestBelow && !p.isGuest
+                        ? "border-b border-gray-300"
+                        : ""
+                    } ${p.isGuest && !volunteers[i + 1]?.isGuest ? "border-b border-gray-300" : ""}`}
+                  >
+                    <td className="py-3 px-6">{rowNumber}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {p.isGuest ? (
+                          <div className="flex items-center relative min-w-0">
+                            {" "}
+                            {/* Changed from items-start to items-center */}
+                            <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                            <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                              {profileImage && (
+                                <Image
+                                  width={40}
+                                  height={40}
+                                  src={profileImage}
+                                  alt="Profile"
+                                  className="w-full h-full rounded-full object-cover"
+                                  unoptimized={
+                                    typeof profileImage === "string" &&
+                                    profileImage.startsWith("http")
+                                  }
+                                />
+                              )}
+                            </div>
+                            <div
+                              className="ml-3 min-w-0 truncate"
+                              title={`${p.firstName} ${p.lastName}`}
+                            >
+                              {p.firstName} {p.lastName}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 relative min-w-0">
+                            <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                              {profileImage && (
+                                <Image
+                                  width={40}
+                                  height={40}
+                                  src={profileImage}
+                                  alt="Profile"
+                                  className="w-full h-full rounded-full object-cover"
+                                  unoptimized={
+                                    typeof profileImage === "string" &&
+                                    profileImage.startsWith("http")
+                                  }
+                                />
+                              )}
+                            </div>
+                            {hasGuestBelow && (
+                              <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                             )}
+                            <div
+                              className="truncate"
+                              title={`${p.firstName} ${p.lastName}`}
+                            >
+                              {p.firstName} {p.lastName}
+                            </div>
                           </div>
-                          <div
-                            className="ml-3 min-w-0 truncate"
-                            title={`${p.firstName} ${p.lastName}`}
-                          >
-                            {p.firstName} {p.lastName}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3 relative min-w-0">
-                          <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
-                            {profileImage && (
-                              <Image
-                                width={40}
-                                height={40}
-                                src={profileImage}
-                                alt="Profile"
-                                className="w-full h-full rounded-full object-cover"
-                                unoptimized={
-                                  typeof profileImage === "string" &&
-                                  profileImage.startsWith("http")
-                                }
-                              />
-                            )}
-                          </div>
-                          {hasGuestBelow && (
-                            <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
-                          )}
-                          <div
-                            className="truncate"
-                            title={`${p.firstName} ${p.lastName}`}
-                          >
-                            {p.firstName} {p.lastName}
-                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-4">
+                      <div className="truncate" title={p.emailAddress}>
+                        {p.emailAddress}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="truncate" title={p.phoneNumber}>
+                        {p.phoneNumber}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {p.speaksSpanish && (
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
+                          S
                         </div>
                       )}
-                    </div>
-                  </td>
-
-                  <td className="py-3 px-4">
-                    <div className="truncate" title={p.emailAddress}>
-                      {p.emailAddress}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="truncate" title={p.phoneNumber}>
-                      {p.phoneNumber}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    {p.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
-                        S
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {!p.isGuest && p.comments && p.comments.trim() !== "" && (
-                      <button
-                        onClick={() => handleViewComment(p.signUpId!)}
-                        className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
-                      >
-                        View Comment
-                      </button>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {!p.isGuest && (
-                      <input
-                        type="checkbox"
-                        checked={p.selected}
-                        onChange={() => toggleSelect(p.signUpId)}
-                        className="w-5 h-5 accent-bcp-blue cursor-pointer"
-                      />
-                    )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {!p.isGuest && p.comments && p.comments.trim() !== "" && (
+                        <button
+                          onClick={() => handleViewComment(p.signUpId!)}
+                          className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
+                        >
+                          View Comment
+                        </button>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {!p.isGuest && (
+                        <input
+                          type="checkbox"
+                          checked={p.selected}
+                          onChange={() => toggleSelect(p.signUpId)}
+                          className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                        />
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {volunteers.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-gray-400">
+                    No one has signed up yet.
                   </td>
                 </tr>
-              );
-            })}
-            {volunteers.length === 0 && (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-gray-400">
-                  No one has signed up yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {anySelected && (
           <div className="border-t border-gray-200 bg-gray-50 w-full">
@@ -630,166 +626,175 @@ const EventAdminTable = (props: EventAdminTableProps) => {
               </h1>
             </div>
 
-            <table className="w-full table-fixed border-white-700 text-bcp-blue">
-              <colgroup>
-                <col style={{ width: "60px" }} />
-                <col style={{ width: "200px" }} />
-                <col style={{ width: "220px" }} />
-                <col style={{ width: "140px" }} />
-                <col style={{ width: "50px" }} />
-                <col style={{ width: "120px" }} />
-                <col style={{ width: "100px" }} />
-              </colgroup>
-              <thead className="bg-white sticky top-0 z-10">
-                <tr className="text-left">
-                  <th className="py-3 px-5 font-normal"></th>
-                  <th className="py-3 px-4 font-normal">Name</th>
-                  <th className="py-3 px-4 font-normal">Email</th>
-                  <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-                  <th className="py-3 px-4 font-normal"></th>
-                  <th className="py-3 px-4 font-normal"></th>
-                  <th className="py-3 px-4 font-normal">
-                    <button
-                      onClick={toggleWaitlistSelectAll}
-                      className="hover:underline transition-all duration-200"
-                    >
-                      Select All
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {waitlist.map((p, i) => {
-                  const nextPerson = waitlist[i + 1];
-                  const hasGuestBelow =
-                    nextPerson && nextPerson.guestOf && !p.isGuest;
-                  const rowNumber = i + 1;
-                  const profileImage = p.profileImage;
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[890px] table-fixed border-white-700 text-bcp-blue">
+                <colgroup>
+                  <col style={{ width: "60px" }} />
+                  <col style={{ width: "200px" }} />
+                  <col style={{ width: "220px" }} />
+                  <col style={{ width: "140px" }} />
+                  <col style={{ width: "50px" }} />
+                  <col style={{ width: "120px" }} />
+                  <col style={{ width: "100px" }} />
+                </colgroup>
+                <thead className="bg-white sticky top-0 z-10">
+                  <tr className="text-left">
+                    <th className="py-3 px-5 font-normal"></th>
+                    <th className="py-3 px-4 font-normal">Name</th>
+                    <th className="py-3 px-4 font-normal">Email</th>
+                    <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
+                    <th className="py-3 px-4 font-normal"></th>
+                    <th className="py-3 px-4 font-normal"></th>
+                    <th className="py-3 px-4 font-normal">
+                      <button
+                        onClick={toggleWaitlistSelectAll}
+                        className="hover:underline transition-all duration-200"
+                      >
+                        Select All
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {waitlist.map((p, i) => {
+                    const nextPerson = waitlist[i + 1];
+                    const hasGuestBelow =
+                      nextPerson && nextPerson.guestOf && !p.isGuest;
+                    const rowNumber = i + 1;
+                    const profileImage = p.profileImage;
 
-                  return (
-                    <tr
-                      key={
-                        p.waitlistId + (p.isGuest ? `-guest-${p.userId}` : "")
-                      }
-                      className={`transition-colors duration-200 ${
-                        p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                      } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
-                        !hasGuestBelow && !p.isGuest
-                          ? "border-b border-gray-300"
-                          : ""
-                      } ${p.isGuest && !waitlist[i + 1]?.isGuest ? "border-b border-gray-300" : ""}`}
-                    >
-                      <td className="py-3 px-6">{rowNumber}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          {p.isGuest ? (
-                            <div className="flex items-center relative min-w-0">
-                              {" "}
-                              {/* Changed from items-start to items-center */}
-                              <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
-                                {profileImage && (
-                                  <Image
-                                    width={40}
-                                    height={40}
-                                    src={profileImage}
-                                    alt="Profile"
-                                    className="w-full h-full rounded-full object-cover"
-                                    unoptimized={
-                                      typeof profileImage === "string" &&
-                                      profileImage.startsWith("http")
-                                    }
-                                  />
+                    return (
+                      <tr
+                        key={
+                          p.waitlistId + (p.isGuest ? `-guest-${p.userId}` : "")
+                        }
+                        className={`transition-colors duration-200 ${
+                          p.selected
+                            ? "bg-gray-100"
+                            : "bg-white hover:bg-gray-50"
+                        } ${!p.isGuest ? "border-t border-gray-300" : ""} ${
+                          !hasGuestBelow && !p.isGuest
+                            ? "border-b border-gray-300"
+                            : ""
+                        } ${p.isGuest && !waitlist[i + 1]?.isGuest ? "border-b border-gray-300" : ""}`}
+                      >
+                        <td className="py-3 px-6">{rowNumber}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {p.isGuest ? (
+                              <div className="flex items-center relative min-w-0">
+                                {" "}
+                                {/* Changed from items-start to items-center */}
+                                <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
+                                <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                                  {profileImage && (
+                                    <Image
+                                      width={40}
+                                      height={40}
+                                      src={profileImage}
+                                      alt="Profile"
+                                      className="w-full h-full rounded-full object-cover"
+                                      unoptimized={
+                                        typeof profileImage === "string" &&
+                                        profileImage.startsWith("http")
+                                      }
+                                    />
+                                  )}
+                                </div>
+                                <div
+                                  className="ml-3 min-w-0 truncate"
+                                  title={`${p.firstName} ${p.lastName}`}
+                                >
+                                  {p.firstName} {p.lastName}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3 relative min-w-0">
+                                <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
+                                  {profileImage && (
+                                    <Image
+                                      width={40}
+                                      height={40}
+                                      src={profileImage}
+                                      alt="Profile"
+                                      className="w-full h-full rounded-full object-cover"
+                                      unoptimized={
+                                        typeof profileImage === "string" &&
+                                        profileImage.startsWith("http")
+                                      }
+                                    />
+                                  )}
+                                </div>
+                                {hasGuestBelow && (
+                                  <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
                                 )}
+                                <div
+                                  className="truncate"
+                                  title={`${p.firstName} ${p.lastName}`}
+                                >
+                                  {p.firstName} {p.lastName}
+                                </div>
                               </div>
-                              <div
-                                className="ml-3 min-w-0 truncate"
-                                title={`${p.firstName} ${p.lastName}`}
-                              >
-                                {p.firstName} {p.lastName}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3 relative min-w-0">
-                              <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
-                                {profileImage && (
-                                  <Image
-                                    width={40}
-                                    height={40}
-                                    src={profileImage}
-                                    alt="Profile"
-                                    className="w-full h-full rounded-full object-cover"
-                                    unoptimized={
-                                      typeof profileImage === "string" &&
-                                      profileImage.startsWith("http")
-                                    }
-                                  />
-                                )}
-                              </div>
-                              {hasGuestBelow && (
-                                <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
-                              )}
-                              <div
-                                className="truncate"
-                                title={`${p.firstName} ${p.lastName}`}
-                              >
-                                {p.firstName} {p.lastName}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="truncate" title={p.emailAddress}>
-                          {p.emailAddress}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="truncate" title={p.phoneNumber}>
-                          {p.phoneNumber}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        {p.speaksSpanish && (
-                          <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
-                            S
+                            )}
                           </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        {!p.isGuest &&
-                          p.comments &&
-                          p.comments.trim() !== "" && (
-                            <button
-                              onClick={() => handleViewComment(p.waitlistId!)}
-                              className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
-                            >
-                              View Comment
-                            </button>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="truncate" title={p.emailAddress}>
+                            {p.emailAddress}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="truncate" title={p.phoneNumber}>
+                            {p.phoneNumber}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {p.speaksSpanish && (
+                            <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black">
+                              S
+                            </div>
                           )}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {!p.isGuest && (
-                          <input
-                            type="checkbox"
-                            checked={p.selected}
-                            onChange={() => toggleWaitlistSelect(p.waitlistId!)}
-                            className="w-5 h-5 accent-bcp-blue cursor-pointer"
-                          />
-                        )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {!p.isGuest &&
+                            p.comments &&
+                            p.comments.trim() !== "" && (
+                              <button
+                                onClick={() => handleViewComment(p.waitlistId!)}
+                                className="text-medium-gray underline text-sm hover:text-bcp-blue transition-colors whitespace-nowrap"
+                              >
+                                View Comment
+                              </button>
+                            )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {!p.isGuest && (
+                            <input
+                              type="checkbox"
+                              checked={p.selected}
+                              onChange={() =>
+                                toggleWaitlistSelect(p.waitlistId!)
+                              }
+                              className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {waitlist.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-8 text-center text-medium-gray"
+                      >
+                        No one is on the waitlist.
                       </td>
                     </tr>
-                  );
-                })}
-                {waitlist.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-400">
-                      No one is on the waitlist.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {anyWaitlistSelected && (
               <div className="border-t border-gray-200 bg-gray-50 w-full">
@@ -826,7 +831,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
           onClose={() => setShowCommentModal(false)}
           layout="custom"
           description={
-            <div className="w-full px-10 py-6 text-left text-bcp-blue">
+            <div className="w-full px-10 py-6 text-left text-bcp-blue max-h-[600px] overflow-y-auto overflow-x-hidden">
               {/* Main User */}
               <div className="flex items-start gap-6 mb-8">
                 <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
@@ -847,23 +852,22 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   )}
                 </div>
 
-                <div
-                  className="flex-shrink-0"
-                  style={{ minWidth: "240px", maxWidth: "240px" }}
-                >
+                <div className="flex-shrink-0" style={{ width: "240px" }}>
                   <div className="flex items-center gap-2 mb-1">
                     <h3
-                      className="text-xl font-bold truncate"
+                      className="text-xl font-bold truncate flex-1 min-w-0"
                       title={selectedUserData.name}
                     >
                       {selectedUserData.name}
                     </h3>
 
-                    {selectedUserData.speaksSpanish && (
-                      <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold flex-shrink-0">
-                        S
-                      </div>
-                    )}
+                    <div className="w-7 h-7 flex-shrink-0">
+                      {selectedUserData.speaksSpanish && (
+                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                          S
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {selectedUserData.memberSince && (
@@ -894,77 +898,85 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 </div>
               </div>
 
-              {/* Guest Section */}
-              {selectedUserData.guestName && (
-                <div className="flex items-start gap-6 mb-8">
-                  <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
-                    {selectedUserData.profileImage ? (
-                      <Image
-                        width={64}
-                        height={64}
-                        src={selectedUserData.profileImage}
-                        alt="Profile"
-                        className="w-full h-full rounded-full object-cover"
-                        unoptimized={
-                          typeof selectedUserData.profileImage === "string" &&
-                          selectedUserData.profileImage.startsWith("http")
-                        }
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-300 rounded-full" />
-                    )}
-                  </div>
-
-                  <div
-                    className="flex-shrink-0"
-                    style={{ minWidth: "240px", maxWidth: "240px" }}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3
-                        className="text-xl font-bold truncate"
-                        title={selectedUserData.guestName}
-                      >
-                        {selectedUserData.guestName}
-                      </h3>
-
-                      {selectedUserData.guestSpeaksSpanish && (
-                        <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black flex-shrink-0">
-                          S
+              {/* Guest Section - Display ALL guests */}
+              {selectedUserData.guests &&
+                selectedUserData.guests.length > 0 && (
+                  <>
+                    {selectedUserData.guests.map((guest, index) => (
+                      <div key={index} className="flex items-start gap-6 mb-8">
+                        <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                          {selectedUserData.profileImage ? (
+                            <Image
+                              width={64}
+                              height={64}
+                              src={selectedUserData.profileImage}
+                              alt="Profile"
+                              className="w-full h-full rounded-full object-cover"
+                              unoptimized={
+                                typeof selectedUserData.profileImage ===
+                                  "string" &&
+                                selectedUserData.profileImage.startsWith("http")
+                              }
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-300 rounded-full" />
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <p className="text-sm text-gray-500">
-                      Guest of {selectedUserData.name.split(" ")[0]}
-                    </p>
-                  </div>
+                        <div
+                          className="flex-shrink-0"
+                          style={{ width: "240px" }}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3
+                              className="text-xl font-bold truncate flex-1 min-w-0"
+                              title={guest.name}
+                            >
+                              {guest.name}
+                            </h3>
 
-                  <div
-                    className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
-                    style={{ minWidth: "320px" }}
-                  >
-                    <span className="text-gray-600 whitespace-nowrap">
-                      Phone number
-                    </span>
-                    <span
-                      className="truncate"
-                      title={selectedUserData.guestPhoneNumber || "N/A"}
-                    >
-                      {selectedUserData.guestPhoneNumber || "N/A"}
-                    </span>
+                            <div className="w-7 h-7 flex-shrink-0">
+                              {guest.speaksSpanish && (
+                                <div className="bg-light-bcp-blue text-white w-7 h-7 rounded-lg flex items-center justify-center border border-black text-sm font-bold">
+                                  S
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                    <span className="text-gray-600 whitespace-nowrap">
-                      Email
-                    </span>
-                    <span
-                      className="truncate"
-                      title={selectedUserData.guestEmail || "N/A"}
-                    >
-                      {selectedUserData.guestEmail || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              )}
+                          <p className="text-sm text-gray-500">
+                            Guest of {selectedUserData.name.split(" ")[0]}
+                          </p>
+                        </div>
+
+                        <div
+                          className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"
+                          style={{ minWidth: "320px" }}
+                        >
+                          <span className="text-gray-600 whitespace-nowrap">
+                            Phone number
+                          </span>
+                          <span
+                            className="truncate"
+                            title={guest.phoneNumber || "N/A"}
+                          >
+                            {guest.phoneNumber || "N/A"}
+                          </span>
+
+                          <span className="text-gray-600 whitespace-nowrap">
+                            Email
+                          </span>
+                          <span
+                            className="truncate"
+                            title={guest.email || "N/A"}
+                          >
+                            {guest.email || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
 
               {/* Comment */}
               <div className="mt-4">

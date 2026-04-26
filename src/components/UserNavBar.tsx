@@ -1,5 +1,5 @@
 "use client";
-import bcp_logo from "@/assets/icons/BCP.svg";
+import bcp_logo from "@/assets/icons/BCPlogo.png";
 import blankProfile from "@/assets/icons/Group 1.svg";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,8 +16,9 @@ function UserNavBar(props: UserNavBarProps) {
   const firstName = (dbFirstName || user?.firstName) ?? "Guest";
 
   return (
-    <nav className="bg-bcp-blue px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
+    <nav className="bg-bcp-blue px-8 py-4">
+      <ul className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between w-full items-center md:items-center">
+        {/* Logo */}
         <li>
           <Link href="/" className="flex items-center gap-4">
             <Image
@@ -28,8 +29,10 @@ function UserNavBar(props: UserNavBarProps) {
             />
           </Link>
         </li>
+        {/* Links row */}
+
         <li>
-          <ul className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+          <ul className="flex items-center gap-4 md:gap-6">
             <li>
               <Link
                 href="https://www.bostoncommunitypediatrics.org/"
@@ -41,7 +44,7 @@ function UserNavBar(props: UserNavBarProps) {
             <li>
               <Link
                 href="/event"
-                className="bg-light-bcp-blue text-white text-sm px-3 py-2 rounded text-center"
+                className="bg-light-bcp-blue text-white text-sm px-4 py-2 rounded text-center"
               >
                 Volunteer
               </Link>
@@ -49,7 +52,9 @@ function UserNavBar(props: UserNavBarProps) {
             {isSignedIn ? (
               <li className="flex items-center gap-2">
                 <Link className="flex items-center gap-2" href="/profile">
-                  <span className="text-white font-medium">{firstName}</span>
+                  <span className="text-white font-medium hidden md:inline">
+                    {firstName}
+                  </span>
                   <Image
                     src={profileImageUrl ?? blankProfile}
                     alt="Profile"
@@ -61,8 +66,8 @@ function UserNavBar(props: UserNavBarProps) {
                 </Link>
               </li>
             ) : (
-              <li className="flex items-center gap-2">
-                <Link href="/login" className="text-white font-medium">
+              <li>
+                <Link href="/login" className="text-white font-medium text-sm">
                   Login
                 </Link>
               </li>

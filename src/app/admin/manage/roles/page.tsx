@@ -263,17 +263,18 @@ const ManageRolesPage = () => {
     }
 
     try {
-      const deletePromises = volunteersToDel.map(async (vol) => {
-        const res = await fetch(`/api/admin/users/${vol.userId}`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: vol.userId }),
-        });
-        if (!res.ok) throw new Error(`Failed to delete user`);
-        return vol.userId;
+      const res = await fetch(`/api/admin/users/batch-delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: volunteersToDel.map((v) => v.userId),
+        }),
       });
 
-      await Promise.all(deletePromises);
+      if (!res.ok) {
+        throw new Error(`Failed to delete users`);
+      }
+
       setVolunteers((prev) => prev.filter((v) => !v.selected));
       setShowDeleteConfirm(false);
       setModalTitle("Users Removed!");
@@ -457,8 +458,8 @@ const ManageRolesPage = () => {
               <option value="NAME_ZA">Name (Z–A)</option>
               <option value="ADMIN">Admin</option>
               <option value="VOLUNTEER">Volunteer</option>
-              <option value="DATE_NEWEST">Date Created (Newest)</option>
-              <option value="DATE_OLDEST">Date Created (Oldest)</option>
+              <option value="DATE_NEWEST">Newest</option>
+              <option value="DATE_OLDEST">Oldest</option>
             </select>
           </div>
         </div>
@@ -502,9 +503,27 @@ const ManageRolesPage = () => {
                 >
                   <td className="py-3 px-4 text-sm">{i + 1}</td>
                   <td className="py-3 px-4 truncate text-sm">
-                    {p.firstName} {p.lastName}
+                    {p.role === "VOLUNTEER" ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(`/admin/manage/${p.userId}`)
+                        }
+                        className="hover:underline text-left"
+                      >
+                        {p.firstName} {p.lastName}
+                      </button>
+                    ) : (
+                      <span>
+                        {p.firstName} {p.lastName}
+                      </span>
+                    )}
                   </td>
-                  <td className="py-3 px-4 truncate text-sm">{p.role}</td>
+                  <td className="py-3 px-4 truncate text-sm">
+                    {p.role
+                      .toLowerCase()
+                      .replace(/^\w/, (c) => c.toUpperCase())}
+                  </td>
                   <td className="py-3 px-4 truncate text-sm">{p.emailAddress}</td>
                   <td className="py-3 px-4 truncate text-sm">{p.phoneNumber}</td>
                   <td className="py-3 px-4 text-center">
@@ -552,9 +571,9 @@ const ManageRolesPage = () => {
                 onClick={handleEditConfirm}
               />
               <Button
-                disabled={selectedCount <= 0}
+                disabled={selectedCount <= 0 || selectedCount > 3}
                 label="Remove"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-light-bcp-blue"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-light-bcp-blue disabled:bg-medium-gray disabled:hover:bg-medium-gray disabled:cursor-not-allowed disabled:opacity-70"
                 onClick={handleDeleteConfirm}
               />
             </div>

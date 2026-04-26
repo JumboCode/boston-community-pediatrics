@@ -93,7 +93,11 @@ export const positionSchema = z
       message: "End date/time must be after start date/time",
       path: ["endTime"],
     }
-  );
+  )
+  .refine((p) => !p.startDate || !p.endDate || p.startDate === p.endDate, {
+    message: "Positions cannot span multiple days",
+    path: ["endDate"],
+  });
 
 export const eventSchema = z
   .object({

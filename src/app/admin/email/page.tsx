@@ -421,14 +421,7 @@ export default function EmailPage() {
           </div>
 
           <div className="flex flex-row gap-4 mt-6">
-            <Button
-              label="Schedule Send"
-              altStyle="w-[150px] h-[44px] text-black bg-light-gray rounded-lg 
-              font-large flex items-center justify-center hover:bg-gray-400"
-              onClick={handleScheduleSend}
-              type="button"
-            />
-
+           
             <Button
               label={sending ? "Sending..." : "Send"}
               altStyle="w-[120px] h-[44px] text-white bg-[#4B647C] rounded-lg 

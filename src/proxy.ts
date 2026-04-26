@@ -5,19 +5,27 @@ import { UserRole } from "@prisma/client";
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
+  const path = req.nextUrl.pathname;
 
-  // Only protect /admin routes
-  if (req.nextUrl.pathname.startsWith("/admin")) {
+  const isAdminPage = path.startsWith("/admin");
+  const isAdminApi = path.startsWith("/api/admin");
 
-    if (!userId) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  if (!isAdminPage && !isAdminApi) return;
 
-    const user = await getUserById(userId);
+  // Not signed in
+  if (!userId) {
+    return isAdminApi
+      ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      : NextResponse.redirect(new URL("/", req.url));
+  }
 
-    if (user && user.role !== UserRole.ADMIN) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
+  const user = await getUserById(userId);
+
+  // Signed in but not an admin
+  if (!user || user.role !== UserRole.ADMIN) {
+    return isAdminApi
+      ? NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      : NextResponse.redirect(new URL("/", req.url));
   }
 });
 

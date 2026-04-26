@@ -83,8 +83,12 @@ export default function DatePicker({
     return days;
   };
 
-  const handleDayClick = (day: number | null, isGrayedOut: boolean) => {
-    if (day === null || isGrayedOut) return;
+  const handleDayClick = (
+    day: number | null,
+    isGrayedOut: boolean,
+    isFutureDate: boolean
+  ) => {
+    if (day === null || isGrayedOut || isFutureDate) return;
 
     // Use UTC to avoid timezone offset issues
     const clickedDate = new Date(Date.UTC(currentYear, currentMonth, day));
@@ -92,6 +96,16 @@ export default function DatePicker({
     setCurrentMonth(clickedDate.getUTCMonth());
     setCurrentYear(clickedDate.getUTCFullYear());
     onDateChange?.(clickedDate);
+  };
+
+  const isFutureDate = (day: number | null) => {
+    if (day === null) return false;
+
+    const clickedDate = new Date(Date.UTC(currentYear, currentMonth, day));
+    const todayUTC = new Date();
+    todayUTC.setHours(0, 0, 0, 0);
+
+    return clickedDate > todayUTC;
   };
 
   const isSelectedDate = (day: number | null) => {
@@ -249,19 +263,20 @@ export default function DatePicker({
           const firstDayOfMonth = getFirstDayOfMonth(currentMonth, currentYear);
           // A day is grayed out if it's beyond the actual days in the current month
           const isGrayedOut = index >= daysInCurrentMonth + firstDayOfMonth;
+          const isFuture = isFutureDate(day);
 
           return (
             <button
               key={index}
-              onClick={() => handleDayClick(day, isGrayedOut)}
-              disabled={day === null}
+              onClick={() => handleDayClick(day, isGrayedOut, isFuture)}
+              disabled={day === null || isFuture}
               type="button"
               className={`
                 h-10 flex items-center justify-center text-base font-medium rounded-xl transition-all
                 ${day === null ? "invisible" : ""}
-                ${isGrayedOut ? "text-gray-300 cursor-default" : "text-gray-700"}
-                ${!isGrayedOut && !isSelected ? "hover:bg-gray-100" : ""}
-                ${isSelected && !isGrayedOut ? "bg-bcp-blue text-white" : ""}
+                ${isGrayedOut || isFuture ? "text-gray-300 cursor-not-allowed" : "text-gray-700"}
+                ${!isGrayedOut && !isSelected && !isFuture ? "hover:bg-gray-100" : ""}
+                ${isSelected && !isGrayedOut && !isFuture ? "bg-bcp-blue text-white" : ""}
               `}
             >
               {day}

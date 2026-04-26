@@ -13,6 +13,23 @@ import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import Link from "next/link";
 
+interface Signup {
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  isGuest: boolean;
+}
+
+interface Waitlist {
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  isGuest?: boolean;
+  positionId?: string;
+}
+
 interface EventProps {
   eventId: string;
   eventName: string;
@@ -39,8 +56,8 @@ interface EventProps {
     city: string;
     state: string;
     zipCode: string;
-    signups: any[];
-    waitlist: any[];
+    signups: Signup[];
+    waitlist: Waitlist[];
   }[];
 }
 
@@ -153,13 +170,14 @@ const ManageEventsPage = () => {
     });
   };
 
+  // Search Bar and Sort
   const [searchQuery, setSearchQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
 
   const [sortOption, setSortOption] = useState<
-    "OLDEST" | "MOST-RECENT" | "PAST" | "UPCOMING"
+    "OLDEST" | "MOST-RECENT" | "PAST" | "UPCOMING" | "NAME_AZ" | "NAME_ZA"
   >("MOST-RECENT");
 
   const toggleSelectAll = () => {
@@ -181,6 +199,14 @@ const ManageEventsPage = () => {
       list.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
     } else if (sortOption === "OLDEST") {
       list.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+    } else if (sortOption === "NAME_AZ") {
+      list.sort((a, b) =>
+        a.eventName.toLowerCase().localeCompare(b.eventName.toLowerCase())
+      );
+    } else if (sortOption === "NAME_ZA") {
+      list.sort((a, b) =>
+        b.eventName.toLowerCase().localeCompare(a.eventName.toLowerCase())
+      );
     }
 
     if (searchQuery) {
@@ -391,16 +417,48 @@ const ManageEventsPage = () => {
 
         {/* Search + Filter */}
         <div className="mb-4 flex items-center gap-4 w-full">
-          <div className="flex flex-1 h-[44px] rounded-lg border overflow-hidden min-w-0">
+          <div
+            className="flex flex-1 min-h-[44px] rounded-lg border border-gray-border px-3 py-2 flex-wrap gap-2 cursor-text min-w-0"
+            onClick={() => {
+              const input = document.getElementById("event-search-input");
+              input?.focus();
+            }}
+          >
+            {/* Selected event chips */}
+            {event
+              .filter((e) => e.selected)
+              .map((e) => (
+                <span
+                  key={e.eventId}
+                  className="flex items-center gap-1 border border-gray-border rounded-full px-3 py-0.5 text-sm bg-white whitespace-nowrap text-bcp-blue"
+                >
+                  {e.eventName}
+                  <button
+                    type="button"
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      toggleSelect(e.eventId);
+                    }}
+                    className="ml-1 text-medium-gray hover:text-red-500 leading-none"
+                  >
+                    x
+                  </button>
+                </span>
+              ))}
+
+            {/* Input */}
             <input
+              id="event-search-input"
               type="text"
-              placeholder="Search by event name..."
+              placeholder={
+                event.some((e) => e.selected) ? "" : "Search by event name..."
+              }
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setExpandedEvents(new Set());
               }}
-              className="flex-1 px-3 py-2 text-sm outline-none"
+              className="flex-1 min-w-[120px] text-sm outline-none"
             />
           </div>
 
@@ -417,7 +475,11 @@ const ManageEventsPage = () => {
                     ? "Oldest"
                     : sortOption === "PAST"
                       ? "Past"
-                      : "Upcoming"}
+                      : sortOption === "UPCOMING"
+                        ? "Upcoming"
+                        : sortOption === "NAME_AZ"
+                          ? "Name (A–Z)"
+                          : "Name (Z–A)"}
               </span>
               <svg
                 className={`w-4 h-4 ml-1 flex-shrink-0 transition-transform duration-200 ${filterOpen ? "rotate-180" : ""}`}
@@ -436,28 +498,39 @@ const ManageEventsPage = () => {
 
             {filterOpen && (
               <div className="absolute right-0 mt-1 w-full bg-white border rounded-lg shadow-lg z-20 overflow-hidden">
-                {(["MOST-RECENT", "OLDEST", "UPCOMING", "PAST"] as const).map(
-                  (opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => {
-                        setSortOption(opt);
-                        setFilterOpen(false);
-                        setExpandedEvents(new Set());
-                      }}
-                      className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-really-light-gray
-                        ${sortOption === opt ? "bg-light-gray font-medium" : ""}`}
-                    >
-                      {opt === "MOST-RECENT"
-                        ? "Most Recent"
-                        : opt === "OLDEST"
-                          ? "Oldest"
-                          : opt === "PAST"
-                            ? "Past"
-                            : "Upcoming"}
-                    </button>
-                  )
-                )}
+                {(
+                  [
+                    "NAME_AZ",
+                    "NAME_ZA",
+                    "MOST-RECENT",
+                    "OLDEST",
+                    "UPCOMING",
+                    "PAST",
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      setSortOption(opt);
+                      setFilterOpen(false);
+                      setExpandedEvents(new Set());
+                    }}
+                    className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-really-light-gray
+                      ${sortOption === opt ? "bg-light-gray font-medium" : ""}`}
+                  >
+                    {opt === "NAME_AZ"
+                      ? "Name (A–Z)"
+                      : opt === "NAME_ZA"
+                        ? "Name (Z–A)"
+                        : opt === "MOST-RECENT"
+                          ? "Most Recent"
+                          : opt === "OLDEST"
+                            ? "Oldest"
+                            : opt === "PAST"
+                              ? "Past"
+                              : "Upcoming"}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -489,121 +562,131 @@ const ManageEventsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedEvents.map((p) => (
-                <Fragment key={p.eventId}>
-                  {/* Main row */}
-                  <tr
-                    className={`transition-colors duration-200 ${
-                      p.selected ? "bg-light-gray" : "bg-white hover:bg-really-light-gray"
-                    } border-t border-gray-border`}
-                  >
-                    <td className="py-3 px-4 pl-8">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <button
-                          onClick={() => toggleExpand(p.eventId)}
-                          className="flex-shrink-0"
-                        >
-                          <svg
-                            className={`w-4 h-4 transition-transform ${expandedEvents.has(p.eventId) ? "rotate-90" : ""}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+              {sortedEvents.length === 0 && searchQuery ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-medium-gray">
+                    No results
+                  </td>
+                </tr>
+              ) : (
+                sortedEvents.map((p) => (
+                  <Fragment key={p.eventId}>
+                    {/* Main Row */}
+                    <tr
+                      className={`transition-colors duration-200 ${
+                        p.selected ? "bg-light-gray" : "bg-white hover:bg-really-light-gray"
+                      } border-t border-gray-border`}
+                    >
+                      <td className="py-3 px-4 pl-8">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <button
+                            onClick={() => {
+                              toggleExpand(p.eventId);
+                            }}
+                            className="flex-shrink-0"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                        </button>
-                        <Link
-                          href={`/event/${p.eventId}`}
-                          className="hover:underline truncate text-sm"
-                        >
-                          {p.eventName}
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center text-sm truncate">
-                      {p.startDate.toLocaleDateString("en-US") ===
-                      p.endDate.toLocaleDateString("en-US")
-                        ? p.startDate.toLocaleDateString("en-US")
-                        : `${p.startDate.toLocaleDateString("en-US")} – ${p.endDate.toLocaleDateString("en-US")}`}
-                    </td>
-                    <td className="py-3 px-4 text-center text-sm">
-                      {(() => {
-                        if (!allPositions)
-                          return (
-                            <span className="inline-block w-12 h-4 bg-light-gray rounded animate-pulse" />
+                            <svg
+                              className={`w-4 h-4 transition-transform ${expandedEvents.has(p.eventId) ? "rotate-90" : ""}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </button>
+                          <Link
+                            href={`/event/${p.eventId}`}
+                            className="hover:underline truncate text-sm"
+                          >
+                            {p.eventName}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center text-sm truncate">
+                        {p.startDate.toLocaleDateString("en-US") ===
+                        p.endDate.toLocaleDateString("en-US")
+                          ? p.startDate.toLocaleDateString("en-US")
+                          : `${p.startDate.toLocaleDateString("en-US")} – ${p.endDate.toLocaleDateString("en-US")}`}
+                      </td>
+                      <td className="py-3 px-4 text-center text-sm">
+                        {(() => {
+                          if (!allPositions)
+                            return (
+                              <span className="inline-block w-12 h-4 bg-light-gray rounded animate-pulse" />
+                            );
+                          const filled = p.positions.reduce(
+                            (s, pos) => s + pos.filledSlots,
+                            0
                           );
-                        const filled = p.positions.reduce(
-                          (s, pos) => s + pos.filledSlots,
-                          0
-                        );
-                        const total = p.positions.reduce(
-                          (s, pos) => s + pos.totalSlots,
-                          0
-                        );
-                        return `${filled}/${total}`;
-                      })()}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex justify-center">
-                        <input
-                          type="checkbox"
-                          checked={p.selected}
-                          onChange={() => toggleSelect(p.eventId)}
-                          className="w-5 h-5 accent-bcp-blue cursor-pointer"
-                        />
-                      </div>
-                    </td>
-                  </tr>
+                          const total = p.positions.reduce(
+                            (s, pos) => s + pos.totalSlots,
+                            0
+                          );
+                          return `${filled}/${total}`;
+                        })()}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex justify-center">
+                          <input
+                            type="checkbox"
+                            checked={p.selected}
+                            onChange={() => toggleSelect(p.eventId)}
+                            className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                          />
+                        </div>
+                      </td>
+                    </tr>
 
-                  {/* Expanded position rows */}
-                  {expandedEvents.has(p.eventId) && (
-                    <>
-                      {!allPositions ? (
-                        <tr className="bg-really-light-gray border-t border-gray-border">
-                          <td
-                            colSpan={4}
-                            className="py-2 px-4 pl-16 text-sm text-medium-gray"
-                          >
-                            Loading...
-                          </td>
-                        </tr>
-                      ) : p.positions.length === 0 ? (
-                        <tr className="bg-really-light-gray border-t border-gray-border">
-                          <td
-                            colSpan={4}
-                            className="py-2 px-4 pl-16 text-sm text-medium-gray"
-                          >
-                            No positions
-                          </td>
-                        </tr>
-                      ) : (
-                        p.positions.map((pos) => (
-                          <tr
-                            key={pos.positionId}
-                            className="bg-light-gray hover:bg-gray-border border-t border-gray-border transition-colors duration-200"
-                          >
-                            <td className="py-2 px-4 pl-16 text-sm text-bcp-blue truncate">
-                              {pos.positionName || "—"}
+                    {/* Expanded position rows */}
+                    {expandedEvents.has(p.eventId) && (
+                      <>
+                        {!allPositions ? (
+                          <tr className="bg-really-light-gray border-t border-gray-border">
+                            <td
+                              colSpan={4}
+                              className="py-2 px-4 pl-16 text-sm text-medium-gray"
+                            >
+                              Loading...
                             </td>
-                            <td className="py-2 px-4 text-sm text-bcp-blue text-center">
-                              Capacity: {pos.filledSlots}/{pos.totalSlots}
-                            </td>
-                            <td className="py-2 px-4 text-sm text-bcp-blue text-center">
-                              Waitlist: {pos.waitlistCount}
-                            </td>
-                            <td />
                           </tr>
-                        ))
-                      )}
-                    </>
-                  )}
-                </Fragment>
-              ))}
+                        ) : p.positions.length === 0 ? (
+                          <tr className="bg-really-light-gray border-t border-gray-border">
+                            <td
+                              colSpan={4}
+                              className="py-2 px-4 pl-16 text-sm text-medium-gray"
+                            >
+                              No positions
+                            </td>
+                          </tr>
+                        ) : (
+                          p.positions.map((pos) => (
+                            <tr
+                              key={pos.positionId}
+                              className="bg-light-gray hover:bg-gray-border border-t border-gray-border transition-colors duration-200"
+                            >
+                              <td className="py-2 px-4 pl-16 text-sm text-bcp-blue truncate">
+                                {pos.positionName || "—"}
+                              </td>
+                              <td className="py-2 px-4 text-sm text-bcp-blue text-center">
+                                Capacity: {pos.filledSlots}/{pos.totalSlots}
+                              </td>
+                              <td className="py-2 px-4 text-sm text-bcp-blue text-center">
+                                Waitlist: {pos.waitlistCount}
+                              </td>
+                              <td />
+                            </tr>
+                          ))
+                        )}
+                      </>
+                    )}
+                  </Fragment>
+                ))
+              )}
             </tbody>
           </table>
         </div>

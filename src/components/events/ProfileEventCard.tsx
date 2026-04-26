@@ -15,6 +15,7 @@ interface ProfileEventCardProps {
   userRole: string;
   date: Date;
   id: string;
+   positionName: string;
   onEdit?: () => void;
   onRemove?: () => void;
   onVolunteer?: () => void;
@@ -29,6 +30,7 @@ const ProfileEventCard = ({
   filledSlots,
   totalSlots,
   userRole,
+  positionName,
   date,
   id,
   onEdit,
@@ -37,6 +39,7 @@ const ProfileEventCard = ({
 }: ProfileEventCardProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  
 
   const isAdmin = userRole === "ADMIN";
   const hasMenuActions = isAdmin
@@ -173,13 +176,14 @@ const ProfileEventCard = ({
 
       {/* Time and Location Info */}
       <div className="flex flex-col gap-1 text-[16px] text-black">
-        <p>{timeRange}</p>
+        <p className="text-[14px] font-medium text-gray-600 truncate">{positionName}</p>
+        <p>{formattedDate}</p>
         <p className="line-clamp-1">{location}</p>
       </div>
 
       {/* Bottom Footer */}
       <div className="flex justify-between items-end mt-auto pb-1">
-        <p className="text-[14px] text-gray-500">{formattedDate}</p>
+        <p className="text-[14px] text-gray-500">{timeRange}</p>
         <p className="text-[18px] font-medium text-black">
           {filledSlots}/{totalSlots}
         </p>
