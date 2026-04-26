@@ -605,7 +605,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             <div className="flex justify-between px-6 py-4">
               <Button
                 label="Send Email"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-dark-blue"
                 onClick={handleSendVolunteerEmail}
               />
               <Button
@@ -621,7 +621,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
         {isAdmin && (
           <>
             <div className="px-5 pt-10">
-              <h1 className="text-[#234254] text-[24px] font-semibold">
+              <h1 className="text-bcp-blue text-[24px] font-semibold">
                 Waitlist: {waitlist.length} Waiting
               </h1>
             </div>
@@ -761,7 +761,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             p.comments.trim() !== "" && (
                               <button
                                 onClick={() => handleViewComment(p.waitlistId!)}
-                                className="text-gray-500 underline text-sm hover:text-gray-700 transition-colors whitespace-nowrap"
+                                className="text-medium-gray underline text-sm hover:text-bcp-blue transition-colors whitespace-nowrap"
                               >
                                 View Comment
                               </button>
@@ -775,7 +775,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                               onChange={() =>
                                 toggleWaitlistSelect(p.waitlistId!)
                               }
-                              className="w-5 h-5 accent-[#234254] cursor-pointer"
+                              className="w-5 h-5 accent-bcp-blue cursor-pointer"
                             />
                           )}
                         </td>
@@ -786,7 +786,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                     <tr>
                       <td
                         colSpan={7}
-                        className="py-8 text-center text-gray-400"
+                        className="py-8 text-center text-medium-gray"
                       >
                         No one is on the waitlist.
                       </td>
@@ -802,12 +802,12 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <div className="flex gap-3">
                     <Button
                       label="Send Email"
-                      altStyle="bg-[#234254] text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                      altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-dark-blue"
                       onClick={handleSendWaitlistEmail}
                     />
                     <Button
                       label="Add to Event"
-                      altStyle="bg-white border border-[#234254] text-[#234254] px-5 py-2 rounded-md shadow hover:bg-gray-50"
+                      altStyle="bg-white border border-bcp-blue text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-50"
                       onClick={handleAddToEvent}
                     />
                   </div>

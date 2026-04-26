@@ -60,7 +60,6 @@ const SignupForm = () => {
     }
   };
 
-  // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -95,7 +94,7 @@ const SignupForm = () => {
     const confirmPassword = formData.get("confirm-password") as string;
     const firstName = formData.get("first-name") as string;
     const lastName = formData.get("last-name") as string;
-    const dob = formData.get("dob") as string;
+    const dobValue = formData.get("dob") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -109,7 +108,7 @@ const SignupForm = () => {
       return;
     }
 
-    if (dob && dob > todayYmd) {
+    if (dobValue && dobValue > todayYmd) {
       setError("Date of birth cannot be in the future");
       setLoading(false);
       return;
@@ -163,9 +162,11 @@ const SignupForm = () => {
       });
 
       setPendingVerification(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Signup error:", err);
-      setError(err?.errors?.[0]?.message || "Error creating account");
+      const message =
+        err instanceof Error ? err.message : "Error creating account";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -250,7 +251,6 @@ const SignupForm = () => {
     });
   }
 
-  // --- RENDER: VERIFICATION FORM ---
   if (pendingVerification) {
     return (
       <div className="flex flex-col items-center border border-medium-gray rounded-lg my-12 sm:my-[220px] w-[calc(100%-32px)] sm:w-[600px] mx-auto p-6 sm:p-10 relative">
@@ -294,7 +294,6 @@ const SignupForm = () => {
     );
   }
 
-  // --- RENDER: SIGN UP FORM ---
   return (
     <form
       onSubmit={handleSubmit}
@@ -319,7 +318,7 @@ const SignupForm = () => {
       <div className="w-full px-4 sm:px-[102px] mb-8">
         <button
           onClick={handleGoogleSignUp}
-          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-medium-gray rounded text-black hover:bg-gray-50 transition-colors font-medium"
+          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-medium-gray rounded text-black hover:bg-really-light-gray transition-colors font-medium"
         >
           <svg
             width="20"
@@ -424,6 +423,7 @@ const SignupForm = () => {
           />
         </div>
 
+        {/* DOB */}
         <div className="relative flex flex-col items-start">
           <label
             htmlFor="dob"
@@ -435,7 +435,7 @@ const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowDatePicker(!showDatePicker)}
-            className="w-full h-[43px] rounded-lg border border-medium-gray px-3 text-left text-base text-medium-gray bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
+            className="w-full h-[43px] rounded-lg border border-medium-gray px-3 text-left text-base text-medium-gray bg-white hover:bg-really-light-gray transition-colors focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           >
             {dob ? formatDateForDisplay(dob) : "Select date"}
           </button>
@@ -587,7 +587,7 @@ const SignupForm = () => {
           </div>
         </div>
 
-        {/* --- NEW: Image Upload UI --- */}
+        {/* Image Upload UI */}
         <div className="flex items-center gap-[60px]">
           <input
             type="file"
@@ -600,7 +600,7 @@ const SignupForm = () => {
           {/* Clickable Circle Image */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-200 flex-shrink-0"
+            className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-border flex-shrink-0"
           >
             {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

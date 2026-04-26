@@ -269,13 +269,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsWaitlisted(false)}
-            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
+            className="px-6 py-2.5 bg-dark-desaturated-blue text-white rounded font-bold text-sm hover:bg-[#2c3e50] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-dark-desaturated-blue rounded font-bold text-sm hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -315,13 +315,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsSuccess(false)}
-            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm"
+            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm hover:bg-[#2a4455] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -338,7 +338,7 @@ export default function EventSignUpForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-400/50 backdrop-blur-[2px]">
           {/* This is your actual modal card. Keep this one rounded! */}
           <div className="bg-white rounded-lg shadow-xl p-10 max-w-md w-full text-center mx-4 border border-gray-200">
-            <h2 className="text-3xl font-semibold text-[#34495e] mb-2">
+            <h2 className="text-3xl font-semibold text-dark-desaturated-blue mb-2">
               Sign in to Volunteer
             </h2>
             <p className="text-gray-900 font-medium mb-8">
@@ -353,7 +353,7 @@ export default function EventSignUpForm({
               </button>
               <button
                 onClick={() => router.push("/login")}
-                className="px-8 py-2.5 bg-[#34495e] text-white rounded font-medium hover:bg-[#2c3e50] transition"
+                className="px-8 py-2.5 bg-dark-desaturated-blue text-white rounded font-medium hover:bg-[#2c3e50] transition"
               >
                 Log In
               </button>
