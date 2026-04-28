@@ -22,6 +22,7 @@ export default function EditProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [emptyFields, setEmptyFields] = useState<Set<string>>(new Set());
   const todayYmd = new Date().toISOString().slice(0, 10);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -118,10 +119,26 @@ export default function EditProfilePage() {
   // Handle File Selection
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Local preview
+    if (!file) return;
+
+    const ALLOWED_TYPES = ["image/jpeg"];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError("Only JPG/JPEG images are allowed.");
+      e.target.value = "";
+      return;
     }
+
+    const MAX_SIZE = 1 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setError("Image must be 1MB or less.");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setForm((prev) => ({ ...prev, profileImageKey: file.name }));
   }
 
   // Handle Remove Image
@@ -159,17 +176,50 @@ export default function EditProfilePage() {
   // --- SUBMIT ---
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    setError("");
 
-    if (form.dob && form.dob > todayYmd) {
-      setError("Date of birth cannot be in the future.");
-      setSaving(false);
+    // Validate required fields
+    const newEmptyFields = new Set<string>();
+    if (!form.firstName) newEmptyFields.add("firstName");
+    if (!form.lastName) newEmptyFields.add("lastName");
+    if (!form.phone) newEmptyFields.add("phone");
+    if (!form.dob) newEmptyFields.add("dob");
+
+    if (form.phone && (form.phone.length < 7 || form.phone.length > 15)) {
+      setError("Phone number must be 7–15 digits.");
       return;
     }
 
+    if (form.dob && form.dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
+      return;
+    }
+
+    if (form.state && form.state.length !== 2) {
+      setError("State must be exactly 2 characters.");
+      return;
+    }
+
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (form.zip && !zipRegex.test(form.zip)) {
+      setError("Zip code must be 5-digit (12345) or 9-digit (12345-6789).");
+      return;
+    }
+
+    if (newEmptyFields.size > 0) {
+      setEmptyFields(newEmptyFields);
+      return;
+    }
+
+    setEmptyFields(new Set());
+    setSaving(true);
+    setError("");
+
     try {
-      let finalImageUrl = normalizeProfileImageUrl(form.profileImageKey) || "";
+      let finalImageUrl = form.profileImageKey
+        ? normalizeProfileImageUrl(form.profileImageKey)
+        : selectedFile
+          ? previewUrl || ""
+          : null;
 
       // 1. Upload new image if selected
       if (selectedFile) {
@@ -191,6 +241,7 @@ export default function EditProfilePage() {
           }
 
           finalImageUrl = normalizeProfileImageUrl(publicUrl) || "";
+          setForm((prev) => ({ ...prev, profileImageKey: publicUrl }));
         }
       }
 
@@ -264,8 +315,18 @@ export default function EditProfilePage() {
                   name="firstName"
                   value={form.firstName}
                   onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  maxLength={50}
+                  className={`w-full border rounded-md px-3 py-2 text-sm ${
+                    emptyFields.has("firstName")
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
+                {emptyFields.has("firstName") && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Please complete this field
+                  </p>
+                )}
               </div>
 
               <div>
@@ -274,8 +335,18 @@ export default function EditProfilePage() {
                   name="lastName"
                   value={form.lastName}
                   onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  maxLength={50}
+                  className={`w-full border rounded-md px-3 py-2 text-sm ${
+                    emptyFields.has("lastName")
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
                 />
+                {emptyFields.has("lastName") && (
+                  <p className="text-red-500 text-sm mt-1">
+                    Please complete this field
+                  </p>
+                )}
               </div>
             </div>
 
@@ -295,10 +366,26 @@ export default function EditProfilePage() {
               <label className="block text-sm mb-1">Phone Number</label>
               <input
                 name="phone"
+                inputMode="numeric"
                 value={form.phone}
-                onChange={handleChange}
-                className="w-full border rounded-md px-3 py-2 text-sm"
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    phone: e.target.value.replace(/\D/g, ""),
+                  }))
+                }
+                maxLength={15}
+                className={`w-full border rounded-md px-3 py-2 text-sm ${
+                  emptyFields.has("phone")
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
               />
+              {emptyFields.has("phone") && (
+                <p className="text-red-500 text-sm mt-1">
+                  Please complete this field
+                </p>
+              )}
             </div>
 
             {/* DOB with Custom DatePicker */}
@@ -307,10 +394,18 @@ export default function EditProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowDatePicker(!showDatePicker)}
-                className="w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
+                className={`w-full border rounded-md px-3 py-2 text-sm text-left bg-white hover:bg-gray-50 transition-colors ${
+                  emptyFields.has("dob") ? "border-red-500" : "border-gray-300"
+                }`}
               >
                 {form.dob ? formatDateForDisplay(form.dob) : "Select date"}
               </button>
+
+              {emptyFields.has("dob") && (
+                <p className="text-red-500 text-sm mt-1">
+                  Please complete this field
+                </p>
+              )}
 
               {showDatePicker && (
                 <>
@@ -378,6 +473,7 @@ export default function EditProfilePage() {
                 name="address"
                 value={form.address}
                 onChange={handleChange}
+                maxLength={100}
                 className="w-full border rounded-md px-3 py-2 text-sm"
               />
             </div>
@@ -388,6 +484,7 @@ export default function EditProfilePage() {
                 name="city"
                 value={form.city}
                 onChange={handleChange}
+                maxLength={50}
                 className="w-full border rounded-md px-3 py-2 text-sm"
               />
             </div>
@@ -399,6 +496,7 @@ export default function EditProfilePage() {
                   name="state"
                   value={form.state}
                   onChange={handleChange}
+                  maxLength={2}
                   className="w-full border rounded-md px-3 py-2 text-sm"
                 />
               </div>
@@ -411,6 +509,7 @@ export default function EditProfilePage() {
                   name="zip"
                   value={form.zip}
                   onChange={handleChange}
+                  maxLength={10}
                   className="w-full border rounded-md px-3 py-2 text-sm"
                 />
               </div>
@@ -422,7 +521,7 @@ export default function EditProfilePage() {
                 type="file"
                 hidden
                 ref={fileInputRef}
-                accept="image/*"
+                accept=".jpg,.jpeg"
                 onChange={handleFileChange}
               />
 

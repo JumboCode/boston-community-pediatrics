@@ -311,7 +311,7 @@ const EventForm = () => {
     if (!files) return;
     const newImages: StaticImageData[] = [];
     const newFiles: File[] = [];
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 2MB in bytes
     const ALLOWED_TYPES = ["image/jpeg", "image/png"];
     const oversizedFiles: string[] = [];
     const invalidFiles: string[] = [];
@@ -1406,7 +1406,10 @@ const EventForm = () => {
                   handlePositionChange(index, "city", e.target.value);
                   clearError(`positions.${index}.city`);
                 }}
-                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.city`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(
+                  `positions.${index}.city`,
+                  "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
+                )}`}
               />
               <ErrorText k={`positions.${index}.city`} />
             </div>
@@ -1430,7 +1433,10 @@ const EventForm = () => {
                     handlePositionChange(index, "state", e.target.value);
                     clearError(`positions.${index}.state`);
                   }}
-                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.state`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(
+                    `positions.${index}.state`,
+                    "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
+                  )}`}
                 />
                 <ErrorText k={`positions.${index}.state`} />
               </div>
@@ -1457,7 +1463,10 @@ const EventForm = () => {
                     );
                     clearError(`positions.${index}.zip`);
                   }}
-                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.zip`, "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed")}`}
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(
+                    `positions.${index}.zip`,
+                    "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
+                  )}`}
                 />
                 <ErrorText k={`positions.${index}.zip`} />
               </div>
