@@ -20,6 +20,12 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    rules: {
+      // enforce === and !==
+      eqeqeq: ["error", "always", { null: "ignore" }],
+    },
+  },
 ];
 
 export default eslintConfig;

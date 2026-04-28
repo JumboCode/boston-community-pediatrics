@@ -12,12 +12,12 @@ import { useSearchParams } from "next/navigation";
 import { getPublicURL } from "@/lib/r2";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 import DateRangePicker from "@/components/RangeCalendar";
+import PositionDatePicker from "@/components/PositionDatePicker";
 
 function sanitizeZipInput(value: string) {
   return value.replace(/\D/g, "").slice(0, EVENT_FIELD_LIMITS.zipMaxDigits);
 }
 
-// API shapes used by this component
 type APIPosition = Partial<{
   id: string;
   position: string;
@@ -76,8 +76,7 @@ export async function fetchEventById(id: string): Promise<ApiEvent | null> {
       console.error("Failed to fetch event", response.statusText);
       return null;
     }
-    const data = (await response.json()) as ApiEvent;
-    return data;
+    return (await response.json()) as ApiEvent;
   } catch (error) {
     console.error("Error fetching event:", error);
     return null;
@@ -107,7 +106,6 @@ const formatDateForDisplay = (value: string) => {
   if (!value) return "Select date";
   const date = parseInputDate(value);
   if (!date) return "Select date";
-
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -115,6 +113,95 @@ const formatDateForDisplay = (value: string) => {
     timeZone: "UTC",
   });
 };
+
+const formatTimeForDisplay = (hhmm: string) => {
+  if (!hhmm) return "";
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+};
+
+const toLocalYmd = (value: string | Date | undefined | null): string => {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const toLocalHhmm = (value: string | Date | undefined | null): string => {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+const formatDateTimeRangeLabel = (
+  startDate: string,
+  endDate: string,
+  startTime: string,
+  endTime: string
+) => {
+  if (!startDate) return "Select date range and time range";
+  const startDateStr = formatDateForDisplay(startDate);
+  const endDateStr = endDate ? formatDateForDisplay(endDate) : "";
+  const dateRange = endDate ? `${startDateStr} - ${endDateStr}` : startDateStr;
+
+  if (!startTime && !endTime) return dateRange;
+
+  const startTimeStr = startTime ? formatTimeForDisplay(startTime) : "";
+  const endTimeStr = endTime ? formatTimeForDisplay(endTime) : "";
+  const timeRange =
+    startTimeStr && endTimeStr
+      ? `${startTimeStr} - ${endTimeStr}`
+      : startTimeStr || endTimeStr;
+
+  return `${dateRange}, ${timeRange}`;
+};
+
+const formatPositionDateTimeLabel = (
+  date: string,
+  startTime: string,
+  endTime: string
+) => {
+  if (!date) return "Select date & times";
+  const dateStr = formatDateForDisplay(date);
+  const startStr = startTime ? formatTimeForDisplay(startTime) : "";
+  const endStr = endTime ? formatTimeForDisplay(endTime) : "";
+  if (!startStr && !endStr) return dateStr;
+  if (!endStr) return `${dateStr}, ${startStr}`;
+  return `${dateStr}, ${startStr} – ${endStr}`;
+};
+
+// ─── Position time bounds check ────────────────────────────────────────────
+const POSITION_TIME_ERROR =
+  "Position time must fall within the event's start/end date and start/end time.";
+
+function isPositionOutOfBounds(
+  p: PositionState,
+  event: {
+    startDate: string;
+    endDate: string;
+    startTime: string;
+    endTime: string;
+  }
+): boolean {
+  if (!event.startTime || !event.endTime) return false;
+
+  const posStartTime = p.sameAsTime ? event.startTime : p.startTime;
+  const posEndTime = p.sameAsTime ? event.endTime : p.endTime;
+  const posDate = p.sameAsDate ? event.startDate : p.startDate;
+
+  if (!posStartTime || !posEndTime || !posDate) return false;
+
+  // Date must fall within the event's date range
+  if (posDate < event.startDate || posDate > event.endDate) return true;
+
+  // Time must fall within the event's daily time window
+  return posStartTime < event.startTime || posEndTime > event.endTime;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 
 const EventForm = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -131,23 +218,12 @@ const EventForm = () => {
 
   const inputBase =
     "rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
-
   const inputClass = (key: string, extra = "") =>
-    `${inputBase} ${
-      errors[key]
-        ? "border-red-500 focus:ring-red-500/30"
-        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
-    } ${extra}`;
-
+    `${inputBase} ${errors[key] ? "border-red-500 focus:ring-red-500/30" : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"} ${extra}`;
   const textareaBase =
     "resize-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
-
   const textareaClass = (key: string, extra = "") =>
-    `${textareaBase} ${
-      errors[key]
-        ? "border-red-500 focus:ring-red-500/30"
-        : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
-    } ${extra}`;
+    `${textareaBase} ${errors[key] ? "border-red-500 focus:ring-red-500/30" : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"} ${extra}`;
 
   const ErrorText = ({ k }: { k: string }) =>
     errors[k] ? <p className="mt-1 text-sm text-red-500">{errors[k]}</p> : null;
@@ -166,6 +242,7 @@ const EventForm = () => {
     state: "",
     zip: "",
   });
+
   const [positions, setPositions] = useState<PositionState[]>([
     {
       id: undefined,
@@ -188,6 +265,28 @@ const EventForm = () => {
   ]);
   const [originalPositionIds, setOriginalPositionIds] = useState<string[]>([]);
 
+  const isEventMultiDay = Boolean(
+    event.startDate && event.endDate && event.startDate !== event.endDate
+  );
+  const SAME_AS_EVENT_DISABLED_TOOLTIP = "Positions cannot span multiple days";
+
+  // If the event becomes multi-day, any position currently marked "same as event"
+  // must stop following the event (positions are single-day only).
+  useEffect(() => {
+    if (!isEventMultiDay) return;
+    setPositions((prev) => {
+      let changed = false;
+      const next = prev.map((p) => {
+        if (p.sameAsDate || p.sameAsTime) {
+          changed = true;
+          return { ...p, sameAsDate: false, sameAsTime: false };
+        }
+        return p;
+      });
+      return changed ? next : prev;
+    });
+  }, [isEventMultiDay]);
+
   const clearError = (key: string) => {
     setErrors((prev) => {
       if (!(key in prev)) return prev;
@@ -200,118 +299,92 @@ const EventForm = () => {
   const [carouselImages, setCarouselImages] = useState<
     (StaticImageData | string)[]
   >([]);
+  const handleRemoveCurrentImage = (index: number) => {
+    setCarouselImages((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleAddPhotosClick = () => fileInputRef.current?.click();
+
   const handleFilesSelected = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
     const newImages: StaticImageData[] = [];
     const newFiles: File[] = [];
     const MAX_FILE_SIZE = 3 * 1024 * 1024; // 2MB in bytes
     const ALLOWED_TYPES = ["image/jpeg", "image/png"];
     const oversizedFiles: string[] = [];
     const invalidFiles: string[] = [];
-
     const TARGET_WIDTH = 1000;
     const TARGET_HEIGHT = 360;
 
     for (let i = 0; i < files.length; i += 1) {
       const file = files[i];
-
       if (!ALLOWED_TYPES.includes(file.type)) {
         invalidFiles.push(`${file.name} (${file.type || "unknown type"})`);
         continue;
       }
-
       if (file.size > MAX_FILE_SIZE) {
         oversizedFiles.push(
           `${file.name} (${(file.size / 1024).toFixed(2)}KB)`
         );
         continue;
       }
-
       try {
         const img = new window.Image();
         const objectUrl = URL.createObjectURL(file);
-
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
           img.src = objectUrl;
         });
-
         const canvas = document.createElement("canvas");
         canvas.width = TARGET_WIDTH;
         canvas.height = TARGET_HEIGHT;
         const ctx = canvas.getContext("2d");
-
         if (!ctx) {
           URL.revokeObjectURL(objectUrl);
           continue;
         }
-
-        // truncate image to fit
         const imgRatio = img.width / img.height;
         const targetRatio = TARGET_WIDTH / TARGET_HEIGHT;
-
         let sX, sY, sW, sH;
-
         if (imgRatio > targetRatio) {
-          // if image wider, then truncate sides
           sH = img.height;
           sW = img.height * targetRatio;
           sX = (img.width - sW) / 2;
           sY = 0;
         } else {
-          // if image taller, then truncate top and bottom
           sW = img.width;
           sH = img.width / targetRatio;
           sX = 0;
           sY = (img.height - sH) / 2;
         }
-
         ctx.drawImage(img, sX, sY, sW, sH, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
-
         const blob = await new Promise<Blob | null>((resolve) => {
           canvas.toBlob(resolve, file.type, 0.92);
         });
-
         URL.revokeObjectURL(objectUrl);
-
         if (!blob) continue;
-
-        const resizedFile = new File([blob], file.name, {
-          type: file.type,
-        });
-
+        const resizedFile = new File([blob], file.name, { type: file.type });
         newFiles.push(resizedFile);
-        const url = URL.createObjectURL(resizedFile);
-        newImages.push(createStaticImageData(url));
+        newImages.push(createStaticImageData(URL.createObjectURL(resizedFile)));
       } catch (error) {
         console.error(`Failed to process image ${file.name}:`, error);
-        continue;
       }
     }
 
-    if (invalidFiles.length > 0) {
-      alert(
-        `The following files are not supported. Only JPG/JPEG/PNG files are allowed:\n\n${invalidFiles.join("\n")}`
-      );
-    }
-
-    if (oversizedFiles.length > 0) {
-      alert(
-        `The following files exceed the 10MB limit and were not added:\n\n${oversizedFiles.join("\n")}`
-      );
-    }
-
+    if (invalidFiles.length > 0)
+      alert(`Not supported. Only JPG/PNG:\n\n${invalidFiles.join("\n")}`);
+    if (oversizedFiles.length > 0)
+      alert(`Exceed 10MB limit:\n\n${oversizedFiles.join("\n")}`);
     if (newFiles.length > 0) {
       setSelectedFiles((prev) => [...prev, ...newFiles]);
       setCarouselImages((prev) => [...prev, ...newImages]);
     }
     e.target.value = "";
   };
+
   const addPosition = () =>
     setPositions((prev) => [
       ...prev,
@@ -343,6 +416,7 @@ const EventForm = () => {
     setPositions((prev) =>
       prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
     );
+
   const toggleSameAsDate = (index: number) => {
     const next = !positions[index].sameAsDate;
     handlePositionChange(index, "sameAsDate", next);
@@ -370,36 +444,26 @@ const EventForm = () => {
       clearError(`positions.${index}.apt`);
     }
   };
+
   async function uploadEventImage(eventId: string, file: File) {
     const presignRes = await fetch("/api/images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "event", eventId }),
     });
-
-    if (!presignRes.ok) {
-      const text = await presignRes.text();
-      throw new Error(`Failed to get upload URL: ${presignRes.status} ${text}`);
-    }
-
+    if (!presignRes.ok)
+      throw new Error(`Failed to get upload URL: ${presignRes.status}`);
     const { key, url } = (await presignRes.json()) as {
       key: string;
       url: string;
     };
-
     const putRes = await fetch(url, {
       method: "PUT",
       body: file,
-      headers: {
-        "Content-Type": file.type || "application/octet-stream",
-      },
+      headers: { "Content-Type": file.type || "application/octet-stream" },
     });
-
-    if (!putRes.ok) {
-      const text = await putRes.text();
-      throw new Error(`Failed to upload file to R2: ${putRes.status} ${text}`);
-    }
-
+    if (!putRes.ok)
+      throw new Error(`Failed to upload file to R2: ${putRes.status}`);
     return key;
   }
 
@@ -421,16 +485,25 @@ const EventForm = () => {
         zip: p.sameAsAddress ? event.zip : p.zip,
       }));
 
-      const formData = {
-        ...event,
-        positions: normalizedPositions,
-      };
+      const allErrors: Record<string, string> = {};
 
+      // ── 1. Position time bounds validation ──
+      normalizedPositions.forEach((p, i) => {
+        if (!p.sameAsDate && !p.sameAsTime && isPositionOutOfBounds(p, event)) {
+          allErrors[`positions.${i}.positionTime`] = POSITION_TIME_ERROR;
+        }
+      });
+
+      // ── 2. Image presence validation ──
+      if (selectedFiles.length === 0 && carouselImages.length === 0) {
+        allErrors.images = "At least one image is required.";
+      }
+
+      // ── 3. Schema validation ──
+      const formData = { ...event, positions: normalizedPositions };
       const parseResult = eventSchema.safeParse(formData);
 
       if (!parseResult.success) {
-        const fieldErrors: Record<string, string> = {};
-
         const redirectPath = (path: (string | number)[]) => {
           if (path[0] === "positions" && typeof path[1] === "number") {
             const idx = path[1];
@@ -442,11 +515,13 @@ const EventForm = () => {
               pos?.sameAsDate
             )
               return [field];
+
             if (
               (field === "startTime" || field === "endTime") &&
               pos?.sameAsTime
             )
               return [field];
+
             if (
               ["address", "apt", "city", "state", "zip"].includes(field) &&
               pos?.sameAsAddress
@@ -460,28 +535,38 @@ const EventForm = () => {
           const path = issue.path.filter(
             (p) => typeof p === "string" || typeof p === "number"
           ) as (string | number)[];
-          const finalPath = redirectPath(path).join(".");
-          if (!(finalPath in fieldErrors))
-            fieldErrors[finalPath] = issue.message;
-        }
 
-        setErrors(fieldErrors);
+          const finalPath = redirectPath(path).join(".");
+
+          // Don't overwrite existing errors (positionTime takes priority)
+          if (!(finalPath in allErrors)) {
+            allErrors[finalPath] = issue.message;
+          }
+        }
+      }
+
+      // ── 3. Apply all errors at once ──
+      if (Object.keys(allErrors).length > 0 || !parseResult.success) {
+        setErrors(allErrors);
         return;
       }
 
+      // From here on, parseResult is guaranteed to be success
+      const data = parseResult.data;
+
+      // ── 4. No errors → proceed ──
       setErrors({});
 
       const isEdit = !!eventIdParam;
       const url = isEdit ? `/api/events?id=${eventIdParam}` : "/api/events";
       const method = isEdit ? "PUT" : "POST";
 
-      // When editing, send only the top-level event fields in the shape
-      // the server's PUT handler expects (Prisma EventUpdateInput-compatible).
       let payload: Record<string, unknown>;
+
       if (isEdit) {
         const combineDateTime = (date: string, time: string) =>
           new Date(`${date}T${time}:00`);
-        const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
+
         const generateDateRange = (start: string, end: string) => {
           const dates: Date[] = [];
           const cur = new Date(`${start}T00:00:00`);
@@ -539,11 +624,10 @@ const EventForm = () => {
         : (createdEvent.id ?? createdEvent.event?.id);
 
       if (!eventId) {
-        console.error("Event response:", createdEvent);
         alert(
           isEdit
             ? "Event updated but no id available"
-            : "Event created but no eventId returned from /api/events"
+            : "Event created but no eventId returned"
         );
         return;
       }
@@ -554,31 +638,28 @@ const EventForm = () => {
         );
       }
 
-      // Sync positions: create/update/delete via eventPosition API
       if (isEdit) {
         const combineDateTime = (date: string, time: string) =>
           new Date(`${date}T${time}:00`);
+
         const toMidnight = (date: string) => new Date(`${date}T00:00:00`);
 
         const currentIds = normalizedPositions
           .map((p) => p.id)
           .filter(Boolean) as string[];
+
         const toDelete = originalPositionIds.filter(
           (id) => !currentIds.includes(id)
         );
 
-        // delete removed positions
         await Promise.all(
           toDelete.map((id) =>
-            fetch(`/api/eventPosition?id=${id}`, { method: "DELETE" }).catch(
-              (e) => {
-                console.error("Failed to delete position", id, e);
-              }
-            )
+            fetch(`/api/eventPosition?id=${id}`, {
+              method: "DELETE",
+            }).catch((e) => console.error("Failed to delete position", id, e))
           )
         );
 
-        // upsert remaining positions (PUT if id, POST if new)
         await Promise.all(
           normalizedPositions.map(async (p: PositionState) => {
             const posPayload = {
@@ -601,23 +682,20 @@ const EventForm = () => {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(posPayload),
-              }).catch((e) =>
-                console.error("Failed to update position", p.id, e)
-              );
+              });
             } else {
               await fetch(`/api/eventPosition`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...posPayload, eventId }),
-              }).catch((e) => console.error("Failed to create position", e));
+              });
             }
           })
         );
       }
 
       await mutate("/api/events");
-      router.push(`/event/${eventId}`); // Redirects to the newly created page
-
+      router.push(`/event/${eventId}`);
       setSelectedFiles([]);
       setCarouselImages([]);
     } catch (err) {
@@ -690,13 +768,7 @@ const EventForm = () => {
         }}
         className={
           className ||
-          `block w-full min-w-0 md:w-[588px] h-[43px] appearance-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue
-          ${
-            error
-              ? "border-red-500 focus:ring-red-500/30"
-              : "border-medium-gray focus:ring-bcp-blue/30"
-          }
-          disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
+          `block w-full min-w-0 md:w-[588px] h-[43px] appearance-none rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:border-bcp-blue ${error ? "border-red-500 focus:ring-red-500/30" : "border-medium-gray focus:ring-bcp-blue/30"} disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed`
         }
         style={
           type === "date"
@@ -713,18 +785,10 @@ const EventForm = () => {
       arr.map((p: APIPosition) => ({
         id: p.id ?? undefined,
         name: p.position ?? "",
-        startDate: p.startTime
-          ? new Date(p.startTime).toISOString().slice(0, 10)
-          : "",
-        endDate: p.endTime
-          ? new Date(p.endTime).toISOString().slice(0, 10)
-          : "",
-        startTime: p.startTime
-          ? new Date(p.startTime).toISOString().slice(11, 16)
-          : "",
-        endTime: p.endTime
-          ? new Date(p.endTime).toISOString().slice(11, 16)
-          : "",
+        startDate: toLocalYmd(p.startTime),
+        endDate: toLocalYmd(p.endTime),
+        startTime: toLocalHhmm(p.startTime),
+        endTime: toLocalHhmm(p.endTime),
         description: p.description ?? "",
         address: p.addressLine1 ?? "",
         apt: p.addressLine2 ?? undefined,
@@ -742,21 +806,12 @@ const EventForm = () => {
       if (!id) return;
       const result = await fetchEventById(id);
       if (!result) return;
-
       setEvent({
         title: result.name ?? "",
-        startDate: result.startTime
-          ? new Date(result.startTime).toISOString().slice(0, 10)
-          : "",
-        endDate: result.endTime
-          ? new Date(result.endTime).toISOString().slice(0, 10)
-          : "",
-        startTime: result.startTime
-          ? new Date(result.startTime).toISOString().slice(11, 16)
-          : "",
-        endTime: result.endTime
-          ? new Date(result.endTime).toISOString().slice(11, 16)
-          : "",
+        startDate: toLocalYmd(result.startTime),
+        endDate: toLocalYmd(result.endTime),
+        startTime: toLocalHhmm(result.startTime),
+        endTime: toLocalHhmm(result.endTime),
         description: result.description ?? "",
         resourcesLink: result.resourcesLink ?? undefined,
         address: result.addressLine1 ?? "",
@@ -766,8 +821,6 @@ const EventForm = () => {
         zip: sanitizeZipInput(String(result.zipCode ?? "")),
       });
       setIsLoading(false);
-
-      // Try to fetch positions from the eventPosition API; fall back to embedded positions
       try {
         const posRes = await fetch(`/api/eventPosition?eventId=${id}`);
         if (posRes.ok) {
@@ -788,13 +841,9 @@ const EventForm = () => {
         }
       } catch (err) {
         console.error("Failed to fetch positions:", err);
-        if (Array.isArray(result.positions) && result.positions.length) {
-          const mapped = mapPositionsArray(result.positions as APIPosition[]);
-          setPositions(mapped);
-        }
+        if (Array.isArray(result.positions) && result.positions.length)
+          setPositions(mapPositionsArray(result.positions as APIPosition[]));
       }
-
-      // Map images (best-effort)
       if (Array.isArray(result.images) && result.images.length) {
         const parsedImages = result.images
           .map((filename) => getPublicURL(filename))
@@ -802,7 +851,6 @@ const EventForm = () => {
         setCarouselImages(parsedImages);
       }
     };
-
     load();
   }, [eventIdParam]);
 
@@ -820,14 +868,19 @@ const EventForm = () => {
           />
         </Link>
       </div>
+
       {/* title */}
       <h1 className="mt-[22px] text-center text-[36px] font-medium leading-tight text-bcp-blue">
         {eventIdParam ? "Edit event" : "Create a new event"}
       </h1>
+
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
         <div className="mt-[26px] w-full px-[30px]">
-          <Carousel images={carouselImages} />
+          <Carousel
+            images={carouselImages}
+            onRemove={handleRemoveCurrentImage}
+          />
         </div>
         <input
           ref={fileInputRef}
@@ -844,9 +897,12 @@ const EventForm = () => {
             onClick={handleAddPhotosClick}
           />
         </div>
+        {errors.images && (
+    <p className="mt-1 text-sm text-red-500">{errors.images}</p>
+  )}
       </div>
 
-      {/* event form fields */}
+      {/* form fields */}
       <div className="px-4 md:px-0 md:mx-[102px] flex flex-col w-full md:w-[588px] min-w-0">
         {/* event title */}
         <div className="flex flex-col items-start w-full">
@@ -869,6 +925,7 @@ const EventForm = () => {
           />
           <ErrorText k="title" />
         </div>
+
         {/* event date & time */}
         <div className="flex flex-col items-start">
           <label className="mb-1 mt-[40px] text-base font-normal text-medium-gray">
@@ -879,7 +936,7 @@ const EventForm = () => {
               id="event-date"
               type="button"
               onClick={() => setShowEventDatePicker((prev) => !prev)}
-              className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base
+              className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base text-medium-gray
               ${
                 errors["startDate"] ||
                 errors["endDate"] ||
@@ -889,11 +946,12 @@ const EventForm = () => {
                   : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
               }`}
             >
-              {event.startDate && event.endDate
-                ? `${formatDateForDisplay(event.startDate)} – ${formatDateForDisplay(event.endDate)}`
-                : event.startDate
-                  ? formatDateForDisplay(event.startDate)
-                  : "Select dates & times"}
+              {formatDateTimeRangeLabel(
+                event.startDate,
+                event.endDate,
+                event.startTime,
+                event.endTime
+              )}
             </button>
             {showEventDatePicker && (
               <>
@@ -940,6 +998,7 @@ const EventForm = () => {
             </p>
           )}
         </div>
+
         {/* event description */}
         <div className="flex flex-col items-start w-full">
           <label
@@ -960,6 +1019,7 @@ const EventForm = () => {
           />
           <ErrorText k="description" />
         </div>
+
         {/* link to resources */}
         <div className="flex flex-col items-start w-full">
           <label
@@ -977,16 +1037,14 @@ const EventForm = () => {
             value={event.resourcesLink || ""}
             maxLength={EVENT_FIELD_LIMITS.resourcesLink}
             onChange={(e) => {
-              setEvent((prev) => ({
-                ...prev,
-                resourcesLink: e.target.value,
-              }));
+              setEvent((prev) => ({ ...prev, resourcesLink: e.target.value }));
               clearError("resourcesLink");
             }}
             className={`w-[588px] h-[43px] ${inputClass("resourcesLink")}`}
           />
           <ErrorText k="resourcesLink" />
         </div>
+
         {/* event street */}
         <div className="flex flex-col items-start w-full">
           <label
@@ -1007,6 +1065,7 @@ const EventForm = () => {
           />
           <ErrorText k="address" />
         </div>
+
         {/* event apt */}
         <div className="flex flex-col items-start w-full">
           <label
@@ -1025,6 +1084,7 @@ const EventForm = () => {
             className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
           />
         </div>
+
         {/* event city */}
         <div className="flex flex-col items-start w-full">
           <label
@@ -1045,6 +1105,7 @@ const EventForm = () => {
           />
           <ErrorText k="city" />
         </div>
+
         {/* event state / zip */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
           <div className="flex flex-col items-start w-full">
@@ -1095,8 +1156,8 @@ const EventForm = () => {
         {/* Positions */}
         {positions.map((position, index) => (
           <div key={index} className="flex flex-col">
-            {/* horizontal line */}
             <div className="mt-[40px] mb-[40px] w-full border-t border-[#D7D7D7]" />
+
             {/* position name */}
             <div className="flex flex-col items-start w-full">
               <label
@@ -1118,25 +1179,43 @@ const EventForm = () => {
               />
               <ErrorText k={`positions.${index}.name`} />
             </div>
+
             {/* position date & time */}
             <div className="flex flex-col">
               <div className="mt-10 flex flex-wrap items-center justify-between gap-2">
                 <label className="mb-1 text-base font-normal text-medium-gray">
                   Position date &amp; time
                 </label>
-                <div className="mb-1 flex items-center gap-[11px]">
+                <div
+                  className="mb-1 flex items-center gap-[11px]"
+                  title={
+                    isEventMultiDay ? SAME_AS_EVENT_DISABLED_TOOLTIP : undefined
+                  }
+                >
                   <Button
                     label="Same as event"
-                    altStyle="bg-transparent text-medium-gray font-medium px-0 hover:bg-transparent focus:outline-none"
+                    disabled={isEventMultiDay}
+                    altStyle={`bg-transparent font-medium px-0 hover:bg-transparent focus:outline-none ${
+                      isEventMultiDay
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-medium-gray"
+                    }`}
                     onClick={() => {
+                      if (isEventMultiDay) return;
                       toggleSameAsDate(index);
                       toggleSameAsTime(index);
                     }}
                   />
                   <input
                     type="checkbox"
-                    checked={position.sameAsDate && position.sameAsTime}
+                    disabled={isEventMultiDay}
+                    checked={
+                      !isEventMultiDay &&
+                      position.sameAsDate &&
+                      position.sameAsTime
+                    }
                     onChange={() => {
+                      if (isEventMultiDay) return;
                       const next = !(
                         position.sameAsDate && position.sameAsTime
                       );
@@ -1147,44 +1226,58 @@ const EventForm = () => {
                         clearError(`positions.${index}.endDate`);
                         clearError(`positions.${index}.startTime`);
                         clearError(`positions.${index}.endTime`);
+                        clearError(`positions.${index}.positionTime`);
                       }
                     }}
-                    className="h-[16px] w-[16px] cursor-pointer accent-bcp-blue"
+                    className={`h-[16px] w-[16px] accent-bcp-blue ${
+                      isEventMultiDay
+                        ? "cursor-not-allowed opacity-50"
+                        : "cursor-pointer"
+                    }`}
                   />
                 </div>
               </div>
 
               {position.sameAsDate && position.sameAsTime ? (
                 <div className="w-[588px] h-[43px] rounded-lg border border-medium-gray px-3 flex items-center text-base text-medium-gray bg-light-gray cursor-not-allowed">
-                  {event.startDate && event.endDate
-                    ? `${formatDateForDisplay(event.startDate)} – ${formatDateForDisplay(event.endDate)}`
+                  {event.startDate
+                    ? formatDateTimeRangeLabel(
+                        event.startDate,
+                        event.endDate,
+                        event.startTime,
+                        event.endTime
+                      )
                     : "Same as event"}
                 </div>
               ) : (
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
                       setOpenPositionDatePicker((current) =>
                         current === index ? null : index
-                      )
-                    }
+                      );
+                      // Clear the position time error when user opens picker to fix it
+                      clearError(`positions.${index}.positionTime`);
+                    }}
                     className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base text-medium-gray
                     ${
                       errors[`positions.${index}.startDate`] ||
                       errors[`positions.${index}.endDate`] ||
                       errors[`positions.${index}.startTime`] ||
-                      errors[`positions.${index}.endTime`]
+                      errors[`positions.${index}.endTime`] ||
+                      errors[`positions.${index}.positionTime`]
                         ? "border-red-500 focus:ring-red-500"
                         : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
                     }`}
                   >
-                    {position.startDate && position.endDate
-                      ? `${formatDateForDisplay(position.startDate)} – ${formatDateForDisplay(position.endDate)}`
-                      : position.startDate
-                        ? formatDateForDisplay(position.startDate)
-                        : "Select dates & times"}
+                    {formatPositionDateTimeLabel(
+                      position.startDate,
+                      position.startTime,
+                      position.endTime
+                    )}
                   </button>
+
                   {openPositionDatePicker === index && (
                     <>
                       <div
@@ -1192,26 +1285,26 @@ const EventForm = () => {
                         onClick={() => setOpenPositionDatePicker(null)}
                       />
                       <div className="absolute top-full left-0 mt-2 z-50">
-                        <DateRangePicker
-                          startDate={position.startDate}
-                          endDate={position.endDate}
+                        <PositionDatePicker
+                          date={position.startDate}
                           startTime={position.startTime}
                           endTime={position.endTime}
-                          onStartDateChange={(ymd) => {
+                          onDateChange={(ymd) => {
                             handlePositionChange(index, "startDate", ymd);
-                            clearError(`positions.${index}.startDate`);
-                          }}
-                          onEndDateChange={(ymd) => {
                             handlePositionChange(index, "endDate", ymd);
+                            clearError(`positions.${index}.startDate`);
                             clearError(`positions.${index}.endDate`);
+                            clearError(`positions.${index}.positionTime`);
                           }}
                           onStartTimeChange={(hhmm) => {
                             handlePositionChange(index, "startTime", hhmm);
                             clearError(`positions.${index}.startTime`);
+                            clearError(`positions.${index}.positionTime`);
                           }}
                           onEndTimeChange={(hhmm) => {
                             handlePositionChange(index, "endTime", hhmm);
                             clearError(`positions.${index}.endTime`);
+                            clearError(`positions.${index}.positionTime`);
                           }}
                         />
                       </div>
@@ -1220,18 +1313,22 @@ const EventForm = () => {
                 </div>
               )}
 
+              {/* Show any date/time field error OR the position-time bounds error */}
               {(errors[`positions.${index}.startDate`] ||
                 errors[`positions.${index}.endDate`] ||
                 errors[`positions.${index}.startTime`] ||
-                errors[`positions.${index}.endTime`]) && (
+                errors[`positions.${index}.endTime`] ||
+                errors[`positions.${index}.positionTime`]) && (
                 <p className="mt-1 text-sm text-red-500">
-                  {errors[`positions.${index}.startDate`] ||
+                  {errors[`positions.${index}.positionTime`] ||
+                    errors[`positions.${index}.startDate`] ||
                     errors[`positions.${index}.endDate`] ||
                     errors[`positions.${index}.endTime`] ||
                     errors[`positions.${index}.startTime`]}
                 </p>
               )}
             </div>
+
             {/* position description */}
             <div className="flex flex-col">
               <label
@@ -1252,6 +1349,7 @@ const EventForm = () => {
               />
               <ErrorText k={`positions.${index}.description`} />
             </div>
+
             {/* position street */}
             <ConditionalInput
               id={`position-address-${index}`}
@@ -1266,6 +1364,7 @@ const EventForm = () => {
               onClearError={() => clearError(`positions.${index}.address`)}
               maxLength={EVENT_FIELD_LIMITS.address}
             />
+
             {/* position apt */}
             <div className="flex flex-col">
               <label
@@ -1288,6 +1387,7 @@ const EventForm = () => {
                 className="w-full md:w-[588px] h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
               />
             </div>
+
             {/* position city */}
             <div className="flex flex-col">
               <label
@@ -1313,6 +1413,7 @@ const EventForm = () => {
               />
               <ErrorText k={`positions.${index}.city`} />
             </div>
+
             {/* position state / zip */}
             <div className="flex flex-col md:flex-row gap-4 md:gap-[60px]">
               <div className="flex flex-col items-start w-full">
@@ -1370,6 +1471,7 @@ const EventForm = () => {
                 <ErrorText k={`positions.${index}.zip`} />
               </div>
             </div>
+
             {/* max participants */}
             <div className="flex flex-col">
               <label
@@ -1412,7 +1514,6 @@ const EventForm = () => {
         </div>
       </div>
 
-      {/* horizontal line */}
       <div className="w-full border-t border-[#D7D7D7]" />
 
       {/* bottom buttons */}

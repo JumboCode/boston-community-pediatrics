@@ -5,7 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import Button from "@/components/common/buttons/Button";
 import Modal from "@/components/common/Modal";
 import { BaseLayoutTemplate } from "@/lib/email/templates/BaseLayout";
-import MessagingSkeleton from "@/components/ui/skeleton/MessagingSkeleton";
 
 interface UserProps {
   id: string;
@@ -155,7 +154,7 @@ export default function EmailPage() {
     }
   }, [dropdownOpen]);
 
-  if (isAdmin === null) return <MessagingSkeleton/>;
+  if (isAdmin === null) return null;
   if (isAdmin === false) {
     return (
       <main className="flex items-center justify-center min-h-screen">
@@ -422,14 +421,7 @@ export default function EmailPage() {
           </div>
 
           <div className="flex flex-row gap-4 mt-6">
-            <Button
-              label="Schedule Send"
-              altStyle="w-[150px] h-[44px] text-black bg-light-gray rounded-lg 
-              font-large flex items-center justify-center hover:bg-gray-400"
-              onClick={handleScheduleSend}
-              type="button"
-            />
-
+           
             <Button
               label={sending ? "Sending..." : "Send"}
               altStyle="w-[120px] h-[44px] text-white bg-[#4B647C] rounded-lg 

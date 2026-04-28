@@ -35,7 +35,7 @@ function NavBar() {
         }  
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        setIsAdmin(data?.role == "ADMIN");
+        setIsAdmin(data?.role === "ADMIN");
         setDbFirstName(data?.firstName ?? "");
         if (data.profileImage) {
           setProfileImage(data.profileImage); // use URL directly

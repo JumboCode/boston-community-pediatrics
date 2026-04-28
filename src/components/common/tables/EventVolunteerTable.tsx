@@ -137,7 +137,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
               )}
             </div>
           ) : (
-            <div>
+            <div className="flex flex-col space-y-2">
               {volunteers.map((volunteer) => {
                 // Use profileImage URL directly, fall back to default icon
                 const avatarSrc = volunteer.profileImage || defaultPfp.src;
@@ -146,7 +146,10 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                   <div key={volunteer.signupId}>
                     {/* Main volunteer row */}
                     <div className="flex items-center gap-2 justify-end">
-                      <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                      <span
+                        className="text-bcp-blue text-[15px] font-normal font-avenir truncate max-w-[180px]"
+                        title={`${volunteer.firstName} ${volunteer.lastName}`}
+                      >
                         {volunteer.firstName} {volunteer.lastName}
                       </span>
                       <Image
@@ -154,7 +157,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                         height={28}
                         src={avatarSrc}
                         alt="Profile"
-                        className="rounded-full object-cover relative z-10"
+                        className="rounded-full object-cover relative z-10 flex-shrink-0"
                         unoptimized={
                           typeof avatarSrc === "string" &&
                           avatarSrc.startsWith("http")
@@ -175,7 +178,10 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                               className="flex items-center justify-end"
                               style={{ height: 36 }}
                             >
-                              <span className="text-bcp-blue text-[15px] font-normal font-avenir">
+                              <span
+                                className="text-bcp-blue text-[15px] font-normal font-avenir truncate max-w-[180px]"
+                                title={`${guest.firstName} ${guest.lastName}`}
+                              >
                                 {guest.firstName} {guest.lastName}
                               </span>
                             </div>
@@ -201,13 +207,13 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
                                   y1="0"
                                   x2="14"
                                   y2={isLast ? "18" : "36"}
-                                  stroke="#D9D9D9"
+                                  stroke="gray-border"
                                   strokeWidth="3"
                                   strokeLinecap="round"
                                 />
                                 <path
                                   d="M14 18 Q14 28 2 28"
-                                  stroke="#D9D9D9"
+                                  stroke="gray-border"
                                   strokeWidth="3"
                                   fill="none"
                                   strokeLinecap="round"

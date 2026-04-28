@@ -182,6 +182,7 @@ const SignupForm = () => {
       setLoading(false);
       return;
     }
+    const dobValue = formData.get("dob") as string;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -199,7 +200,7 @@ const SignupForm = () => {
       return;
     }
 
-    if (dob && dob > todayYmd) {
+    if (dobValue && dobValue > todayYmd) {
       setError("Date of birth cannot be in the future");
       setLoading(false);
       return;
@@ -211,6 +212,7 @@ const SignupForm = () => {
       if (selectedFile) {
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileType: selectedFile.type }),
         });
 
@@ -279,6 +281,8 @@ const SignupForm = () => {
 
       const clerkUserId = completeSignUp.createdUserId;
 
+      await setActive({ session: completeSignUp.createdSessionId });
+
       if (clerkUserId && savedFormData) {
         const dbResponse = await fetch("/api/users", {
           method: "POST",
@@ -306,7 +310,6 @@ const SignupForm = () => {
         if (!dbResponse.ok) console.error("Failed to sync user to DB");
       }
 
-      await setActive({ session: completeSignUp.createdSessionId });
       router.push("/event");
     } catch {
       setError("Verification failed");
@@ -339,7 +342,6 @@ const SignupForm = () => {
     });
   }
 
-  // --- RENDER: VERIFICATION FORM ---
   if (pendingVerification) {
     return (
       <div className="flex flex-col items-center border border-medium-gray rounded-lg my-12 sm:my-[220px] w-[calc(100%-32px)] sm:w-[600px] mx-auto p-6 sm:p-10 relative">
@@ -383,7 +385,6 @@ const SignupForm = () => {
     );
   }
 
-  // --- RENDER: SIGN UP FORM ---
   return (
     <form
       onSubmit={handleSubmit}
@@ -408,7 +409,7 @@ const SignupForm = () => {
       <div className="w-full px-4 sm:px-[102px] mb-8">
         <button
           onClick={handleGoogleSignUp}
-          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-medium-gray rounded text-black hover:bg-gray-50 transition-colors font-medium"
+          className="w-full h-[44px] flex items-center justify-center gap-3 bg-white border border-medium-gray rounded text-black hover:bg-really-light-gray transition-colors font-medium"
         >
           <svg
             width="20"
@@ -552,6 +553,7 @@ const SignupForm = () => {
           )}
         </div>
 
+        {/* DOB */}
         <div className="relative flex flex-col items-start">
           <label
             htmlFor="dob"
@@ -730,7 +732,7 @@ const SignupForm = () => {
           </div>
         </div>
 
-        {/* --- NEW: Image Upload UI --- */}
+        {/* Image Upload UI */}
         <div className="flex items-center gap-[60px]">
           <input
             type="file"
@@ -743,10 +745,11 @@ const SignupForm = () => {
           {/* Clickable Circle Image */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-200 flex-shrink-0"
+            className="w-[160px] h-[160px] sm:w-[264px] sm:h-[264px] relative cursor-pointer overflow-hidden hover:opacity-90 transition-opacity border border-gray-border flex-shrink-0"
           >
             {previewUrl ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={previewUrl}
                 alt="Preview"
                 width={264}

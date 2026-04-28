@@ -15,6 +15,12 @@ const s3 = new S3Client({
 // Hardcoded for now based on your previous snippet, but better to move to ENV
 const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN!;
 
+const ALLOWED_FILE_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 function joinPublicUrl(base: string, key: string) {
   const cleanBase = base.replace(/\/+$/, "");
   const cleanKey = key.replace(/^\/+/, "");
@@ -24,10 +30,20 @@ function joinPublicUrl(base: string, key: string) {
 export async function POST(req: NextRequest) {
   try {
     const { fileType } = await req.json();
-    
-    // Generate a unique filename for the new user
+
+    if (typeof fileType !== "string" || !(fileType in ALLOWED_FILE_TYPES)) {
+      return NextResponse.json(
+        {
+          error:
+            "Unsupported file type. Allowed: " +
+            Object.keys(ALLOWED_FILE_TYPES).join(", "),
+        },
+        { status: 400 }
+      );
+    }
+
+    const extension = ALLOWED_FILE_TYPES[fileType];
     const uniqueId = crypto.randomUUID();
-    const extension = fileType.split("/")[1];
     const key = `profilePictures/signup-${uniqueId}.${extension}`;
 
     const command = new PutObjectCommand({

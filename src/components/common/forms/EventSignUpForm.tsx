@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
+import { useRef } from "react";
 import DatePicker from "@/components/DatePicker";
 
 // --- Types ---
@@ -96,7 +97,14 @@ export default function EventSignUpForm({
 
   const addGuest = () => {
     const newGuest: Guest = {
-      id: crypto.randomUUID(),
+      //id: crypto.randomUUID()
+
+      //crypto doesn't work on mobile so we need to do math.random
+      id: typeof crypto.randomUUID === 'function' 
+      ? crypto.randomUUID() 
+
+      : Math.random().toString(36).substring(2, 11),
+      
 
       firstName: "",
       lastName: "",
@@ -255,10 +263,10 @@ export default function EventSignUpForm({
               {eventName}
             </p>
             <p>
-              <span className="font-bold text-gray-900">Date:</span> {eventDate}
+              <span className="font-bold text-gray-900">Date:</span> {eventDate || "not found"}
             </p>
             <p>
-              <span className="font-bold text-gray-900">Time:</span> {eventTime}
+              <span className="font-bold text-gray-900">Time:</span> {eventTime || "not found"}
             </p>
             <p>
               <span className="font-bold text-gray-900">Total Group:</span>{" "}
@@ -269,13 +277,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsWaitlisted(false)}
-            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
+            className="px-6 py-2.5 bg-dark-desaturated-blue text-white rounded font-bold text-sm hover:bg-[#2c3e50] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-dark-desaturated-blue rounded font-bold text-sm hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -286,7 +294,7 @@ export default function EventSignUpForm({
 
   if (isSuccess) {
     return (
-      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300">
+      <div className="bg-light-bcp-blue p-10 rounded-xl shadow-lg w-full max-w-3xl mx-auto text-center text-white animate-in fade-in zoom-in duration-300 overflow-hidden">
         <h2 className="text-3xl font-bold mb-2">Registration Confirmed!</h2>
         <p className="text-blue-100 mb-8">
           A confirmation has been sent to your email.
@@ -295,7 +303,7 @@ export default function EventSignUpForm({
           <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
             EVENT
           </div>
-          <div className="space-y-1 text-sm flex-1">
+          <div className="space-y-1 text-sm flex-1 min-w-0">
             <p>
               <span className="font-bold text-gray-900">Event:</span>{" "}
               {eventName}
@@ -306,7 +314,7 @@ export default function EventSignUpForm({
             <p>
               <span className="font-bold text-gray-900">Time:</span> {eventTime}
             </p>
-            <p>
+            <p className="leading">
               <span className="font-bold text-gray-900">Total Group:</span>{" "}
               {1 + guests.length} (You + {guests.length} guests)
             </p>
@@ -315,13 +323,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsSuccess(false)}
-            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm"
+            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm hover:bg-[#2a4455] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -338,7 +346,7 @@ export default function EventSignUpForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-400/50 backdrop-blur-[2px]">
           {/* This is your actual modal card. Keep this one rounded! */}
           <div className="bg-white rounded-lg shadow-xl p-10 max-w-md w-full text-center mx-4 border border-gray-200">
-            <h2 className="text-3xl font-semibold text-[#34495e] mb-2">
+            <h2 className="text-3xl font-semibold text-dark-desaturated-blue mb-2">
               Sign in to Volunteer
             </h2>
             <p className="text-gray-900 font-medium mb-8">
@@ -353,7 +361,7 @@ export default function EventSignUpForm({
               </button>
               <button
                 onClick={() => router.push("/login")}
-                className="px-8 py-2.5 bg-[#34495e] text-white rounded font-medium hover:bg-[#2c3e50] transition"
+                className="px-8 py-2.5 bg-dark-desaturated-blue text-white rounded font-medium hover:bg-[#2c3e50] transition"
               >
                 Log In
               </button>
@@ -575,7 +583,7 @@ export default function EventSignUpForm({
                 )}
               </div>
 
-              {/* DOB with Custom DatePicker */}
+              {/* DOB */}
               <div className="relative">
                 <label className="block text-xs text-gray-700 mb-2">
                   Participant’s Date of Birth

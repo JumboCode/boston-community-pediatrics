@@ -2,13 +2,11 @@
 
 import { useState, useRef } from "react";
 
-interface DateRangePickerProps {
-  startDate?: string; // "yyyy-mm-dd"
-  endDate?: string; // "yyyy-mm-dd"
+interface PositionDatePickerProps {
+  date?: string; // "yyyy-mm-dd"
   startTime?: string; // "hh:mm" 24h
   endTime?: string; // "hh:mm" 24h
-  onStartDateChange?: (ymd: string) => void;
-  onEndDateChange?: (ymd: string) => void;
+  onDateChange?: (ymd: string) => void;
   onStartTimeChange?: (hhmm: string) => void;
   onEndTimeChange?: (hhmm: string) => void;
   className?: string;
@@ -59,35 +57,32 @@ function formatDateDisplay(ymd: string): string {
   return `${m}/${d}/${y}`;
 }
 
-export default function DateRangePicker({
-  startDate: initialStartDate = "",
-  endDate: initialEndDate = "",
+export default function PositionDatePicker({
+  date: initialDate = "",
   startTime: initialStartTime = "",
   endTime: initialEndTime = "",
-  onStartDateChange,
-  onEndDateChange,
+  onDateChange,
   onStartTimeChange,
   onEndTimeChange,
   className = "",
-}: DateRangePickerProps) {
+}: PositionDatePickerProps) {
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
   const currentDay = today.getDate();
 
   const [viewMonth, setViewMonth] = useState(
-    initialStartDate
-      ? (parseYmd(initialStartDate)?.getMonth() ?? currentMonth)
+    initialDate
+      ? (parseYmd(initialDate)?.getMonth() ?? currentMonth)
       : currentMonth
   );
   const [viewYear, setViewYear] = useState(
-    initialStartDate
-      ? (parseYmd(initialStartDate)?.getFullYear() ?? currentYear)
+    initialDate
+      ? (parseYmd(initialDate)?.getFullYear() ?? currentYear)
       : currentYear
   );
 
-  const [startDate, setStartDate] = useState<string>(initialStartDate);
-  const [endDate, setEndDate] = useState<string>(initialEndDate);
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [startTime, setStartTime] = useState<string>(
     initialStartTime || "09:00"
   );
@@ -129,7 +124,9 @@ export default function DateRangePicker({
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
     let nextDay = 1;
-    while (days.length < 42) days.push(nextDay++);
+    while (days.length < 42) {
+      days.push(nextDay++);
+    }
     return days;
   };
 
@@ -139,45 +136,17 @@ export default function DateRangePicker({
     isTooFar: boolean
   ) => {
     if (day === null || isPast || isTooFar) return;
-    const clickedYmd = toYmd(new Date(viewYear, viewMonth, day));
-    const startDateObj = parseYmd(startDate);
-
-    if (!startDate || (startDate && endDate)) {
-      setStartDate(clickedYmd);
-      setEndDate("");
-      onStartDateChange?.(clickedYmd);
-      onEndDateChange?.("");
-    } else if (startDate && !endDate) {
-      if (startDateObj && new Date(viewYear, viewMonth, day) < startDateObj) {
-        setEndDate(startDate);
-        setStartDate(clickedYmd);
-        onStartDateChange?.(clickedYmd);
-        onEndDateChange?.(startDate);
-      } else {
-        setEndDate(clickedYmd);
-        onEndDateChange?.(clickedYmd);
-      }
-    }
+    const ymd = toYmd(new Date(viewYear, viewMonth, day));
+    setSelectedDate(ymd);
+    onDateChange?.(ymd);
   };
 
-  const isDateInRange = (day: number | null) => {
-    if (day === null || !startDate || !endDate) return false;
-    const cur = new Date(viewYear, viewMonth, day);
-    const s = parseYmd(startDate);
-    const e = parseYmd(endDate);
-    return !!s && !!e && cur >= s && cur <= e;
-  };
-
-  const isStartDate = (day: number | null) => {
-    if (day === null || !startDate) return false;
-    const s = parseYmd(startDate);
-    return !!s && new Date(viewYear, viewMonth, day).getTime() === s.getTime();
-  };
-
-  const isEndDate = (day: number | null) => {
-    if (day === null || !endDate) return false;
-    const e = parseYmd(endDate);
-    return !!e && new Date(viewYear, viewMonth, day).getTime() === e.getTime();
+  const isSelected = (day: number | null, isTrailing: boolean) => {
+    if (day === null || isTrailing || !selectedDate) return false;
+    const sel = parseYmd(selectedDate);
+    return (
+      !!sel && new Date(viewYear, viewMonth, day).getTime() === sel.getTime()
+    );
   };
 
   const handlePrevMonth = () => {
@@ -233,15 +202,8 @@ export default function DateRangePicker({
             disabled={viewYear === currentYear && viewMonth === currentMonth}
             className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M10 12L6 8L10 4" />
+            <svg width="16" height="16" viewBox="0 0 16 16">
+              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" />
             </svg>
           </button>
 
@@ -325,9 +287,8 @@ export default function DateRangePicker({
                 getDaysInMonth(viewMonth, viewYear) +
                   getFirstDayOfMonth(viewMonth, viewYear);
 
-            const isInRange = !isTrailing && isDateInRange(day);
-            const isStart = !isTrailing && isStartDate(day);
-            const isEnd = !isTrailing && isEndDate(day);
+            const sel = isSelected(day, isTrailing);
+
             const isPast = day !== null && isPastDate(viewYear, viewMonth, day);
             const isTooFar =
               day !== null && isTooFarInFuture(viewYear, viewMonth, day);
@@ -341,14 +302,12 @@ export default function DateRangePicker({
                 }
                 disabled={day === null || isDisabled}
                 className={`
-          h-10 flex items-center justify-center text-base font-medium rounded-xl transition-all
-          ${day === null ? "invisible" : ""}
-          ${isTrailing ? "text-gray-300 cursor-not-allowed" : ""}
-          ${isDisabled ? "text-gray-300 cursor-not-allowed" : "text-gray-700"}
-          ${!isDisabled && !isStart && !isEnd ? "hover:bg-gray-100" : ""}
-          ${isInRange && !isStart && !isEnd ? "bg-gray-100 rounded-none" : ""}
-          ${isStart || isEnd ? "bg-bcp-blue text-white" : ""}
-        `}
+                h-10 flex items-center justify-center text-base font-medium rounded-xl transition-all
+                ${day === null ? "invisible" : ""}
+                ${isTrailing || isDisabled ? "text-gray-300 cursor-not-allowed" : "text-gray-700"}
+                ${!isTrailing && !isDisabled && !sel ? "hover:bg-gray-100" : ""}
+                ${sel ? "bg-bcp-blue text-white" : ""}
+              `}
               >
                 {day}
               </button>
@@ -357,29 +316,19 @@ export default function DateRangePicker({
         </div>
       </div>
 
-      {/* Date & Time footer — full-width with contained padding */}
+      {/* Date & Time footer */}
       <div className="border-t border-gray-200 px-4 py-3 space-y-3">
-        {/* Row 1: Start date | End date */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-gray-400 leading-none">
-              Start date
-            </p>
-            <p className="text-xs font-semibold text-gray-800">
-              {startDate ? formatDateDisplay(startDate) : "—"}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400 leading-none">
-              End date
-            </p>
-            <p className="text-xs font-semibold text-gray-800">
-              {endDate ? formatDateDisplay(endDate) : "—"}
-            </p>
-          </div>
+        {/* Date display */}
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-wide text-gray-400">
+            Date
+          </p>
+          <p className="text-xs font-semibold text-gray-800">
+            {selectedDate ? formatDateDisplay(selectedDate) : "—"}
+          </p>
         </div>
 
-        {/* Row 2: Start time | End time */}
+        {/* Start time | End time */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-wide text-gray-400">
@@ -423,7 +372,6 @@ function TimeInput({ hour, minute, period, onCommit }: TimeInputProps) {
   const [localMinute, setLocalMinute] = useState(minute);
   const [localPeriod, setLocalPeriod] = useState<"AM" | "PM">(period);
 
-  // Sync when parent value changes
   const prevHour = useRef(hour);
   const prevMinute = useRef(minute);
   const prevPeriod = useRef(period);
@@ -501,7 +449,7 @@ function TimeInput({ hour, minute, period, onCommit }: TimeInputProps) {
       <button
         type="button"
         onClick={togglePeriod}
-        className="ml-1 text-xs font-semibold text-grey-700 hover:bg-gray-200 px-1 py-0.5 rounded transition-colors"
+        className="ml-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 px-1 py-0.5 rounded transition-colors"
       >
         {localPeriod}
       </button>

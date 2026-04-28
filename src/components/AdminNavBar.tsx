@@ -1,5 +1,5 @@
 "use client";
-import bcp_logo from "@/assets/icons/BCP.svg";
+import bcp_logo from "@/assets/icons/BCPlogo.png";
 import blankProfile from "@/assets/icons/Group 1.svg";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,7 +17,7 @@ function AdminNavBar(props: UserNavBarProps) {
   const { user } = useUser();
   const firstName = (dbFirstName || user?.firstName) ?? "Admin";
   return (
-    <nav className="bg-[#234254] px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <nav className="bg-bcp-blue px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <ul className="flex flex-col md:flex-row md:items-center justify-between w-full">
         <li>
           <Link href="/" className="flex items-center gap-4">
