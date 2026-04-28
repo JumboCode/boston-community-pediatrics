@@ -18,6 +18,7 @@ interface EditableTextProps {
   renderPrefix?: React.ReactNode;
   pencilClassName?: string;
   as?: "p" | "div" | "span";
+  maxLength?: number;
 }
 
 export default function EditableText({
@@ -27,6 +28,7 @@ export default function EditableText({
   renderPrefix,
   pencilClassName = "absolute bottom-0 right-0 translate-y-1/2 translate-x-1/2 z-10",
   as = "div",
+  maxLength = 2000,
 }: EditableTextProps) {
   const { isAdmin } = useIsAdmin();
   const { entry, setEntry, removeEntry } = useSiteContent(contentKey);
@@ -57,6 +59,7 @@ export default function EditableText({
           fallbackText={fallbackText}
           hasCustomValue={Boolean(entry)}
           renderPrefix={renderPrefix}
+          maxLength={maxLength}
           onClose={() => setModalOpen(false)}
           onSaved={(updated) => {
             setEntry(updated);
@@ -78,6 +81,7 @@ interface ModalProps {
   fallbackText: string;
   hasCustomValue: boolean;
   renderPrefix?: React.ReactNode;
+  maxLength: number;
   onClose: () => void;
   onSaved: (entry: {
     key: SiteContentKey;
@@ -94,6 +98,7 @@ function EditableTextModal({
   fallbackText,
   hasCustomValue,
   renderPrefix,
+  maxLength,
   onClose,
   onSaved,
   onReset,
@@ -104,6 +109,11 @@ function EditableTextModal({
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setError("Text cannot be empty.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -112,7 +122,7 @@ function EditableTextModal({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ value: draft }),
+          body: JSON.stringify({ value: trimmed }),
         }
       );
       if (!res.ok) throw new Error("Failed to save text");
@@ -187,10 +197,14 @@ function EditableTextModal({
             </label>
             <textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => setDraft(e.target.value.slice(0, maxLength))}
               rows={10}
-              className="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#234254]"
+              maxLength={maxLength}
+              className="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#234254] resize-none"
             />
+            <p className={`text-xs mt-1 text-right ${draft.length >= maxLength ? "text-red-500" : "text-gray-500"}`}>
+              {draft.length}/{maxLength}
+            </p>
           </div>
 
           <div>

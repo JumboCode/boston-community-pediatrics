@@ -155,14 +155,29 @@ function EditableImageModal({
     const f = e.target.files?.[0] ?? null;
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     objectUrlRef.current = null;
-    setFile(f);
-    if (f) {
-      const url = URL.createObjectURL(f);
-      objectUrlRef.current = url;
-      setPreviewUrl(url);
-    } else {
-      setPreviewUrl(null);
+    setFile(null);
+    setPreviewUrl(null);
+    setError(null);
+
+    if (!f) return;
+
+    if (!["image/jpeg"].includes(f.type)) {
+      setError("Only JPG/JPEG images are allowed.");
+      e.target.value = "";
+      return;
     }
+
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (f.size > MAX_SIZE) {
+      setError("Image must be 5MB or less.");
+      e.target.value = "";
+      return;
+    }
+
+    setFile(f);
+    const url = URL.createObjectURL(f);
+    objectUrlRef.current = url;
+    setPreviewUrl(url);
   };
 
   const handleSave = async () => {
@@ -286,12 +301,12 @@ function EditableImageModal({
             </label>
             <input
               type="file"
-              accept="image/*"
+              accept=".jpg,.jpeg"
               onChange={onFileChange}
               className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-[#234254] file:text-white hover:file:bg-[#1b3443]"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Preview will appear above. Click Save to publish.
+              JPG/JPEG only, max 5MB. Preview will appear above. Click Save to publish.
             </p>
           </div>
 
