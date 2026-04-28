@@ -63,13 +63,19 @@ export default function EventSignUpForm({
     "We'll keep you updated!"
   );
   const [comment, setComment] = useState("");
-  const [emptyFields, setEmptyFields] = useState<Set<string>>(new Set());
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showDatePicker, setShowDatePicker] = useState<{
     [guestId: string]: boolean;
   }>({});
 
+  const todayYmd = new Date().toISOString().slice(0, 10);
+  const MAX_NAME = 50;
+  const MAX_RELATIONSHIP = 50;
+  const MAX_PHONE = 15;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   // Use the URL directly — no getPublicURL needed
-  const profileImageSrc = userData?.profileImage ?? blankProfile;
+  const profileImageSrc = userData?.profileImage || blankProfile;
 
   useEffect(() => {
     if (initialGuests.length > 0) {
@@ -145,25 +151,32 @@ export default function EventSignUpForm({
   const handleSignUp = async () => {
     setErrorMessage(null);
 
-    // Validate required fields
-    const newEmptyFields = new Set<string>();
+    const errors: Record<string, string> = {};
     guests.forEach((g, index) => {
-      if (!g.firstName) newEmptyFields.add(`firstName-${index}`);
-      if (!g.lastName) newEmptyFields.add(`lastName-${index}`);
-      if (!g.email) newEmptyFields.add(`email-${index}`);
-      if (!g.dateOfBirth) newEmptyFields.add(`dob-${index}`);
-      if (!g.relationship) newEmptyFields.add(`relationship-${index}`);
+      if (!g.firstName) errors[`firstName-${index}`] = "Required";
+      if (!g.lastName) errors[`lastName-${index}`] = "Required";
+      if (g.email && !EMAIL_REGEX.test(g.email)) {
+        errors[`email-${index}`] = "Invalid email format";
+      }
+      if (g.phoneNumber && !/^\d{7,15}$/.test(g.phoneNumber)) {
+        errors[`phone-${index}`] = "Enter 7–15 digits";
+      }
+      if (!g.dateOfBirth) {
+        errors[`dob-${index}`] = "Required";
+      } else if (g.dateOfBirth > todayYmd) {
+        errors[`dob-${index}`] = "Date of birth cannot be in the future";
+      }
+      if (!g.relationship) errors[`relationship-${index}`] = "Required";
     });
 
-    if (newEmptyFields.size > 0) {
-      setEmptyFields(newEmptyFields);
-      setErrorMessage("Please fill in all required fields for guests.");
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setErrorMessage("Please fix the errors below.");
       window.scrollTo(0, 0);
       return;
     }
 
-    setEmptyFields(new Set());
-
+    setFieldErrors({});
     setIsSubmitting(true);
 
     const payload = {
@@ -428,10 +441,12 @@ export default function EventSignUpForm({
 
         <textarea
           rows={4}
+          maxLength={500}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="w-full border border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none"
+          className="w-full border border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none resize-none"
         />
+        <p className="text-xs text-gray-500 text-right mt-1">{comment.length}/500</p>
       </div>
       <div className="mb-10 text-sm">
         <p className="mb-1">
@@ -462,8 +477,9 @@ export default function EventSignUpForm({
 
                   <input
                     type="text"
+                    maxLength={MAX_NAME}
                     className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
-                      emptyFields.has(`firstName-${index}`)
+                      fieldErrors[`firstName-${index}`]
                         ? "border-red-500"
                         : "border-gray-700"
                     }`}
@@ -472,9 +488,9 @@ export default function EventSignUpForm({
                       updateGuest(guest.id, "firstName", e.target.value)
                     }
                   />
-                  {emptyFields.has(`firstName-${index}`) && (
+                  {fieldErrors[`firstName-${index}`] && (
                     <p className="text-red-500 text-xs mt-1">
-                      Please complete this field
+                      {fieldErrors[`firstName-${index}`]}
                     </p>
                   )}
                 </div>
@@ -487,8 +503,9 @@ export default function EventSignUpForm({
 
                   <input
                     type="text"
+                    maxLength={MAX_NAME}
                     className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
-                      emptyFields.has(`lastName-${index}`)
+                      fieldErrors[`lastName-${index}`]
                         ? "border-red-500"
                         : "border-gray-700"
                     }`}
@@ -497,9 +514,9 @@ export default function EventSignUpForm({
                       updateGuest(guest.id, "lastName", e.target.value)
                     }
                   />
-                  {emptyFields.has(`lastName-${index}`) && (
+                  {fieldErrors[`lastName-${index}`] && (
                     <p className="text-red-500 text-xs mt-1">
-                      Please complete this field
+                      {fieldErrors[`lastName-${index}`]}
                     </p>
                   )}
                 </div>
@@ -507,12 +524,12 @@ export default function EventSignUpForm({
               {/* Email */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-2">
-                  Email
+                  Email (optional)
                 </label>
                 <input
                   type="email"
                   className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
-                    emptyFields.has(`email-${index}`)
+                    fieldErrors[`email-${index}`]
                       ? "border-red-500"
                       : "border-gray-700"
                   }`}
@@ -521,9 +538,9 @@ export default function EventSignUpForm({
                     updateGuest(guest.id, "email", e.target.value)
                   }
                 />
-                {emptyFields.has(`email-${index}`) && (
+                {fieldErrors[`email-${index}`] && (
                   <p className="text-red-500 text-xs mt-1">
-                    Please complete this field
+                    {fieldErrors[`email-${index}`]}
                   </p>
                 )}
               </div>
@@ -535,12 +552,27 @@ export default function EventSignUpForm({
                 </label>
                 <input
                   type="tel"
-                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  inputMode="numeric"
+                  maxLength={MAX_PHONE}
+                  className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
+                    fieldErrors[`phone-${index}`]
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  }`}
                   value={guest.phoneNumber}
                   onChange={(e) =>
-                    updateGuest(guest.id, "phoneNumber", e.target.value)
+                    updateGuest(
+                      guest.id,
+                      "phoneNumber",
+                      e.target.value.replace(/\D/g, "")
+                    )
                   }
                 />
+                {fieldErrors[`phone-${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors[`phone-${index}`]}
+                  </p>
+                )}
               </div>
 
               {/* DOB with Custom DatePicker */}
@@ -557,7 +589,7 @@ export default function EventSignUpForm({
                     }))
                   }
                   className={`w-full border rounded-md p-2.5 text-sm text-left bg-white hover:bg-gray-50 transition-colors ${
-                    emptyFields.has(`dob-${index}`)
+                    fieldErrors[`dob-${index}`]
                       ? "border-red-500"
                       : "border-gray-700"
                   }`}
@@ -567,9 +599,9 @@ export default function EventSignUpForm({
                     : "Select date"}
                 </button>
 
-                {emptyFields.has(`dob-${index}`) && (
+                {fieldErrors[`dob-${index}`] && (
                   <p className="text-red-500 text-xs mt-1">
-                    Please complete this field
+                    {fieldErrors[`dob-${index}`]}
                   </p>
                 )}
 
@@ -647,8 +679,9 @@ export default function EventSignUpForm({
                 </label>
                 <input
                   type="text"
+                  maxLength={MAX_RELATIONSHIP}
                   className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
-                    emptyFields.has(`relationship-${index}`)
+                    fieldErrors[`relationship-${index}`]
                       ? "border-red-500"
                       : "border-gray-700"
                   }`}
@@ -657,9 +690,9 @@ export default function EventSignUpForm({
                     updateGuest(guest.id, "relationship", e.target.value)
                   }
                 />
-                {emptyFields.has(`relationship-${index}`) && (
+                {fieldErrors[`relationship-${index}`] && (
                   <p className="text-red-500 text-xs mt-1">
-                    Please complete this field
+                    {fieldErrors[`relationship-${index}`]}
                   </p>
                 )}
               </div>

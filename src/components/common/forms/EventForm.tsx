@@ -1,8 +1,5 @@
 "use client";
-import {
-  eventSchema,
-  EVENT_FIELD_LIMITS,
-} from "@/lib/schemas/eventSchema";
+import { eventSchema, EVENT_FIELD_LIMITS } from "@/lib/schemas/eventSchema";
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect, type ChangeEvent } from "react";
@@ -17,15 +14,13 @@ import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
 import DateRangePicker from "@/components/RangeCalendar";
 
 function sanitizeZipInput(value: string) {
-  return value
-    .replace(/\D/g, "")
-    .slice(0, EVENT_FIELD_LIMITS.zipMaxDigits);
+  return value.replace(/\D/g, "").slice(0, EVENT_FIELD_LIMITS.zipMaxDigits);
 }
 
 // API shapes used by this component
 type APIPosition = Partial<{
   id: string;
-  position: string;  
+  position: string;
   date: string | Date;
   startTime: string | Date;
   endTime: string | Date;
@@ -134,8 +129,6 @@ const EventForm = () => {
     number | null
   >(null);
 
-
-
   const inputBase =
     "rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2";
 
@@ -215,7 +208,7 @@ const EventForm = () => {
 
     const newImages: StaticImageData[] = [];
     const newFiles: File[] = [];
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 2MB in bytes
     const ALLOWED_TYPES = ["image/jpeg", "image/png"];
     const oversizedFiles: string[] = [];
     const invalidFiles: string[] = [];
@@ -813,7 +806,7 @@ const EventForm = () => {
     load();
   }, [eventIdParam]);
 
-  if(isLoading) return <BasicSkeleton />;
+  if (isLoading) return <BasicSkeleton />;
 
   return (
     <div className="relative mt-[120px] mb-[138px] flex w-full max-w-[792px] flex-col items-center rounded-lg border border-medium-gray bg-white overflow-hidden">
@@ -834,8 +827,8 @@ const EventForm = () => {
       {/* carousel and add photos */}
       <div className="flex w-full flex-col items-center">
         <div className="mt-[26px] w-full px-[30px]">
-  <Carousel images={carouselImages} />
-</div>
+          <Carousel images={carouselImages} />
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -888,7 +881,10 @@ const EventForm = () => {
               onClick={() => setShowEventDatePicker((prev) => !prev)}
               className={`w-[588px] h-[43px] rounded-lg border px-3 flex items-center justify-start text-left text-base
               ${
-                errors["startDate"] || errors["endDate"] || errors["startTime"] || errors["endTime"]
+                errors["startDate"] ||
+                errors["endDate"] ||
+                errors["startTime"] ||
+                errors["endTime"]
                   ? "border-red-500 focus:ring-red-500"
                   : "border-medium-gray focus:ring-bcp-blue/30 focus:border-bcp-blue"
               }`}
@@ -932,9 +928,15 @@ const EventForm = () => {
               </>
             )}
           </div>
-          {(errors["startDate"] || errors["endDate"] || errors["startTime"] || errors["endTime"]) && (
+          {(errors["startDate"] ||
+            errors["endDate"] ||
+            errors["startTime"] ||
+            errors["endTime"]) && (
             <p className="mt-1 text-sm text-red-500">
-              {errors["startDate"] || errors["endDate"] || errors["endTime"] || errors["startTime"]}
+              {errors["startDate"] ||
+                errors["endDate"] ||
+                errors["endTime"] ||
+                errors["startTime"]}
             </p>
           )}
         </div>
@@ -1135,7 +1137,9 @@ const EventForm = () => {
                     type="checkbox"
                     checked={position.sameAsDate && position.sameAsTime}
                     onChange={() => {
-                      const next = !(position.sameAsDate && position.sameAsTime);
+                      const next = !(
+                        position.sameAsDate && position.sameAsTime
+                      );
                       handlePositionChange(index, "sameAsDate", next);
                       handlePositionChange(index, "sameAsTime", next);
                       if (next) {
@@ -1302,7 +1306,8 @@ const EventForm = () => {
                   handlePositionChange(index, "city", e.target.value);
                   clearError(`positions.${index}.city`);
                 }}
-                className={`w-full md:w-[588px] h-[43px] ${inputClass(`positions.${index}.city`,
+                className={`w-full md:w-[588px] h-[43px] ${inputClass(
+                  `positions.${index}.city`,
                   "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                 )}`}
               />
@@ -1327,7 +1332,8 @@ const EventForm = () => {
                     handlePositionChange(index, "state", e.target.value);
                     clearError(`positions.${index}.state`);
                   }}
-                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.state`,
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(
+                    `positions.${index}.state`,
                     "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
@@ -1352,11 +1358,12 @@ const EventForm = () => {
                     handlePositionChange(
                       index,
                       "zip",
-                      sanitizeZipInput(e.target.value),
+                      sanitizeZipInput(e.target.value)
                     );
                     clearError(`positions.${index}.zip`);
                   }}
-                  className={`w-full md:w-[264px] h-[43px] ${inputClass(`positions.${index}.zip`,
+                  className={`w-full md:w-[264px] h-[43px] ${inputClass(
+                    `positions.${index}.zip`,
                     "disabled:bg-light-gray disabled:text-medium-gray disabled:placeholder:text-medium-gray disabled:cursor-not-allowed"
                   )}`}
                 />
@@ -1375,9 +1382,7 @@ const EventForm = () => {
                 id={`position-participants-${index}`}
                 type="number"
                 min={1}
-                max={
-                  10 ** EVENT_FIELD_LIMITS.participantsMaxDigits - 1
-                }
+                max={10 ** EVENT_FIELD_LIMITS.participantsMaxDigits - 1}
                 value={position.participants}
                 onChange={(e) => {
                   handlePositionChange(index, "participants", e.target.value);

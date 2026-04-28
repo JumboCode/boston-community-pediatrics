@@ -119,12 +119,26 @@ export default function EditProfilePage() {
   // Handle File Selection
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Local preview
-      // Set profileimagekey to file name for now; will be replaced with actual URL after upload in handleSubmit
-      setForm((prev) => ({ ...prev, profileImageKey: file.name }));
+    if (!file) return;
+
+    const ALLOWED_TYPES = ["image/jpeg"];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError("Only JPG/JPEG images are allowed.");
+      e.target.value = "";
+      return;
     }
+
+    const MAX_SIZE = 1 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setError("Image must be 1MB or less.");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setForm((prev) => ({ ...prev, profileImageKey: file.name }));
   }
 
   // Handle Remove Image
@@ -170,15 +184,13 @@ export default function EditProfilePage() {
     if (!form.phone) newEmptyFields.add("phone");
     if (!form.dob) newEmptyFields.add("dob");
 
-    // Additional validations
-    const phoneDigits = form.phone.replace(/\D/g, "");
-    if (phoneDigits.length > 15) {
-      setError("Phone number must be 15 digits or less.");
+    if (form.phone && (form.phone.length < 7 || form.phone.length > 15)) {
+      setError("Phone number must be 7–15 digits.");
       return;
     }
 
-    if (form.address && form.address.length > 100) {
-      setError("Street address must be 100 characters or less.");
+    if (form.dob && form.dob > todayYmd) {
+      setError("Date of birth cannot be in the future.");
       return;
     }
 
@@ -189,9 +201,7 @@ export default function EditProfilePage() {
 
     const zipRegex = /^\d{5}(-\d{4})?$/;
     if (form.zip && !zipRegex.test(form.zip)) {
-      setError(
-        "Zip code must be in 5-digit format (12345) or 9-digit format (12345-6789)."
-      );
+      setError("Zip code must be 5-digit (12345) or 9-digit (12345-6789).");
       return;
     }
 
@@ -203,12 +213,6 @@ export default function EditProfilePage() {
     setEmptyFields(new Set());
     setSaving(true);
     setError("");
-
-    if (form.dob && form.dob > todayYmd) {
-      setError("Date of birth cannot be in the future.");
-      setSaving(false);
-      return;
-    }
 
     try {
       let finalImageUrl = form.profileImageKey
@@ -311,6 +315,7 @@ export default function EditProfilePage() {
                   name="firstName"
                   value={form.firstName}
                   onChange={handleChange}
+                  maxLength={50}
                   className={`w-full border rounded-md px-3 py-2 text-sm ${
                     emptyFields.has("firstName")
                       ? "border-red-500"
@@ -330,6 +335,7 @@ export default function EditProfilePage() {
                   name="lastName"
                   value={form.lastName}
                   onChange={handleChange}
+                  maxLength={50}
                   className={`w-full border rounded-md px-3 py-2 text-sm ${
                     emptyFields.has("lastName")
                       ? "border-red-500"
@@ -360,9 +366,15 @@ export default function EditProfilePage() {
               <label className="block text-sm mb-1">Phone Number</label>
               <input
                 name="phone"
+                inputMode="numeric"
                 value={form.phone}
-                onChange={handleChange}
-                maxLength={20} // Allow for formatting like (123) 456-7890
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    phone: e.target.value.replace(/\D/g, ""),
+                  }))
+                }
+                maxLength={15}
                 className={`w-full border rounded-md px-3 py-2 text-sm ${
                   emptyFields.has("phone")
                     ? "border-red-500"
@@ -472,6 +484,7 @@ export default function EditProfilePage() {
                 name="city"
                 value={form.city}
                 onChange={handleChange}
+                maxLength={50}
                 className="w-full border rounded-md px-3 py-2 text-sm"
               />
             </div>
@@ -508,7 +521,7 @@ export default function EditProfilePage() {
                 type="file"
                 hidden
                 ref={fileInputRef}
-                accept="image/*"
+                accept=".jpg,.jpeg"
                 onChange={handleFileChange}
               />
 

@@ -64,13 +64,27 @@ const SignupForm = () => {
     }
   };
 
-  // --- NEW: Handle Image Selection ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+    if (!file) return;
+
+    const ALLOWED_TYPES = ["image/jpeg", "image/jpg"];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError("Only JPG/JPEG images are allowed.");
+      e.target.value = "";
+      return;
     }
+
+    const MAX_SIZE = 1 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setError("Image must be 1MB or less.");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleGoogleSignUp = async () => {
@@ -443,6 +457,7 @@ const SignupForm = () => {
             <input
               name="first-name"
               id="first-name"
+              maxLength={50}
               className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
                 emptyFields.has("firstName")
                   ? "border-red-500 focus:ring-red-200"
@@ -466,6 +481,7 @@ const SignupForm = () => {
             <input
               name="last-name"
               id="last-name"
+              maxLength={50}
               className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
                 emptyFields.has("lastName")
                   ? "border-red-500 focus:ring-red-200"
@@ -518,7 +534,11 @@ const SignupForm = () => {
             name="phone"
             id="phone"
             type="tel"
-            maxLength={20}
+            inputMode="numeric"
+            maxLength={15}
+            onChange={(e) => {
+              e.target.value = e.target.value.replace(/\D/g, "");
+            }}
             className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
               emptyFields.has("phone")
                 ? "border-red-500 focus:ring-red-200"
@@ -716,7 +736,7 @@ const SignupForm = () => {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept="image/*"
+            accept=".jpg,.jpeg"
             className="hidden"
           />
 
