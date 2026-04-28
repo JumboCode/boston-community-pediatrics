@@ -1,6 +1,8 @@
-// Button component!
-import React from "react";
+"use client";
+import React, { useRef } from "react";
 import Image from "next/image";
+
+const DEFAULT_DEBOUNCE_MS = 500;
 
 interface ButtonProps {
   label: string;
@@ -11,6 +13,7 @@ interface ButtonProps {
   altTextStyle?: string;
   disabled?: boolean;
   type?: HTMLButtonElement["type"];
+  debounceMs?: number;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -22,11 +25,23 @@ const Button: React.FC<ButtonProps> = ({
   altTextStyle,
   disabled,
   type,
+  debounceMs = DEFAULT_DEBOUNCE_MS,
 }) => {
+  const debouncing = useRef(false);
+
+  const handleClick = () => {
+    if (!onClick || debouncing.current) return;
+    debouncing.current = true;
+    onClick();
+    setTimeout(() => {
+      debouncing.current = false;
+    }, debounceMs);
+  };
+
   return (
     <button
       type={type ?? "button"}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       className={
         altStyle
