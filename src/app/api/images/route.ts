@@ -71,6 +71,12 @@ export async function POST(req: NextRequest) {
       }
 
       const key = `profiles/${user.id}`;
+
+      // Delete old image if it was from signup (different key pattern)
+      if (user.profileImage && user.profileImage !== key) {
+        await deleteObject(user.profileImage).catch(() => {});
+      }
+
       await updateUserProfileImage(user.id, key);
       const url = await getPresignedURL(key);
       return NextResponse.json({ key, url });
