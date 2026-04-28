@@ -79,7 +79,6 @@ const ManageEventsPage = () => {
 
   const router = useRouter();
 
-  // Fetch event information
   const { data: allPositions } = useSWR<any[]>(`/api/eventPosition`, fetcher);
   const { data: allSignups } = useSWR<any[]>(`/api/eventSignup`, fetcher);
   const { data: allWaitlist } = useSWR<any[]>(`/api/waitlist`, fetcher);
@@ -154,14 +153,12 @@ const ManageEventsPage = () => {
     setEvent(events);
   }, [events]);
 
-  // Event selection (toggle by `eventId`)
   const toggleSelect = (id?: string) => {
     setEvent((prev) =>
       prev.map((v) => (v.eventId === id ? { ...v, selected: !v.selected } : v))
     );
   };
 
-  // Expanded view
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
 
   const toggleExpand = (eventId: string) => {
@@ -190,11 +187,8 @@ const ManageEventsPage = () => {
 
   const sortedEvents = useMemo(() => {
     let list = [...event];
-
-    // Curr Date
     const now = new Date();
 
-    // Apply sorting
     if (sortOption === "UPCOMING") {
       list = list
         .filter((v) => v.startDate > now)
@@ -216,10 +210,9 @@ const ManageEventsPage = () => {
     }
 
     if (searchQuery) {
-      list = list.filter((v) => {
-        const full = `${v.eventName}`.toLowerCase();
-        return full.includes(searchQuery.toLowerCase());
-      });
+      list = list.filter((v) =>
+        v.eventName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
     return list;
@@ -319,7 +312,6 @@ const ManageEventsPage = () => {
         lines.push(row.map((x) => `"${x ?? ""}"`).join(","));
       }
 
-      // Waitlist rows
       for (const v of pos.waitlist ?? []) {
         const row = [
           ev.eventId,
@@ -371,7 +363,6 @@ const ManageEventsPage = () => {
     router.refresh();
   }, [router]);
 
-  // Delete Event - show confirmation first
   const handleDeleteConfirm = () => {
     setPendingCount(selectedCount);
     setShowDeleteConfirm(true);
@@ -390,24 +381,15 @@ const ManageEventsPage = () => {
       const deletePromises = eventToDel.map(async (vol) => {
         const res = await fetch(`/api/events?id=${vol.eventId}`, {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: vol.eventId }),
         });
-
-        if (!res.ok) {
-          throw new Error(`Failed to delete event`);
-        }
+        if (!res.ok) throw new Error(`Failed to delete event`);
         return vol.eventId;
       });
 
       await Promise.all(deletePromises);
-
-      // Remove all selected entries from state
       setEvent((prev) => prev.filter((v) => !v.selected));
-
-      // Show success modal
       setShowDeleteConfirm(false);
       setModalTitle("Event(s) Removed!");
       setModalMessage("Event(s) successfully removed");
@@ -422,7 +404,7 @@ const ManageEventsPage = () => {
 
   return (
     <>
-      <div className="items-center justify-center p-6 ml-60 mr-60">
+      <div className="items-center justify-center p-6 lg:ml-60 lg:mr-60 mx-4">
         <h1 className="text-[16px] font-semibold mb-6 text-bcp-blue">
           <Link href="/" className="hover:underline">
             Home
@@ -433,10 +415,10 @@ const ManageEventsPage = () => {
           </Link>
         </h1>
 
-        {/* Search Bar */}
+        {/* Search + Filter */}
         <div className="mb-4 flex items-center gap-4 w-full">
           <div
-            className="flex flex-1 min-h-[44px] rounded-lg border px-3 py-2 flex-wrap gap-2 cursor-text"
+            className="flex flex-1 min-h-[44px] rounded-lg border border-gray-border px-3 py-2 flex-wrap gap-2 cursor-text min-w-0"
             onClick={() => {
               const input = document.getElementById("event-search-input");
               input?.focus();
@@ -448,8 +430,7 @@ const ManageEventsPage = () => {
               .map((e) => (
                 <span
                   key={e.eventId}
-                  className="flex items-center gap-1 border border-gray-400 
-        rounded-full px-3 py-0.5 text-sm bg-white whitespace-nowrap"
+                  className="flex items-center gap-1 border border-gray-border rounded-full px-3 py-0.5 text-sm bg-white whitespace-nowrap text-bcp-blue"
                 >
                   {e.eventName}
                   <button
@@ -458,7 +439,7 @@ const ManageEventsPage = () => {
                       ev.stopPropagation();
                       toggleSelect(e.eventId);
                     }}
-                    className="ml-1 text-gray-500 hover:text-red-500 leading-none"
+                    className="ml-1 text-medium-gray hover:text-red-500 leading-none"
                   >
                     x
                   </button>
@@ -481,11 +462,11 @@ const ManageEventsPage = () => {
             />
           </div>
 
-          {/* Filter Dropdown*/}
-          <div ref={filterRef} className="relative w-44">
+          {/* Filter Dropdown */}
+          <div ref={filterRef} className="relative w-44 flex-shrink-0">
             <button
               onClick={() => setFilterOpen((o) => !o)}
-              className="h-[44px] w-full rounded-lg border px-4 py-2 text-sm flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
+              className="h-[44px] w-full rounded-lg border px-4 py-2 text-sm flex items-center justify-between bg-white hover:bg-really-light-gray transition-colors"
             >
               <span className="flex-1 text-center">
                 {sortOption === "MOST-RECENT"
@@ -534,8 +515,8 @@ const ManageEventsPage = () => {
                       setFilterOpen(false);
                       setExpandedEvents(new Set());
                     }}
-                    className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-gray-50
-                    ${sortOption === opt ? "bg-gray-100 font-medium" : ""}`}
+                    className={`w-full text-center px-4 py-2 text-sm transition-colors hover:bg-really-light-gray
+                      ${sortOption === opt ? "bg-light-gray font-medium" : ""}`}
                   >
                     {opt === "NAME_AZ"
                       ? "Name (A–Z)"
@@ -555,22 +536,25 @@ const ManageEventsPage = () => {
           </div>
         </div>
 
-        {/* Events Table */}
+        {/* Events Table — fixed layout so columns never shift */}
         <div
           ref={tableRef}
           className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto min-w-0"
         >
-          <table className="w-full table-fixed border-white-700 text-bcp-blue">
+          <table className="w-full min-w-[480px] table-fixed text-bcp-blue">
+            <colgroup>
+              {/* Events  Date  Capacity  Select */}
+              <col className="w-[45%]" />
+              <col className="w-[25%]" />
+              <col className="w-[18%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
-                <th className="py-3 pl-8 px-4 font-normal w-[40%]">Events</th>
-                <th className="py-3 px-4 font-normal w-[25%] text-center">
-                  Date
-                </th>
-                <th className="py-3 px-4 font-normal w-[20%] text-center">
-                  Capacity
-                </th>
-                <th className="py-3 px-4    font-normal w-[15%] text-center">
+                <th className="py-3 pl-8 px-4 font-normal">Events</th>
+                <th className="py-3 px-4 font-normal text-center">Date</th>
+                <th className="py-3 px-4 font-normal text-center">Capacity</th>
+                <th className="py-3 px-4 font-normal text-center">
                   <button onClick={toggleSelectAll} className="hover:underline">
                     Select All
                   </button>
@@ -580,7 +564,7 @@ const ManageEventsPage = () => {
             <tbody>
               {sortedEvents.length === 0 && searchQuery ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-gray-400">
+                  <td colSpan={4} className="py-8 text-center text-medium-gray">
                     No results
                   </td>
                 </tr>
@@ -590,8 +574,8 @@ const ManageEventsPage = () => {
                     {/* Main Row */}
                     <tr
                       className={`transition-colors duration-200 ${
-                        p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                      } border-t border-gray-300`}
+                        p.selected ? "bg-light-gray" : "bg-white hover:bg-really-light-gray"
+                      } border-t border-gray-border`}
                     >
                       <td className="py-3 px-4 pl-8">
                         <div className="flex items-center gap-2 min-w-0">
@@ -617,23 +601,23 @@ const ManageEventsPage = () => {
                           </button>
                           <Link
                             href={`/event/${p.eventId}`}
-                            className="hover:underline truncate"
+                            className="hover:underline truncate text-sm"
                           >
                             {p.eventName}
                           </Link>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-4 text-center text-sm truncate">
                         {p.startDate.toLocaleDateString("en-US") ===
                         p.endDate.toLocaleDateString("en-US")
                           ? p.startDate.toLocaleDateString("en-US")
-                          : `${p.startDate.toLocaleDateString("en-US")} - ${p.endDate.toLocaleDateString("en-US")}`}
+                          : `${p.startDate.toLocaleDateString("en-US")} – ${p.endDate.toLocaleDateString("en-US")}`}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-4 text-center text-sm">
                         {(() => {
                           if (!allPositions)
                             return (
-                              <span className="inline-block w-12 h-4 bg-gray-200 rounded animate-pulse" />
+                              <span className="inline-block w-12 h-4 bg-light-gray rounded animate-pulse" />
                             );
                           const filled = p.positions.reduce(
                             (s, pos) => s + pos.filledSlots,
@@ -662,19 +646,19 @@ const ManageEventsPage = () => {
                     {expandedEvents.has(p.eventId) && (
                       <>
                         {!allPositions ? (
-                          <tr className="bg-gray-50 border-t border-gray-200">
+                          <tr className="bg-really-light-gray border-t border-gray-border">
                             <td
                               colSpan={4}
-                              className="py-2 px-4 pl-16 text-sm text-gray-400"
+                              className="py-2 px-4 pl-16 text-sm text-medium-gray"
                             >
                               Loading...
                             </td>
                           </tr>
                         ) : p.positions.length === 0 ? (
-                          <tr className="bg-gray-50 border-t border-gray-200">
+                          <tr className="bg-really-light-gray border-t border-gray-border">
                             <td
                               colSpan={4}
-                              className="py-2 px-4 pl-16 text-sm text-gray-400"
+                              className="py-2 px-4 pl-16 text-sm text-medium-gray"
                             >
                               No positions
                             </td>
@@ -683,15 +667,15 @@ const ManageEventsPage = () => {
                           p.positions.map((pos) => (
                             <tr
                               key={pos.positionId}
-                              className="bg-gray-100 hover:bg-gray-200 border-t border-gray-200 transition-colors duration-200"
+                              className="bg-light-gray hover:bg-gray-border border-t border-gray-border transition-colors duration-200"
                             >
-                              <td className="py-2 px-4 pl-16 text-sm text-gray-800">
+                              <td className="py-2 px-4 pl-16 text-sm text-bcp-blue truncate">
                                 {pos.positionName || "—"}
                               </td>
-                              <td className="py-2 px-4 text-sm text-gray-800 text-center">
+                              <td className="py-2 px-4 text-sm text-bcp-blue text-center">
                                 Capacity: {pos.filledSlots}/{pos.totalSlots}
                               </td>
-                              <td className="py-2 px-4 text-sm text-gray-800 text-center">
+                              <td className="py-2 px-4 text-sm text-bcp-blue text-center">
                                 Waitlist: {pos.waitlistCount}
                               </td>
                               <td />
@@ -708,20 +692,20 @@ const ManageEventsPage = () => {
         </div>
 
         <div className="border-t w-full">
-          <div className="flex justify-between py-6">
-            <div className="flex justify-between gap-4">
+          <div className="flex flex-wrap justify-between py-6 gap-4">
+            <div className="flex flex-wrap gap-4">
               <Button
                 disabled={selectedCount <= 0}
                 label="Save as CSV"
-                altStyle="bg-gray-300 text-black px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleSaveCSV}
               />
             </div>
-            <div className="flex justify-between gap-4">
+            <div className="flex flex-wrap gap-4">
               <Button
                 disabled={selectedCount <= 0}
                 label="Remove"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e]"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-light-bcp-blue"
                 onClick={handleDeleteConfirm}
               />
             </div>

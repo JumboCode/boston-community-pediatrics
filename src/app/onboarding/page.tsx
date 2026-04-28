@@ -85,6 +85,28 @@ function OnboardingPage() {
       return;
     }
 
+    const phone = formData.get("phone") as string;
+    if (phone && (phone.length < 7 || phone.length > 15)) {
+      setError("Phone number must be 7–15 digits.");
+      setSubmitting(false);
+      return;
+    }
+
+    const state = formData.get("state") as string;
+    if (state && state.length !== 2) {
+      setError("State must be exactly 2 characters.");
+      setSubmitting(false);
+      return;
+    }
+
+    const zip = formData.get("zip") as string;
+    const zipRegex = /^\d{5}(-\d{4})?$/;
+    if (zip && !zipRegex.test(zip)) {
+      setError("Zip code must be 5-digit (12345) or 9-digit (12345-6789).");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       // POST to your existing API to create the user record
       const res = await fetch("/api/users", {
@@ -161,7 +183,8 @@ function OnboardingPage() {
                 name="first-name"
                 id="first-name"
                 required
-                defaultValue={user?.firstName || ""} // Pre-fill if Google provided it
+                maxLength={50}
+                defaultValue={user?.firstName || ""}
                 className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
@@ -176,7 +199,8 @@ function OnboardingPage() {
                 name="last-name"
                 id="last-name"
                 required
-                defaultValue={user?.lastName || ""} // Pre-fill if Google provided it
+                maxLength={50}
+                defaultValue={user?.lastName || ""}
                 className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
@@ -195,6 +219,11 @@ function OnboardingPage() {
               id="phone"
               type="tel"
               required
+              inputMode="numeric"
+              maxLength={15}
+              onChange={(e) => {
+                e.target.value = e.target.value.replace(/\D/g, "");
+              }}
               className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>
@@ -292,6 +321,7 @@ function OnboardingPage() {
               <input
                 name="city"
                 id="city"
+                maxLength={50}
                 className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
@@ -305,6 +335,7 @@ function OnboardingPage() {
               <input
                 name="state"
                 id="state"
+                maxLength={2}
                 className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
@@ -318,6 +349,8 @@ function OnboardingPage() {
               <input
                 name="zip"
                 id="zip"
+                maxLength={10}
+                inputMode="numeric"
                 className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
               />
             </div>
@@ -334,6 +367,7 @@ function OnboardingPage() {
             <input
               name="street"
               id="street"
+              maxLength={100}
               className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
             />
           </div>

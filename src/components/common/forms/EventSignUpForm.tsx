@@ -15,11 +15,6 @@ interface Guest {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
-
-  month: string;
-  day: string;
-  year: string;
-
   speaksSpanish: boolean;
   relationship: string;
 }
@@ -69,9 +64,19 @@ export default function EventSignUpForm({
     "We'll keep you updated!"
   );
   const [comment, setComment] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showDatePicker, setShowDatePicker] = useState<{
+    [guestId: string]: boolean;
+  }>({});
+
+  const todayYmd = new Date().toISOString().slice(0, 10);
+  const MAX_NAME = 50;
+  const MAX_RELATIONSHIP = 50;
+  const MAX_PHONE = 15;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   // Use the URL directly — no getPublicURL needed
-  const profileImageSrc = userData?.profileImage ?? blankProfile;
+  const profileImageSrc = userData?.profileImage || blankProfile;
 
   useEffect(() => {
     if (initialGuests.length > 0) {
@@ -106,11 +111,6 @@ export default function EventSignUpForm({
       email: "",
       phoneNumber: "",
       dateOfBirth: "",
-
-      month: "",
-      day: "",
-      year: "",
-
       relationship: "",
       speaksSpanish: false,
     };
@@ -131,52 +131,60 @@ export default function EventSignUpForm({
     setGuests(guests.map((g) => (g.id === id ? { ...g, [field]: value } : g)));
   };
 
-  const monthRef = useRef<HTMLInputElement | null>(null);
-  const dayRef = useRef<HTMLInputElement | null>(null);
-  const yearRef = useRef<HTMLInputElement | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
+  // Handle Date Selection from DatePicker
+  const handleDateSelect = (guestId: string, date: Date) => {
+    // Use UTC methods to prevent timezone offset issues
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`; // YYYY-MM-DD
+    updateGuest(guestId, "dateOfBirth", formattedDate);
+    setShowDatePicker((prev) => ({ ...prev, [guestId]: false }));
+  };
 
-  const updateDOBField = (
-    guestId: string,
-    field: "month" | "day" | "year",
-    value: string
-  ) => {
-    const numbersOnly = value.replace(/\D/g, "");
-
-    setGuests((prev) =>
-      prev.map((g) => {
-        if (g.id !== guestId) return g;
-
-        const updated = { ...g, [field]: numbersOnly };
-
-        if (updated.month && updated.day && updated.year.length === 4) {
-          updated.dateOfBirth = `${updated.year}-${updated.month.padStart(
-            2,
-            "0"
-          )}-${updated.day.padStart(2, "0")}`;
-        } else {
-          updated.dateOfBirth = "";
-        }
-
-        return updated;
-      })
-    );
+  // Format date for display
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return "";
+    // Parse as UTC to prevent timezone offset
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
   };
 
   const handleSignUp = async () => {
     setErrorMessage(null);
 
-    const isValid = guests.every(
-      (g) => g.firstName && g.lastName && g.dateOfBirth && g.relationship
-    );
-    if (!isValid) {
-      setErrorMessage(
-        "Please fill in all required fields for guests (Name, DOB, Relationship)."
-      );
+    const errors: Record<string, string> = {};
+    guests.forEach((g, index) => {
+      if (!g.firstName) errors[`firstName-${index}`] = "Required";
+      if (!g.lastName) errors[`lastName-${index}`] = "Required";
+      if (g.email && !EMAIL_REGEX.test(g.email)) {
+        errors[`email-${index}`] = "Invalid email format";
+      }
+      if (g.phoneNumber && !/^\d{7,15}$/.test(g.phoneNumber)) {
+        errors[`phone-${index}`] = "Enter 7–15 digits";
+      }
+      if (!g.dateOfBirth) {
+        errors[`dob-${index}`] = "Required";
+      } else if (g.dateOfBirth > todayYmd) {
+        errors[`dob-${index}`] = "Date of birth cannot be in the future";
+      }
+      if (!g.relationship) errors[`relationship-${index}`] = "Required";
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setErrorMessage("Please fix the errors below.");
       window.scrollTo(0, 0);
       return;
     }
 
+    setFieldErrors({});
     setIsSubmitting(true);
 
     const payload = {
@@ -269,13 +277,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsWaitlisted(false)}
-            className="px-6 py-2.5 bg-[#34495e] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2c3e50] transition shadow-sm"
+            className="px-6 py-2.5 bg-dark-desaturated-blue text-white rounded font-bold text-sm hover:bg-[#2c3e50] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-[#34495e] rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-dark-desaturated-blue rounded font-bold text-sm hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -315,13 +323,13 @@ export default function EventSignUpForm({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setIsSuccess(false)}
-            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm uppercase tracking-wide hover:bg-[#2a4455] transition shadow-sm"
+            className="px-6 py-2.5 bg-[#35566b] text-white rounded font-bold text-sm hover:bg-[#2a4455] transition shadow-sm"
           >
             Edit details
           </button>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm uppercase tracking-wide hover:bg-gray-50 transition shadow-sm"
+            className="px-6 py-2.5 bg-white text-light-bcp-blue rounded font-bold text-sm hover:bg-gray-50 transition shadow-sm"
           >
             Return to Home
           </button>
@@ -338,7 +346,7 @@ export default function EventSignUpForm({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-400/50 backdrop-blur-[2px]">
           {/* This is your actual modal card. Keep this one rounded! */}
           <div className="bg-white rounded-lg shadow-xl p-10 max-w-md w-full text-center mx-4 border border-gray-200">
-            <h2 className="text-3xl font-semibold text-[#34495e] mb-2">
+            <h2 className="text-3xl font-semibold text-dark-desaturated-blue mb-2">
               Sign in to Volunteer
             </h2>
             <p className="text-gray-900 font-medium mb-8">
@@ -353,7 +361,7 @@ export default function EventSignUpForm({
               </button>
               <button
                 onClick={() => router.push("/login")}
-                className="px-8 py-2.5 bg-[#34495e] text-white rounded font-medium hover:bg-[#2c3e50] transition"
+                className="px-8 py-2.5 bg-dark-desaturated-blue text-white rounded font-medium hover:bg-[#2c3e50] transition"
               >
                 Log In
               </button>
@@ -441,10 +449,12 @@ export default function EventSignUpForm({
 
         <textarea
           rows={4}
+          maxLength={500}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="w-full border border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none"
+          className="w-full border border-gray-700 rounded-lg p-3 focus:ring-2 focus:ring-light-bcp-blue outline-none resize-none"
         />
+        <p className="text-xs text-gray-500 text-right mt-1">{comment.length}/500</p>
       </div>
       <div className="mb-10 text-sm">
         <p className="mb-1">
@@ -454,20 +464,6 @@ export default function EventSignUpForm({
       </div>
       <div className="space-y-10 mb-10">
         {guests.map((guest, index) => {
-          const [month = "", day = "", year = ""] = guest.dateOfBirth
-            .split("-")
-            .reverse();
-
-          const updateDOB = (m: string, d: string, y: string) => {
-            if (!m && !d && !y) {
-              updateGuest(guest.id, "dateOfBirth", "");
-              return;
-            }
-
-            const formatted = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-            updateGuest(guest.id, "dateOfBirth", formatted);
-          };
-
           return (
             <div key={guest.id} className="space-y-5">
               {/* Guest Divider */}
@@ -489,12 +485,22 @@ export default function EventSignUpForm({
 
                   <input
                     type="text"
-                    className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                    maxLength={MAX_NAME}
+                    className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
+                      fieldErrors[`firstName-${index}`]
+                        ? "border-red-500"
+                        : "border-gray-700"
+                    }`}
                     value={guest.firstName}
                     onChange={(e) =>
                       updateGuest(guest.id, "firstName", e.target.value)
                     }
                   />
+                  {fieldErrors[`firstName-${index}`] && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {fieldErrors[`firstName-${index}`]}
+                    </p>
+                  )}
                 </div>
 
                 {/* Last Name */}
@@ -505,12 +511,22 @@ export default function EventSignUpForm({
 
                   <input
                     type="text"
-                    className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                    maxLength={MAX_NAME}
+                    className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
+                      fieldErrors[`lastName-${index}`]
+                        ? "border-red-500"
+                        : "border-gray-700"
+                    }`}
                     value={guest.lastName}
                     onChange={(e) =>
                       updateGuest(guest.id, "lastName", e.target.value)
                     }
                   />
+                  {fieldErrors[`lastName-${index}`] && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {fieldErrors[`lastName-${index}`]}
+                    </p>
+                  )}
                 </div>
               </div>
               {/* Email */}
@@ -520,12 +536,21 @@ export default function EventSignUpForm({
                 </label>
                 <input
                   type="email"
-                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
+                    fieldErrors[`email-${index}`]
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  }`}
                   value={guest.email}
                   onChange={(e) =>
                     updateGuest(guest.id, "email", e.target.value)
                   }
                 />
+                {fieldErrors[`email-${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors[`email-${index}`]}
+                  </p>
+                )}
               </div>
 
               {/* Phone */}
@@ -535,12 +560,27 @@ export default function EventSignUpForm({
                 </label>
                 <input
                   type="tel"
-                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  inputMode="numeric"
+                  maxLength={MAX_PHONE}
+                  className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
+                    fieldErrors[`phone-${index}`]
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  }`}
                   value={guest.phoneNumber}
                   onChange={(e) =>
-                    updateGuest(guest.id, "phoneNumber", e.target.value)
+                    updateGuest(
+                      guest.id,
+                      "phoneNumber",
+                      e.target.value.replace(/\D/g, "")
+                    )
                   }
                 />
+                {fieldErrors[`phone-${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors[`phone-${index}`]}
+                  </p>
+                )}
               </div>
 
               {/* DOB */}
@@ -548,47 +588,44 @@ export default function EventSignUpForm({
                 <label className="block text-xs text-gray-700 mb-2">
                   Participant’s Date of Birth
                 </label>
-
                 <button
                   type="button"
                   onClick={() =>
-                    setShowDatePicker(
-                      showDatePicker === guest.id ? null : guest.id
-                    )
+                    setShowDatePicker((prev) => ({
+                      ...prev,
+                      [guest.id]: !prev[guest.id],
+                    }))
                   }
-                  className="w-full h-[46px] border border-gray-700 rounded-lg px-4 text-sm text-left bg-white hover:bg-gray-50 transition-colors"
+                  className={`w-full border rounded-md p-2.5 text-sm text-left bg-white hover:bg-gray-50 transition-colors ${
+                    fieldErrors[`dob-${index}`]
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  }`}
                 >
                   {guest.dateOfBirth
-                    ? (() => {
-                        const [year, month, day] = guest.dateOfBirth
-                          .split("-")
-                          .map(Number);
-
-                        const date = new Date(Date.UTC(year, month - 1, day));
-
-                        return date.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          timeZone: "UTC",
-                        });
-                      })()
+                    ? formatDateForDisplay(guest.dateOfBirth)
                     : "Select date"}
                 </button>
 
-                {showDatePicker === guest.id && (
+                {fieldErrors[`dob-${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors[`dob-${index}`]}
+                  </p>
+                )}
+
+                {showDatePicker[guest.id] && (
                   <>
                     {/* Backdrop */}
                     <div
                       className="fixed inset-0 z-40"
                       onClick={() =>
-                        setShowDatePicker(
-                          showDatePicker === guest.id ? null : guest.id
-                        )
+                        setShowDatePicker((prev) => ({
+                          ...prev,
+                          [guest.id]: false,
+                        }))
                       }
                     />
-
-                    {/* DatePicker */}
+                    {/* DatePicker Dropdown */}
                     <div className="absolute top-full left-0 mt-2 z-50">
                       <DatePicker
                         selectedDate={
@@ -601,21 +638,9 @@ export default function EventSignUpForm({
                               })()
                             : null
                         }
-                        onDateChange={(date) => {
-                          const year = date.getUTCFullYear();
-                          const month = String(date.getUTCMonth() + 1).padStart(
-                            2,
-                            "0"
-                          );
-                          const day = String(date.getUTCDate()).padStart(
-                            2,
-                            "0"
-                          );
-
-                          const formatted = `${year}-${month}-${day}`;
-                          updateGuest(guest.id, "dateOfBirth", formatted);
-                          setShowDatePicker(null);
-                        }}
+                        onDateChange={(date) =>
+                          handleDateSelect(guest.id, date)
+                        }
                       />
                     </div>
                   </>
@@ -662,12 +687,22 @@ export default function EventSignUpForm({
                 </label>
                 <input
                   type="text"
-                  className="w-full border border-gray-700 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none"
+                  maxLength={MAX_RELATIONSHIP}
+                  className={`w-full border rounded-md p-2.5 text-sm focus:ring-2 focus:ring-light-bcp-blue outline-none ${
+                    fieldErrors[`relationship-${index}`]
+                      ? "border-red-500"
+                      : "border-gray-700"
+                  }`}
                   value={guest.relationship}
                   onChange={(e) =>
                     updateGuest(guest.id, "relationship", e.target.value)
                   }
                 />
+                {fieldErrors[`relationship-${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors[`relationship-${index}`]}
+                  </p>
+                )}
               </div>
 
               {/* Remove */}
