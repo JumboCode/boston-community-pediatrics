@@ -4,6 +4,7 @@ import blankProfile from "@/assets/icons/Group 1.svg";
 import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import EditableImage from "./admin-editable/EditableImage";
 
 interface UserNavBarProps {
   profileImageUrl: string | null;
@@ -20,14 +21,18 @@ function UserNavBar(props: UserNavBarProps) {
       <ul className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between w-full items-center md:items-center">
         {/* Logo */}
         <li>
-          <Link href="/" className="flex items-center gap-4">
-            <Image
-              src={bcp_logo}
-              alt="BCP Logo"
-              className="w-auto h-12"
-              priority
-            />
-          </Link>
+          <EditableImage
+            contentKey="navbar.logo"
+            fallbackSrc={bcp_logo}
+            alt="BCP Logo"
+            className="w-auto h-12"
+            priority
+            wrapperClassName="h-12 flex items-center gap-4"
+            pencilClassName="absolute -bottom-1.5 -right-1.5 z-10"
+            pencilSize="sm"
+            href="/"
+            linkClassName="flex items-center"
+          />
         </li>
         {/* Links row */}
 
