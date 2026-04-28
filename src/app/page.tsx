@@ -9,6 +9,9 @@ import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import { useRouter } from "next/navigation";
 import { getPublicURL } from "@/lib/r2";
+import EditableImage from "@/components/admin-editable/EditableImage";
+import EditableText from "@/components/admin-editable/EditableText";
+import { DEFAULT_ABOUT_TEXT } from "@/lib/siteContent";
 
 interface Event {
   id: string;
@@ -84,7 +87,14 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen flex bg-white relative w-full h-full flex flex-col items-center">
       <div className="relative w-full h-auto">
-        <Image src={homepage} alt="Homepage Image" className="w-full" />
+        <EditableImage
+          contentKey="home.hero"
+          fallbackSrc={homepage}
+          alt="Homepage Image"
+          className="w-full"
+          wrapperClassName="w-full block"
+          pencilClassName="absolute bottom-4 right-4 z-10"
+        />
 
         <Image
   src={welcome}
@@ -195,30 +205,24 @@ const Home: React.FC = () => {
       <div
         className={`flex items-center my-5 justify-center w-[90%] mx-auto mb-20 ${isMobile ? "flex-col gap-8" : "gap-20"}`}
       >
-        <div
-          className={`text-bcp-blue text-lg font-normal ${isMobile ? "w-full order-2" : "w-[60%]"}`}
-        >
-          <b>Boston Community Pediatrics (BCP)</b> is changing the way we define
-          healthcare for our children. As the first nonprofit pediatric private
-          practice in the Commonwealth, and one of the first in the nation, BCP
-          is bringing income and racial equity to pediatrics by providing all
-          families–but especially those with low-income–with comprehensive,
-          high-quality, culturally competent care, regardless of their ability
-          to pay. BCP cares for its patients at the intersection of physical
-          health, mental health, and the social determinants of health that keep
-          children with low-income from reaching their full health potential.
-          That’s why BCP treats the whole patient. At BCP, patients receive,
-          providing fully-integrated, onsite medical and mental health care, as
-          well as robust care navigation and wellness programming to address
-          housing, food insecurity, early childcare, education needs, and more.
+        <div className={isMobile ? "w-full order-2" : "w-[60%]"}>
+          <EditableText
+            contentKey="home.about.text"
+            fallbackText={DEFAULT_ABOUT_TEXT}
+            renderPrefix={<b>Boston Community Pediatrics (BCP)</b>}
+            className="text-bcp-blue text-lg font-normal"
+          />
         </div>
         <div
           className={`flex justify-center ${isMobile ? "w-full order-1" : "w-[40%]"}`}
         >
-          <Image
-            src={aboutus}
+          <EditableImage
+            contentKey="home.about.image"
+            fallbackSrc={aboutus}
             alt="About Us Image"
             className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue"
+            wrapperClassName="w-full h-full block"
+            pencilClassName="absolute bottom-3 right-3 z-10"
           />
         </div>
       </div>

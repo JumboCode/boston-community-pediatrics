@@ -1,5 +1,5 @@
-import Image from "next/image";
 import EventCard from "@/components/events/EventCard";
+import EventHero from "@/components/events/EventHero";
 import { getEvents } from "@/app/api/events/controller";
 import { Event, UserRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
@@ -67,15 +67,7 @@ export default async function EventsPage() {
     <div className="w-full flex flex-col items-center">
     
       {/* Hero */}
-      <div className="w-full overflow-hidden">
-        <Image
-          src="/high-res-stock-photo.jpg"
-          alt="Event Image"
-          width={1920}
-          height={600}
-          className="w-full h-48 sm:h-64 md:h-80 lg:h-96 object-cover"
-        />
-      </div>
+      <EventHero />
 
       <div className="w-full max-w-[1200px] px-6 py-12">
         <div className="flex">

@@ -136,3 +136,15 @@ enum UserRole {
   VOLUNTEER
   ADMIN
 }
+
+model SiteContent {
+  key       String          @id
+  type      SiteContentType
+  value     String
+  updatedAt DateTime        @updatedAt
+}
+
+enum SiteContentType {
+  IMAGE
+  TEXT
+}
