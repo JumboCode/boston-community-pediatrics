@@ -11,18 +11,32 @@ const LoginForm = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  if (!isLoaded) return <BasicSkeleton />;
+  const [showPassword, setShowPassword] = useState(false);
+  const [emptyFields, setEmptyFields] = useState<Set<string>>(new Set());
+  if(!isLoaded) return <BasicSkeleton/>;
 
   // --- 1. EMAIL/PASSWORD LOGIN ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isLoaded) return;
-    setLoading(true);
-    setError("");
-
+    
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+
+    // Validate fields
+    const newEmptyFields = new Set<string>();
+    if (!email) newEmptyFields.add("email");
+    if (!password) newEmptyFields.add("password");
+
+    if (newEmptyFields.size > 0) {
+      setEmptyFields(newEmptyFields);
+      return;
+    }
+
+    setEmptyFields(new Set());
+    setLoading(true);
+    setError("");
 
     try {
       const result = await signIn.create({
@@ -114,21 +128,54 @@ const LoginForm = () => {
         onSubmit={handleSubmit}
         className="w-full flex flex-col items-center gap-8"
       >
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          required
-          className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-        />
+        <div className="w-full">
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            className={`w-full h-[43px] rounded-lg border p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+              emptyFields.has("email")
+                ? "border-red-500 focus:ring-red-200"
+                : "border-medium-gray focus:border-bcp-blue"
+            }`}
+          />
+          {emptyFields.has("email") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
+        </div>
 
-        <input
-          name="password"
-          placeholder="Password"
-          required
-          type="password"
-          className="w-full h-[43px] rounded-lg border border-medium-gray p-3 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 focus:border-bcp-blue"
-        />
+        <div className="relative w-full">
+          <input
+            name="password"
+            placeholder="Password"
+            type={showPassword ? "text" : "password"}
+            className={`w-full h-[43px] rounded-lg border p-3 pr-10 text-base text-medium-gray placeholder:text-medium-gray focus:outline-none focus:ring-2 focus:ring-bcp-blue/30 ${
+              emptyFields.has("password")
+                ? "border-red-500 focus:ring-red-200"
+                : "border-medium-gray focus:border-bcp-blue"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-medium-gray hover:text-gray-700"
+          >
+            {showPassword ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+          {emptyFields.has("password") && (
+            <p className="text-red-500 text-sm mt-1">Please complete this field</p>
+          )}
+        </div>
 
         <button
           type="submit"

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Button from "@/components/common/buttons/Button";
@@ -45,8 +45,10 @@ const ManageRolesPage = () => {
   const currentUserId = user?.id;
   const [volunteers, setVolunteers] = useState<FrontEndUser[]>([]);
 
-  // search/dropdown helpers copied from admin/email/page.tsx
   const [searchQuery, setSearchQuery] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [sortOption, setSortOption] = useState<
     | "NAME_AZ"
@@ -66,7 +68,6 @@ const ManageRolesPage = () => {
 
   const router = useRouter();
 
-  // Fetch signups for the position (volunteers)
   const { data: allVols, isLoading: isLoadingVols } = useSWR<ApiUser[]>(
     `/api/users`,
     fetcher
@@ -75,7 +76,7 @@ const ManageRolesPage = () => {
   const frontEndUsers = useMemo(() => {
     if (!allVols) return [];
     return allVols
-      .filter((v: ApiUser) => v.id || v.userId) // Filter out invalid users first
+      .filter((v: ApiUser) => v.id || v.userId)
       .map(
         (v: ApiUser): FrontEndUser => ({
           userId: (v.id || v.userId)!,
@@ -101,10 +102,8 @@ const ManageRolesPage = () => {
     setVolunteers(frontEndUsers);
   }, [frontEndUsers]);
 
-  // Volunteer selection (toggle by `userId`)
   const toggleSelect = (id?: string) => {
     if (!id || id === currentUserId) return;
-
     setVolunteers((prev) =>
       prev.map((v) => (v.userId === id ? { ...v, selected: !v.selected } : v))
     );
@@ -123,27 +122,30 @@ const ManageRolesPage = () => {
 
   const selectedCount = volunteers.filter((v) => v.selected).length;
 
+  const seenVolunteers = volunteers.filter((v) => {
+    const full = `${v.lastName} ${v.firstName} ${v.emailAddress}`.toLowerCase();
+    return full.includes(searchQuery.toLowerCase());
+  });
+
   const sortedVolunteers = useMemo(() => {
     let list = [...volunteers];
 
-    // Apply role filters
     if (sortOption === "ADMIN") {
       list = list.filter((v) => v.role === "ADMIN");
     } else if (sortOption === "VOLUNTEER") {
       list = list.filter((v) => v.role === "VOLUNTEER");
     }
 
-    // Apply sorting
     if (sortOption === "NAME_AZ") {
       list.sort((a, b) => {
-        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
-        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
+        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
         return aName.localeCompare(bName);
       });
     } else if (sortOption === "NAME_ZA") {
       list.sort((a, b) => {
-        const aName = `${a.firstName} ${a.lastName}`.toLowerCase();
-        const bName = `${b.firstName} ${b.lastName}`.toLowerCase();
+        const aName = `${a.lastName} ${a.firstName}`.toLowerCase();
+        const bName = `${b.lastName} ${b.firstName}`.toLowerCase();
         return bName.localeCompare(aName);
       });
     } else if (sortOption === "DATE_NEWEST") {
@@ -160,17 +162,34 @@ const ManageRolesPage = () => {
       });
     }
 
-    // ADD THIS: Apply search filtering
-    if (searchQuery) {
-      list = list.filter((v) => {
-        const full =
-          `${v.firstName} ${v.lastName} ${v.emailAddress}`.toLowerCase();
-        return full.includes(searchQuery.toLowerCase());
-      });
-    }
-
     return list;
-  }, [volunteers, sortOption, searchQuery]); // Make sure searchQuery is in dependencies
+  }, [volunteers, sortOption]);
+
+  function addVolunteer(id: string) {
+    toggleSelect(id);
+    setSearchQuery("");
+    setDropdownOpen(false);
+  }
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+        setSearchQuery("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (dropdownOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [dropdownOpen]);
 
   const copyEmailString = volunteers
     .filter((v) => v.selected)
@@ -184,6 +203,7 @@ const ManageRolesPage = () => {
       console.error(err);
     }
   };
+
   const handleSaveCSV = () => {
     const header = "Last Name,First Name,Email Address,Phone Number";
     const content = volunteers
@@ -193,7 +213,6 @@ const ManageRolesPage = () => {
       )
       .join("\n");
 
-    // const blob = new Blob([content], { type: "text/plain" });
     const blob = new Blob([`${header}\n${content}`], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -215,20 +234,18 @@ const ManageRolesPage = () => {
     const selectedIds = volunteers
       .filter((v) => v.selected)
       .map((v) => v.userId);
-
     sessionStorage.setItem(
       "adminEmailRecipientUserIds",
       JSON.stringify(selectedIds)
     );
     sessionStorage.setItem("adminEmailSource", "manage");
-
     router.push("/admin/email");
   };
+
   if (isLoadingVols) {
     return <ManageRolesSkeleton />;
   }
 
-  // Delete User - show confirmation first
   const handleDeleteConfirm = () => {
     setPendingCount(selectedCount);
     setShowDeleteConfirm(true);
@@ -259,7 +276,6 @@ const ManageRolesPage = () => {
       }
 
       setVolunteers((prev) => prev.filter((v) => !v.selected));
-
       setShowDeleteConfirm(false);
       setModalTitle("Users Removed!");
       setModalMessage("Users successfully removed");
@@ -272,7 +288,6 @@ const ManageRolesPage = () => {
     }
   };
 
-  // Edit roles - show confirmation first
   const handleEditConfirm = () => {
     setPendingCount(selectedCount);
     setShowEditConfirm(true);
@@ -299,11 +314,7 @@ const ManageRolesPage = () => {
             role: vol.role === "ADMIN" ? "VOLUNTEER" : "ADMIN",
           }),
         });
-
-        if (!res.ok) {
-          throw new Error(`Failed to update role`);
-        }
-
+        if (!res.ok) throw new Error(`Failed to update role`);
         return vol.userId;
       });
 
@@ -320,7 +331,6 @@ const ManageRolesPage = () => {
         }))
       );
 
-      // Show success modal
       setShowEditConfirm(false);
       setModalTitle("Roles Updated!");
       setModalMessage("Role successfully assigned!");
@@ -335,60 +345,99 @@ const ManageRolesPage = () => {
 
   return (
     <>
-      <div className="items-center justify-center p-6 ml-60 mr-60">
+      <div className="items-center justify-center p-6 lg:ml-60 lg:mr-60 mx-4">
         <h1 className="text-[16px] font-semibold mb-6 text-bcp-blue">
           <Link href="/" className="hover:underline">
             Home
           </Link>
           {" / "}
-          <Link href="/admin/manage/roles" className="hover:underline">
+          <Link href="/admin/manage" className="hover:underline">
             Manage Roles
           </Link>
         </h1>
 
-        {/* search bar + sort dropdown copied/adapted from admin/email/page.tsx */}
+        {/* Search bar + sort dropdown */}
         <div className="mb-4 flex items-center gap-4 w-full">
-          <div className="flex flex-1 min-h-[44px] rounded-lg border px-3 py-2 flex flex-wrap gap-2 focus-within:ring-2">
-            {/* Selected user chips */}
-            {volunteers
-              .filter((v) => v.selected)
-              .map((u) => (
-                <span
-                  key={u.userId}
-                  className="flex items-center gap-1 border border-gray-400 
-        rounded-full px-3 py-0.5 text-sm bg-white whitespace-nowrap"
-                >
-                  {u.lastName}, {u.firstName}
-                  <button
-                    type="button"
-                    onClick={() => toggleSelect(u.userId)}
-                    className="ml-1 text-gray-500 hover:text-red-500 leading-none"
-                    aria-label={`Remove ${u.firstName}`}
+          <div ref={containerRef} className="relative flex-1 min-w-0">
+            <div
+              className="min-h-[44px] w-full rounded-lg border px-3 py-2
+                flex flex-wrap gap-2 cursor-text focus-within:ring-2"
+              onClick={() => setDropdownOpen(true)}
+            >
+              {volunteers
+                .filter((v) => v.selected)
+                .map((u) => (
+                  <span
+                    key={u.userId}
+                    className="flex items-center gap-1 border border-gray-border
+                    rounded-full px-3 py-0.5 text-sm text-bcp-blue bg-white
+                    whitespace-nowrap"
                   >
-                    ×
-                  </button>
-                </span>
-              ))}
+                    {u.lastName}, {u.firstName}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(u.userId);
+                      }}
+                      className="ml-1 text-medium-gray hover:text-red-500 leading-none"
+                      aria-label={`Remove ${u.firstName}`}
+                    >
+                      x
+                    </button>
+                  </span>
+                ))}
+              <span className="flex-1 min-w-[4px]" />
+            </div>
 
-            {/* Actual input */}
-            <input
-              type="text"
-              placeholder={
-                volunteers.some((v) => v.selected)
-                  ? ""
-                  : "Search by name or email..."
-              }
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 min-w-[120px] text-sm outline-none"
-            />
+            {dropdownOpen && (
+              <div
+                className="absolute z-50 left-0 right-0 bg-white border
+                  border-medium-gray rounded-lg shadow-lg mt-1"
+              >
+                <div className="p-2 border-b border-light-gray">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && seenVolunteers.length > 0) {
+                        addVolunteer(seenVolunteers[0].userId);
+                      }
+                    }}
+                    className="w-full border-none outline-none focus:ring-0 text-sm"
+                  />
+                </div>
+                {seenVolunteers.length === 0 && searchQuery ? (
+                  <div className="p-2 text-sm text-medium-gray">No results</div>
+                ) : (
+                  <div className="max-h-[320px] overflow-y-auto">
+                    {seenVolunteers.map((u) => (
+                      <button
+                        key={u.userId}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          addVolunteer(u.userId);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 hover:bg-really-light-gray text-left text-sm"
+                      >
+                        {u.lastName}, {u.firstName}{" "}
+                        <span className="text-medium-gray">({u.emailAddress})</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* sort-by dropdown */}
-          <div className="w-40">
-            <label htmlFor="sort" className="sr-only">
-              Sort by role
-            </label>
+          {/* Sort dropdown */}
+          <div className="w-40 flex-shrink-0">
+            <label htmlFor="sort" className="sr-only">Sort by role</label>
             <select
               id="sort"
               value={sortOption}
@@ -415,20 +464,29 @@ const ManageRolesPage = () => {
           </div>
         </div>
 
-        <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto">
-          {/* Volunteer Table (populated by `/api/users`) */}
-          <table className="w-full border-white-700 text-bcp-blue">
+        {/* Table — fixed layout so columns never shift */}
+        <div className="bg-white border border-black font-sans max-h-[550px] overflow-y-auto overflow-x-auto">
+          <table className="w-full table-fixed text-bcp-blue">
+            <colgroup>
+              {/* #   Name   Role   Email   Phone   Select */}
+              <col className="w-[5%]" />
+              <col className="w-[22%]" />
+              <col className="w-[12%]" />
+              <col className="w-[30%]" />
+              <col className="w-[20%]" />
+              <col className="w-[11%]" />
+            </colgroup>
             <thead className="bg-white sticky top-0 z-10">
               <tr className="text-left">
-                <th className="py-3 px-5 font-normal"></th>
-                <th className="py-3 pl-5 px-4 font-normal">Name</th>
+                <th className="py-3 px-4 font-normal"></th>
+                <th className="py-3 px-4 font-normal">Name</th>
                 <th className="py-3 px-4 font-normal">Role</th>
                 <th className="py-3 px-4 font-normal">Email</th>
-                <th className="py-3 px-4 pr-5 font-normal">Phone Number</th>
-                <th className="py-3 px-4 pl-13 font-normal">
+                <th className="py-3 px-4 font-normal">Phone Number</th>
+                <th className="py-3 px-4 font-normal text-center">
                   <button
                     onClick={toggleSelectAll}
-                    className="hover:underline transition-all duration-200 "
+                    className="hover:underline transition-all duration-200"
                   >
                     Select All
                   </button>
@@ -436,100 +494,86 @@ const ManageRolesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedVolunteers.length === 0 && searchQuery ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-400">
-                    No results
+              {sortedVolunteers.map((p, i) => (
+                <tr
+                  key={p.userId}
+                  className={`transition-colors duration-200 ${
+                    p.selected ? "bg-light-gray" : "bg-white hover:bg-really-light-gray"
+                  } border-t border-gray-border`}
+                >
+                  <td className="py-3 px-4 text-sm">{i + 1}</td>
+                  <td className="py-3 px-4 truncate text-sm">
+                    {p.role === "VOLUNTEER" ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(`/admin/manage/${p.userId}`)
+                        }
+                        className="hover:underline text-left"
+                      >
+                        {p.firstName} {p.lastName}
+                      </button>
+                    ) : (
+                      <span>
+                        {p.firstName} {p.lastName}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 truncate text-sm">
+                    {p.role
+                      .toLowerCase()
+                      .replace(/^\w/, (c) => c.toUpperCase())}
+                  </td>
+                  <td className="py-3 px-4 truncate text-sm">{p.emailAddress}</td>
+                  <td className="py-3 px-4 truncate text-sm">{p.phoneNumber}</td>
+                  <td className="py-3 px-4 text-center">
+                    <input
+                      type="checkbox"
+                      checked={p.selected}
+                      onChange={() => toggleSelect(p.userId)}
+                      disabled={p.userId === currentUserId}
+                      className="w-5 h-5 accent-bcp-blue cursor-pointer"
+                    />
                   </td>
                 </tr>
-              ) : (
-                sortedVolunteers.map((p, i) => {
-                  const rowNumber = i + 1;
-
-                  return (
-                    <tr
-                      key={p.userId}
-                      className={`transition-colors duration-200 ${
-                        p.selected ? "bg-gray-100" : "bg-white hover:bg-gray-50"
-                      } border-t border-gray-300`}
-                    >
-                      <td className="py-3 px-6">{rowNumber}</td>
-                      <td className="py-3 px-4">
-                        {p.role === "VOLUNTEER" ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              router.push(`/admin/manage/${p.userId}`)
-                            }
-                            className="hover:underline text-left"
-                          >
-                            {p.firstName} {p.lastName}
-                          </button>
-                        ) : (
-                          <span>
-                            {p.firstName} {p.lastName}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        {p.role
-                          .toLowerCase()
-                          .replace(/^\w/, (c) => c.toUpperCase())}
-                      </td>
-
-                      <td className="py-3 px-4">{p.emailAddress}</td>
-                      <td className="py-3 px-4">{p.phoneNumber}</td>
-                      <td className="py-3 px-4 text-center">
-                        <input
-                          type="checkbox"
-                          checked={p.selected}
-                          onChange={() => toggleSelect(p.userId)}
-                          disabled={p.userId === currentUserId}
-                          className="w-5 h-5 accent-bcp-blue cursor-pointer"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
         <div className="border-t w-full">
-          <div className="flex justify-between py-6">
-            <div className="flex justify-between gap-4">
+          <div className="flex flex-wrap justify-between py-6 gap-4">
+            <div className="flex flex-wrap gap-4">
               <Button
                 disabled={selectedCount <= 0}
                 label="Message"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleMessage}
               />
               <Button
                 disabled={selectedCount <= 0}
                 label="Copy to Clipboard"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleCopy}
               />
               <Button
                 disabled={selectedCount <= 0}
                 label="Save as CSV"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleSaveCSV}
               />
             </div>
-            <div className="flex justify-between gap-4">
+            <div className="flex flex-wrap gap-4">
               <Button
                 disabled={selectedCount <= 0}
                 label="Change Role"
-                altStyle="bg-[#f4f4f4] text-gray-700 px-5 py-2 rounded-md shadow hover:bg-gray-400"
+                altStyle="bg-light-gray text-bcp-blue px-5 py-2 rounded-md shadow hover:bg-gray-border"
                 onClick={handleEditConfirm}
               />
-
               <Button
                 disabled={selectedCount <= 0 || selectedCount > 3}
                 label="Remove"
-                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-[#1b323e] disabled:bg-gray-400 disabled:hover:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-70"
+                altStyle="bg-bcp-blue text-white px-5 py-2 rounded-md shadow hover:bg-light-bcp-blue disabled:bg-medium-gray disabled:hover:bg-medium-gray disabled:cursor-not-allowed disabled:opacity-70"
                 onClick={handleDeleteConfirm}
               />
             </div>
@@ -565,8 +609,8 @@ const ManageRolesPage = () => {
       {showDeleteConfirm && (
         <Modal
           open={showDeleteConfirm}
-          title={`Remove ${pendingCount} user${pendingCount === 1 ? "" : "s"}?`}
-          // message={`remove (${pendingCount}) users?`}
+          title="Confirm Removal"
+          message={`Remove (${pendingCount}) users?`}
           onClose={() => setShowDeleteConfirm(false)}
           buttons={[
             {
@@ -577,7 +621,7 @@ const ManageRolesPage = () => {
             },
             {
               label: "Remove",
-              variant: "primary",
+              variant: "danger",
               onClick: handleDeleteApproved,
               disabled: isLoading,
             },

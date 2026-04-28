@@ -33,7 +33,7 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
         {/* Header */}
         <Body className="bg-[#f2f4f6] font-sans">
           <Container className="w-[640px] max-w-full mx-auto bg-white my-8 border border-gray-200">
-            <Section className="bg-[#234254] px-6 py-1 text-center">
+            <Section className="bg-bcp-blue px-6 py-1 text-center">
               <Img
                 src={LOGO_URL}
                 alt="Boston Community Pediatrics"
@@ -68,7 +68,7 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
               width="100%"
               cellPadding="0"
               cellSpacing="0"
-              style={{ backgroundColor: "#234254" }}
+              style={{ backgroundColor: "bcp-blue" }}
             >
               <tr style={{ height: "48px" }}>
                 <td width="20%"></td>
