@@ -10,6 +10,7 @@ export type RemovedFromEventArgs = {
   startTime: string;
   endTime: string;
   location: string;
+  eventImage?: string;
   wasWaitlisted?: boolean;
 };
 
@@ -20,7 +21,7 @@ export async function sendRemoved(args: RemovedFromEventArgs) {
     ? `Waitlist Position Removed: ${args.eventName}`
     : `Removed: ${args.eventName}`,
     type: "removed",
-    data: { 
+    data: {
       firstName: args.firstName,
       eventName: args.eventName,
       position: args.position,
@@ -28,6 +29,7 @@ export async function sendRemoved(args: RemovedFromEventArgs) {
       startTime: args.startTime,
       endTime: args.endTime,
       location: args.location,
+      eventImage: args.eventImage,
     },
   });
 }

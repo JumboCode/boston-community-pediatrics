@@ -8,6 +8,10 @@ import {
   removeEventImage,
   updateEventImage,
 } from "../events/controller";
+import { checkAndIncrementStorage } from "@/lib/r2Storage";
+
+const MAX_PROFILE_SIZE = 1 * 1024 * 1024;   // 1 MB
+const MAX_EVENT_SIZE   = 10 * 1024 * 1024;  // 10 MB
 
 const R2_PUBLIC_DOMAIN = "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev";
 
@@ -50,10 +54,24 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (body.type === "profile") {
+      const fileSizeBytes = Number(body.fileSizeBytes);
+      if (!fileSizeBytes || fileSizeBytes > MAX_PROFILE_SIZE) {
+        return NextResponse.json(
+          { error: "File must be 1MB or less." },
+          { status: 400 }
+        );
+      }
+
+      const allowed = await checkAndIncrementStorage(fileSizeBytes);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "Storage limit reached. No new uploads can be accepted." },
+          { status: 507 }
+        );
+      }
+
       const key = `profiles/${user.id}`;
-
       await updateUserProfileImage(user.id, key);
-
       const url = await getPresignedURL(key);
       return NextResponse.json({ key, url });
     }
@@ -67,16 +85,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Missing eventId" }, { status: 400 });
       }
 
-      const event = await getEventById(body.eventId);
+      const fileSizeBytes = Number(body.fileSizeBytes);
+      if (!fileSizeBytes || fileSizeBytes > MAX_EVENT_SIZE) {
+        return NextResponse.json(
+          { error: "File must be 10MB or less." },
+          { status: 400 }
+        );
+      }
 
+      const allowed = await checkAndIncrementStorage(fileSizeBytes);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "Storage limit reached. No new uploads can be accepted." },
+          { status: 507 }
+        );
+      }
+
+      const event = await getEventById(body.eventId);
       if (!event) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
       }
 
       const key = `events/${body.eventId}/${crypto.randomUUID()}`;
-
       await updateEventImage(body.eventId, key);
-
       const url = await getPresignedURL(key);
       return NextResponse.json({ key, url });
     }

@@ -19,6 +19,7 @@ const emailSchema = z.object({
       filledSlots: z.number().optional(),
       location: z.string().optional(),
       waitlistPosition: z.number().optional(),
+      eventImage: z.string().url().optional(),
     })
     .optional(),
 });

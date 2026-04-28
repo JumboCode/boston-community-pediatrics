@@ -12,6 +12,7 @@ export type WaitlistedArgs = {
   filledSlots: number;
   location: string;
   waitlistPosition: number;
+  eventImage?: string;
 };
 
 export async function sendWaitlisted(args: WaitlistedArgs) {
@@ -29,6 +30,7 @@ export async function sendWaitlisted(args: WaitlistedArgs) {
       filledSlots: args.filledSlots,
       location: args.location,
       waitlistPosition: args.waitlistPosition,
+      eventImage: args.eventImage,
     },
   });
 }

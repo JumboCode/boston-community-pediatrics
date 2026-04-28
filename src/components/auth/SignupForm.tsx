@@ -213,7 +213,7 @@ const SignupForm = () => {
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileType: selectedFile.type }),
+          body: JSON.stringify({ fileType: selectedFile.type, fileSizeBytes: selectedFile.size }),
         });
 
         if (!uploadRes.ok) throw new Error("Failed to initialize upload");

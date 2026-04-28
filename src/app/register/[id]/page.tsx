@@ -3,6 +3,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState, use } from "react";
 import EventSignUpForm from "@/components/common/forms/EventSignUpForm";
 import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import { getPublicURL } from "@/lib/r2";
 
 interface RegisterPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,7 @@ interface EventData {
   date?: string | string[];
   startTime?: string;
   endTime?: string;
+  images?: string[];
 }
 
 interface PositionData {
@@ -193,14 +195,22 @@ export default function RegisterPage({ params }: RegisterPageProps) {
     eventTimeLabel = formatTime(startDt) || "TBD";
   }
 
+  const rawImage = evt?.images?.[0];
+  const eventImage = rawImage
+    ? rawImage.startsWith("http")
+      ? rawImage
+      : getPublicURL(rawImage)
+    : undefined;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <EventSignUpForm
-        userData={data.user} //will be null if unauthenticated
+        userData={data.user}
         positionData={data.position}
         eventName={data.position.event?.name}
         eventDate={eventDateLabel}
         eventTime={eventTimeLabel}
+        eventImage={eventImage}
         initialRegistrationId={data.existingRegistrationId}
         initialGuests={data.existingGuests}
       />

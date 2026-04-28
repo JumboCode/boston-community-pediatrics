@@ -1,8 +1,8 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
+import { checkAndIncrementStorage } from "@/lib/r2Storage";
 
-// Using your specific ENV keys
 const s3 = new S3Client({
   region: "auto",
   endpoint: process.env.R2_ENDPOINT,
@@ -12,14 +12,8 @@ const s3 = new S3Client({
   },
 });
 
-// Hardcoded for now based on your previous snippet, but better to move to ENV
 const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN!;
-
-const ALLOWED_FILE_TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
 function joinPublicUrl(base: string, key: string) {
   const cleanBase = base.replace(/\/+$/, "");
@@ -29,30 +23,38 @@ function joinPublicUrl(base: string, key: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { fileType } = await req.json();
+    const { fileType, fileSizeBytes } = await req.json();
 
-    if (typeof fileType !== "string" || !(fileType in ALLOWED_FILE_TYPES)) {
+    if (fileType !== "image/jpeg") {
       return NextResponse.json(
-        {
-          error:
-            "Unsupported file type. Allowed: " +
-            Object.keys(ALLOWED_FILE_TYPES).join(", "),
-        },
+        { error: "Unsupported file type. Only JPEG images are allowed." },
         { status: 400 }
       );
     }
 
-    const extension = ALLOWED_FILE_TYPES[fileType];
-    const uniqueId = crypto.randomUUID();
-    const key = `profilePictures/signup-${uniqueId}.${extension}`;
+    if (typeof fileSizeBytes !== "number" || fileSizeBytes > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File must be 1MB or less." },
+        { status: 400 }
+      );
+    }
+
+    const allowed = await checkAndIncrementStorage(fileSizeBytes);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Storage limit reached. No new uploads can be accepted." },
+        { status: 507 }
+      );
+    }
+
+    const key = `profilePictures/signup-${crypto.randomUUID()}.jpg`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET,
       Key: key,
-      ContentType: fileType,
+      ContentType: "image/jpeg",
     });
 
-    // Generate a temporary upload URL (valid for 600 seconds)
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 });
 
     return NextResponse.json({

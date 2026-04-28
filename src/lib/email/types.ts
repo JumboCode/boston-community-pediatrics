@@ -10,6 +10,7 @@ export type EmailData = {
   filledSlots?: number;
   location?: string;
   waitlistPosition?: number;
+  eventImage?: string;
 };
 
 export type SendEmailProps = {

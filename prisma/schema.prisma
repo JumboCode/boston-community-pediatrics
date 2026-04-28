@@ -136,3 +136,8 @@ enum UserRole {
   VOLUNTEER
   ADMIN
 }
+
+model AppConfig {
+  id             String @id @default("singleton")
+  r2StorageBytes BigInt @default(0)
+}

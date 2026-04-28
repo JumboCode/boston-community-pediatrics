@@ -225,7 +225,7 @@ export default function EditProfilePage() {
       if (selectedFile) {
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
-          body: JSON.stringify({ fileType: selectedFile.type }),
+          body: JSON.stringify({ fileType: selectedFile.type, fileSizeBytes: selectedFile.size }),
         });
 
         if (uploadRes.ok) {
