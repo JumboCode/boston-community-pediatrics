@@ -1523,10 +1523,6 @@ const EventForm = () => {
       <div className="mt-[56px] mb-[71px] flex flex-col items-center">
         <div className="flex flex-col md:flex-row items-center gap-3">
           <Button
-            label="Save as draft"
-            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2]"
-          />
-          <Button
             onClick={handleCreateEvent}
             label="Submit"
             altStyle="bg-bcp-blue text-white text-[16px] w-[125px] h-[44px] font-medium rounded-lg hover:bg-[#386a80]"

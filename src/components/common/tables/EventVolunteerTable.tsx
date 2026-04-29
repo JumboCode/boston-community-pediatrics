@@ -139,91 +139,82 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
           ) : (
             <div className="flex flex-col space-y-2">
               {volunteers.map((volunteer) => {
-                // Use profileImage URL directly, fall back to default icon
                 const avatarSrc = volunteer.profileImage || defaultPfp.src;
 
                 return (
-                  <div key={volunteer.signupId}>
-                    {/* Main volunteer row */}
-                    <div className="flex items-center gap-2 justify-end">
-                      <span
-                        className="text-bcp-blue text-[15px] font-normal font-avenir truncate max-w-[180px]"
-                        title={`${volunteer.firstName} ${volunteer.lastName}`}
-                      >
-                        {volunteer.firstName} {volunteer.lastName}
-                      </span>
+                  <div key={volunteer.signupId} className="flex items-start gap-2">
+                    {/* Names column — grows, truncates naturally */}
+                    <div className="flex flex-col flex-1 min-w-0 items-end">
+                      {/* Volunteer name — same height as avatar */}
+                      <div className="flex items-center justify-end w-full" style={{ height: 28 }}>
+                        <span
+                          className="text-bcp-blue text-[15px] font-normal font-avenir truncate"
+                          title={`${volunteer.firstName} ${volunteer.lastName}`}
+                        >
+                          {volunteer.firstName} {volunteer.lastName}
+                        </span>
+                      </div>
+                      {/* Guest names — same height as SVG rows */}
+                      {volunteer.guests?.map((guest) => (
+                        <div
+                          key={guest.id}
+                          className="flex items-center justify-end w-full"
+                          style={{ height: 36 }}
+                        >
+                          <span
+                            className="text-bcp-blue text-[15px] font-normal font-avenir truncate"
+                            title={`${guest.firstName} ${guest.lastName}`}
+                          >
+                            {guest.firstName} {guest.lastName}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Right column — fixed 28px, avatar then SVG lines */}
+                    <div className="flex flex-col items-center flex-shrink-0" style={{ width: 28 }}>
                       <Image
                         width={28}
                         height={28}
                         src={avatarSrc}
                         alt="Profile"
-                        className="rounded-full object-cover relative z-10 flex-shrink-0"
+                        className="rounded-full object-cover w-[28px] h-[28px] border border-gray-300 flex-shrink-0"
                         unoptimized={
                           typeof avatarSrc === "string" &&
                           avatarSrc.startsWith("http")
                         }
                       />
+                      {volunteer.guests?.map((guest, gIdx) => {
+                        const isLast = gIdx === volunteer.guests.length - 1;
+                        return (
+                          <svg
+                            key={guest.id}
+                            width="28"
+                            height="36"
+                            viewBox="0 0 28 36"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <line
+                              x1="14"
+                              y1="0"
+                              x2="14"
+                              y2={isLast ? "18" : "36"}
+                              stroke="#D9D9D9"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d="M14 18 Q14 28 2 28"
+                              stroke="#D9D9D9"
+                              strokeWidth="3"
+                              fill="none"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        );
+                      })}
                     </div>
-
-                    {/* Guest rows: names on left, curved stem on right under avatar */}
-                    {volunteer.guests && volunteer.guests.length > 0 && (
-                      <div className="flex mt-[4px]">
-                        <div
-                          className="flex flex-col flex-1"
-                          style={{ marginRight: 8 }}
-                        >
-                          {volunteer.guests.map((guest) => (
-                            <div
-                              key={guest.id}
-                              className="flex items-center justify-end"
-                              style={{ height: 36 }}
-                            >
-                              <span
-                                className="text-bcp-blue text-[15px] font-normal font-avenir truncate max-w-[180px]"
-                                title={`${guest.firstName} ${guest.lastName}`}
-                              >
-                                {guest.firstName} {guest.lastName}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        <div
-                          className="flex flex-col"
-                          style={{ width: 28, marginTop: -8 }}
-                        >
-                          {volunteer.guests.map((guest, gIdx) => {
-                            const isLast = gIdx === volunteer.guests.length - 1;
-                            return (
-                              <svg
-                                key={guest.id}
-                                width="28"
-                                height="36"
-                                viewBox="0 0 28 36"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <line
-                                  x1="14"
-                                  y1="0"
-                                  x2="14"
-                                  y2={isLast ? "18" : "36"}
-                                  stroke="#D9D9D9"
-                                  strokeWidth="3"
-                                  strokeLinecap="round"
-                                />
-                                <path
-                                  d="M14 18 Q14 28 2 28"
-                                  stroke="#D9D9D9"
-                                  strokeWidth="3"
-                                  fill="none"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}

@@ -438,7 +438,7 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
           <div className="min-w-0">
-            <div className="mb-6">
+            <div className="mb-6 pt-6">
               <h1 className="text-[28px] font-bold">Upcoming Events</h1>
             </div>
 

@@ -92,7 +92,7 @@ const ProfileEventCard = ({
       className="relative flex flex-col w-[275px] h-[300px] rounded-2xl shadow-sm p-4 gap-2 bg-really-light-gray group hover:shadow-md transition-shadow border border-gray-50"
     >
       {/* Image */}
-      <div className="w-full h-[165px] relative overflow-hidden rounded-xl bg-gray-200">
+      <div className="w-full h-[165px] relative overflow-hidden rounded-xl bg-gray-200 border border-gray-300">
         <Image src={image} alt={title} fill className="object-cover" />
       </div>
 

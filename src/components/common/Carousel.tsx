@@ -33,7 +33,7 @@ const Carousel = ({ images, onRemove }: CarouselProps) => {
   return (
     <div className="w-full max-w-[1000px] px-4 sm:px-0">
       {/* Image box */}
-      <div className="relative w-full h-[220px] sm:h-[360px] bg-white">
+      <div className="relative w-full h-[220px] sm:h-[360px] bg-white border border-gray-300 rounded-lg">
         {hasImages ? (
           images.map((src, i) => (
             <div
