@@ -213,7 +213,7 @@ const SignupForm = () => {
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileType: selectedFile.type }),
+          body: JSON.stringify({ fileType: selectedFile.type, fileSizeBytes: selectedFile.size }),
         });
 
         if (!uploadRes.ok) throw new Error("Failed to initialize upload");
@@ -901,7 +901,7 @@ const SignupForm = () => {
       {error && <p className="text-red-500 mt-4 px-4 text-center">{error}</p>}
 
       {/* Submit Button */}
-      <div className="mt-16 sm:mt-[90px] mb-10 sm:mb-[70px] w-full px-4 sm:px-[102px] flex justify-center">
+      <div className="mt-16 sm:mt-[90px] mb-10 sm:mb-[70px] w-full px-4 sm:px-[102px] flex flex-col items-center gap-4">
         <div id="clerk-captcha" />
         <button
           type="submit"

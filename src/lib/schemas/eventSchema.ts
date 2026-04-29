@@ -12,8 +12,7 @@ export const EVENT_FIELD_LIMITS = {
   zipMaxDigits: 9,
   positionName: 200,
   resourcesLink: 2048,
-  /** Max digits for participant count string (e.g. up to 999999) */
-  participantsMaxDigits: 6,
+  participantsMax: 10,
 } as const;
 
 const hhmm = z
@@ -37,11 +36,11 @@ const zipCodeSchema = z
   .string()
   .min(
     EVENT_FIELD_LIMITS.zipMinDigits,
-    `Zip code must be at least ${EVENT_FIELD_LIMITS.zipMinDigits} digits`,
+    `Zip code must be at least ${EVENT_FIELD_LIMITS.zipMinDigits} digits`
   )
   .max(
     EVENT_FIELD_LIMITS.zipMaxDigits,
-    `Zip code must be at most ${EVENT_FIELD_LIMITS.zipMaxDigits} digits`,
+    `Zip code must be at most ${EVENT_FIELD_LIMITS.zipMaxDigits} digits`
   )
   .regex(/^\d+$/, "Zip code must contain only numbers");
 
@@ -65,7 +64,10 @@ export const positionSchema = z
       .string()
       .min(1, "Street address is required")
       .max(EVENT_FIELD_LIMITS.address, "Street address is too long"),
-    apt: z.string().max(EVENT_FIELD_LIMITS.apt, "Apt / suite is too long").default(""),
+    apt: z
+      .string()
+      .max(EVENT_FIELD_LIMITS.apt, "Apt / suite is too long")
+      .default(""),
     city: z
       .string()
       .min(1, "City is required")
@@ -77,18 +79,22 @@ export const positionSchema = z
     zip: zipCodeSchema,
     participants: z
       .string()
-      .regex(/^\d+$/, "Must be a number")
-      .min(1, "Must be a number")
-      .max(
-        EVENT_FIELD_LIMITS.participantsMaxDigits,
-        "Maximum participants value is too large",
+      .regex(/^\d+$/, "Must be a whole number")
+      .refine(
+        (val) => parseInt(val, 10) >= 1,
+        "Must be at least 1"
+      )
+      .refine(
+        (val) => parseInt(val, 10) <= EVENT_FIELD_LIMITS.participantsMax,
+        `Maximum ${EVENT_FIELD_LIMITS.participantsMax} participants per position`
       ),
     sameAsDate: z.boolean(),
     sameAsTime: z.boolean(),
     sameAsAddress: z.boolean(),
   })
   .refine(
-    (p) => endDateTimeAfterStart(p.startDate, p.endDate, p.startTime, p.endTime),
+    (p) =>
+      endDateTimeAfterStart(p.startDate, p.endDate, p.startTime, p.endTime),
     {
       message: "End date/time must be after start date/time",
       path: ["endTime"],
@@ -127,21 +133,21 @@ export const eventSchema = z
           z
             .string()
             .min(1)
-            .max(
-              EVENT_FIELD_LIMITS.resourcesLink,
-              "Resources link is too long",
-            )
+            .max(EVENT_FIELD_LIMITS.resourcesLink, "Resources link is too long")
             .url(
-              "Use a full URL starting with https:// (or leave this field blank)",
+              "Use a full URL starting with https:// (or leave this field blank)"
             ),
         ])
-        .optional(),
+        .optional()
     ),
     address: z
       .string()
       .min(1, "Street address is required")
       .max(EVENT_FIELD_LIMITS.address, "Street address is too long"),
-    apt: z.string().max(EVENT_FIELD_LIMITS.apt, "Apt / suite is too long").default(""),
+    apt: z
+      .string()
+      .max(EVENT_FIELD_LIMITS.apt, "Apt / suite is too long")
+      .default(""),
     city: z
       .string()
       .min(1, "City is required")
@@ -156,7 +162,8 @@ export const eventSchema = z
       .min(1, "At least one position is required"),
   })
   .refine(
-    (e) => endDateTimeAfterStart(e.startDate, e.endDate, e.startTime, e.endTime),
+    (e) =>
+      endDateTimeAfterStart(e.startDate, e.endDate, e.startTime, e.endTime),
     {
       message: "End date/time must be after start date/time",
       path: ["endTime"],

@@ -147,7 +147,7 @@ export default async function EventDetailsPage(props: {
             className={`w-full flex flex-col items-center justify-center ${
               user?.role !== UserRole.ADMIN
                 ? "border border-gray-800 max-w-[1000px] m-10"
-                : "space-y-6 p-3"
+                : "space-y-6 overflow-x-auto"
             }`}
           >
             {positions.map((item: EventPosition) => {

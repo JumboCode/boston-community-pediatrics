@@ -115,80 +115,92 @@ const Home: React.FC = () => {
 </div>
       </div>
 
-      <div className="flex items-center my-10 justify-center w-[90%] mx-auto">
-        <div className="flex-grow border-t-2 border-bcp-blue"></div>
-        <span className="mx-4 text-bcp-blue text-3xl font-bold">
-          Featured Opportunities
-        </span>
-        <div className="flex-grow border-t-2 border-bcp-blue"></div>
-      </div>
+      {(loading || pinnedEvents.length > 0) && (
+        <>
+          <div className="flex items-center my-10 justify-center w-[90%] mx-auto">
+            <div className="flex-grow border-t-2 border-bcp-blue"></div>
+            <span className="mx-4 text-bcp-blue text-3xl font-bold">
+              Featured Opportunities
+            </span>
+            <div className="flex-grow border-t-2 border-bcp-blue"></div>
+          </div>
 
-      <div
-        className={`flex justify-center ${isMobile ? "flex-col items-center" : "origin-center"}`}
-        style={{
-          gap: isMobile ? "40px" : `${315 * scale}px`,
-          width: isMobile ? "90%" : "auto",
-          maxWidth: "100%",
-          transition: "gap 0.5s",
-        }}
-      >
-        {loading ? (
-          <p className="text-bcp-blue text-lg">Loading events...</p>
-        ) : pinnedEvents.length === 0 ? (
-          <p className="text-bcp-blue text-lg">
-            There are no featured events at this time.
-          </p>
-        ) : (
-          pinnedEvents.map((event) => {
-            const hasValidImage =
-              event.images &&
-              event.images.length > 0 &&
-              event.images[0] &&
-              event.images[0].trim() !== "";
-
-            const imageSrc = hasValidImage
-              ? event.images[0].startsWith("/")
-                ? event.images[0]
-                : `${getPublicURL(event.images[0])}`
-              : "/event1.jpg";
-
-            return (
-              <div
-                key={event.id}
-                className="text-center text-bcp-blue text-lg font-bold"
-              >
-                <div
-                  className={`relative group ${isMobile ? "w-[337px] h-[300px]" : ""}`}
-                  style={
-                    isMobile
-                      ? {}
-                      : {
-                          width: `${486 * scale}px`,
-                          height: `${391 * scale}px`,
-                        }
-                  }
-                >
-                  <Image
-                    src={imageSrc}
-                    alt={event.name}
-                    width={450}
-                    height={400}
-                    className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue transition-all duration-300 group-hover:blur-[3px]"
+          <div
+            className={`flex justify-center ${isMobile ? "flex-col items-center" : "origin-center"}`}
+            style={{
+              gap: isMobile ? "40px" : `${315 * scale}px`,
+              width: isMobile ? "90%" : "auto",
+              maxWidth: "100%",
+              transition: "gap 0.5s",
+            }}
+          >
+            {loading ? (
+              [0, 1].map((i) => (
+                <div key={i} className="text-center">
+                  <div
+                    className={`animate-pulse bg-gray-200 rounded ${isMobile ? "w-[337px] h-[300px]" : ""}`}
+                    style={
+                      isMobile
+                        ? {}
+                        : { width: `${486 * scale}px`, height: `${391 * scale}px` }
+                    }
                   />
-                  <Button
-                    label="More Details"
-                    onClick={() => router.push(`/event/${event.id}`)}
-                    altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-bcp-blue rounded-lg 
-        flex items-center justify-center opacity-0 text-md font-normal
-        transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:bg-light-bcp-blue"
-                  />
+                  <div className="mt-8 animate-pulse bg-gray-200 h-5 rounded w-40 mx-auto" />
                 </div>
-                <div className="mt-8">{event.name}</div>
-              </div>
-            );
-          })
-        )}
-      </div>
+              ))
+            ) : (
+              pinnedEvents.map((event) => {
+                const hasValidImage =
+                  event.images &&
+                  event.images.length > 0 &&
+                  event.images[0] &&
+                  event.images[0].trim() !== "";
+
+                const imageSrc = hasValidImage
+                  ? event.images[0].startsWith("/")
+                    ? event.images[0]
+                    : `${getPublicURL(event.images[0])}`
+                  : "/event1.jpg";
+
+                return (
+                  <div
+                    key={event.id}
+                    className="text-center text-bcp-blue text-lg font-bold"
+                  >
+                    <div
+                      className={`relative group ${isMobile ? "w-[337px] h-[300px]" : ""}`}
+                      style={
+                        isMobile
+                          ? {}
+                          : {
+                              width: `${486 * scale}px`,
+                              height: `${391 * scale}px`,
+                            }
+                      }
+                    >
+                      <Image
+                        src={imageSrc}
+                        alt={event.name}
+                        width={450}
+                        height={400}
+                        className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue transition-all duration-300 group-hover:blur-[3px]"
+                      />
+                      <Button
+                        label="More Details"
+                        onClick={() => router.push(`/event/${event.id}`)}
+                        altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-bcp-blue rounded-lg
+            flex items-center justify-center opacity-0 text-md font-normal
+            transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:bg-light-bcp-blue"
+                      />
+                    </div>
+                    <div className="mt-8">{event.name}</div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
 
       <div
         className="flex items-center justify-center w-[90%] mx-auto"

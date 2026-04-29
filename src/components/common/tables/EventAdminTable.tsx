@@ -7,6 +7,7 @@ import Modal from "@/components/common/Modal";
 import { AdminUser } from "@/app/api/eventSignup/controller";
 import { WaitlistEntry } from "@/app/api/waitlist/route";
 import Image from "next/image";
+import defaultPfp from "@/assets/icons/Group 1.svg";
 
 interface FrontEndUser {
   userId: string;
@@ -81,7 +82,8 @@ const EventAdminTable = (props: EventAdminTableProps) => {
 
   const { data: waitlistSignups } = useSWR<WaitlistEntry[]>(
     positionId && isAdmin ? `/api/waitlist?positionId=${positionId}` : null,
-    fetcher
+    fetcher,
+    { errorRetryCount: 3 }
   );
 
   const frontEndUsers = useMemo(() => {
@@ -391,7 +393,7 @@ const EventAdminTable = (props: EventAdminTableProps) => {
   };
 
   return (
-    <div className="min-w-[1100px] flex items-center justify-center p-6">
+    <div className="w-full flex items-center justify-center p-3 sm:p-6 overflow-x-auto">
       <div className="w-full max-w-[996px] bg-white border border-black font-sans">
         {/* Header */}
         <div className="flex flex-col">
@@ -496,20 +498,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                             {" "}
                             {/* Changed from items-start to items-center */}
                             <div className="absolute left-[17.5px] -top-[30px] w-[5px] h-[30px] bg-gray-border"></div>
-                            <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
-                              {profileImage && (
-                                <Image
-                                  width={40}
-                                  height={40}
-                                  src={profileImage}
-                                  alt="Profile"
-                                  className="w-full h-full rounded-full object-cover"
-                                  unoptimized={
-                                    typeof profileImage === "string" &&
-                                    profileImage.startsWith("http")
-                                  }
-                                />
-                              )}
+                            <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 overflow-hidden">
+                              <Image
+                                width={40}
+                                height={40}
+                                src={profileImage || defaultPfp}
+                                alt="Profile"
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={
+                                  typeof profileImage === "string" &&
+                                  profileImage.startsWith("http")
+                                }
+                              />
                             </div>
                             <div
                               className="ml-3 min-w-0 truncate"
@@ -520,20 +520,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                           </div>
                         ) : (
                           <div className="flex items-center gap-3 relative min-w-0">
-                            <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 bg-gray-border overflow-hidden">
-                              {profileImage && (
-                                <Image
-                                  width={40}
-                                  height={40}
-                                  src={profileImage}
-                                  alt="Profile"
-                                  className="w-full h-full rounded-full object-cover"
-                                  unoptimized={
-                                    typeof profileImage === "string" &&
-                                    profileImage.startsWith("http")
-                                  }
-                                />
-                              )}
+                            <div className="w-10 h-10 rounded-full flex-shrink-0 relative z-10 overflow-hidden">
+                              <Image
+                                width={40}
+                                height={40}
+                                src={profileImage || defaultPfp}
+                                alt="Profile"
+                                className="w-full h-full rounded-full object-cover"
+                                unoptimized={
+                                  typeof profileImage === "string" &&
+                                  profileImage.startsWith("http")
+                                }
+                              />
                             </div>
                             {hasGuestBelow && (
                               <div className="absolute left-[17.5px] top-[40px] w-[5px] h-[30px] bg-gray-border"></div>
@@ -834,22 +832,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
             <div className="w-full px-10 py-6 text-left text-bcp-blue max-h-[600px] overflow-y-auto overflow-x-hidden">
               {/* Main User */}
               <div className="flex items-start gap-6 mb-8">
-                <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
-                  {selectedUserData.profileImage ? (
-                    <Image
-                      width={64}
-                      height={64}
-                      src={selectedUserData.profileImage}
-                      alt="Profile"
-                      className="w-full h-full rounded-full object-cover"
-                      unoptimized={
-                        typeof selectedUserData.profileImage === "string" &&
-                        selectedUserData.profileImage.startsWith("http")
-                      }
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-300 rounded-full" />
-                  )}
+                <div className="w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
+                  <Image
+                    width={64}
+                    height={64}
+                    src={selectedUserData.profileImage || defaultPfp}
+                    alt="Profile"
+                    className="w-full h-full rounded-full object-cover"
+                    unoptimized={
+                      typeof selectedUserData.profileImage === "string" &&
+                      selectedUserData.profileImage.startsWith("http")
+                    }
+                  />
                 </div>
 
                 <div className="flex-shrink-0" style={{ width: "240px" }}>
@@ -904,23 +898,19 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                   <>
                     {selectedUserData.guests.map((guest, index) => (
                       <div key={index} className="flex items-start gap-6 mb-8">
-                        <div className="w-16 h-16 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
-                          {selectedUserData.profileImage ? (
-                            <Image
-                              width={64}
-                              height={64}
-                              src={selectedUserData.profileImage}
-                              alt="Profile"
-                              className="w-full h-full rounded-full object-cover"
-                              unoptimized={
-                                typeof selectedUserData.profileImage ===
-                                  "string" &&
-                                selectedUserData.profileImage.startsWith("http")
-                              }
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-300 rounded-full" />
-                          )}
+                        <div className="w-16 h-16 rounded-full flex-shrink-0 overflow-hidden">
+                          <Image
+                            width={64}
+                            height={64}
+                            src={selectedUserData.profileImage || defaultPfp}
+                            alt="Profile"
+                            className="w-full h-full rounded-full object-cover"
+                            unoptimized={
+                              typeof selectedUserData.profileImage ===
+                                "string" &&
+                              selectedUserData.profileImage.startsWith("http")
+                            }
+                          />
                         </div>
 
                         <div

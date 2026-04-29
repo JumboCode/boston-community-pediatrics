@@ -9,8 +9,7 @@ import {
   Img,
 } from "@react-email/components";
 
-const BASE_URL = "https://boston-community-pediatrics-5ntupemwm.vercel.app/";
-const PLACEHOLDER_EVENT_IMAGE_URL = `${BASE_URL}/event1.jpg`;
+const PLACEHOLDER_EVENT_IMAGE_URL = "https://boston-community-pediatrics-5ntupemwm.vercel.app/event1.jpg";
 
 interface WaitlistedProps {
   firstName?: string;
@@ -22,11 +21,8 @@ interface WaitlistedProps {
   filledSlots: number;
   waitlistPosition: number;
   location: string;
+  eventImage?: string;
 }
-
-// For both signed up and waitlist just am lazy, probably can do a filledslots / total slots
-
-// Same stuff from sign up applies
 
 export function WaitlistedTemplate({
   firstName,
@@ -38,6 +34,7 @@ export function WaitlistedTemplate({
   waitlistPosition,
   location,
   date,
+  eventImage,
 }: WaitlistedProps) {
   return (
     <BaseLayoutTemplate>
@@ -69,24 +66,28 @@ export function WaitlistedTemplate({
         </Text>
 
         {/* Event Card */}
-        <Container className="border border-gray-300 bg-white p-0 m-0">
+        <Container className="border border-gray-300 bg-white p-0" style={{ margin: "0 auto" }}>
           <Row>
             <Column
-              style={{ padding: "16px", width: "200px", verticalAlign: "top" }}
+              style={{ padding: "16px", width: "120px", verticalAlign: "middle", textAlign: "center" }}
             >
               <Img
-                src={PLACEHOLDER_EVENT_IMAGE_URL}
+                src={eventImage || PLACEHOLDER_EVENT_IMAGE_URL}
                 alt={eventName}
+                width="100"
+                height="100"
                 style={{
                   display: "block",
-                  width: "180px",
-                  height: "auto",
+                  width: "100px",
+                  height: "100px",
+                  objectFit: "cover",
+                  objectPosition: "center",
+                  margin: "0 auto",
                 }}
               />
             </Column>
             <Column
-              className="p-2"
-              style={{ verticalAlign: "top", paddingTop: "16px" }}
+              style={{ verticalAlign: "middle", padding: "16px 16px 16px 0" }}
             >
               <Text className="text-sm font-semibold leading-4 m-1">
                 {eventName}

@@ -1,12 +1,15 @@
 import * as React from "react";
 import {
   Body,
+  Column,
   Container,
   Head,
   Html,
   Img,
+  Row,
   Section,
   Tailwind,
+  Text,
 } from "@react-email/components";
 import { TailwindConfig } from "@react-email/tailwind";
 
@@ -33,7 +36,7 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
         {/* Header */}
         <Body className="bg-[#f2f4f6] font-sans">
           <Container className="w-[640px] max-w-full mx-auto bg-white my-8 border border-gray-200">
-            <Section className="bg-bcp-blue px-6 py-1 text-center">
+            <Section style={{ backgroundColor: "#234254", padding: "4px 24px", textAlign: "center" }}>
               <Img
                 src={LOGO_URL}
                 alt="Boston Community Pediatrics"
@@ -64,52 +67,30 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
             <Section className="bg-white">{children}</Section>
 
             {/* Footer */}
-            <table
-              width="100%"
-              cellPadding="0"
-              cellSpacing="0"
-              style={{ backgroundColor: "bcp-blue" }}
-            >
-              <tr style={{ height: "48px" }}>
-                <td width="20%"></td>
-                <td
-                  width="60%"
-                  style={{
-                    verticalAlign: "middle",
-                    textAlign: "center",
-                  }}
-                >
-                  <p
+            <Section style={{ backgroundColor: "#234254", padding: "12px 24px" }}>
+              <Row>
+                <Column style={{ verticalAlign: "middle", textAlign: "center", paddingRight: "12px" }}>
+                  <Text
                     style={{
                       fontSize: "10px",
                       color: "white",
                       margin: 0,
-                      lineHeight: "1.4",
+                      lineHeight: "1.6",
                     }}
                   >
-                    527 Albany St., Suite 200 Boston MA 02118 || Contact Us:
-                    (617) 934-6009
-                  </p>
-                </td>
-
-                <td
-                  width="15%"
-                  style={{
-                    verticalAlign: "middle",
-                    textAlign: "right",
-                    paddingRight: "24px",
-                  }}
-                >
+                    527 Albany St., Suite 200 Boston MA 02118 || Contact Us: (617) 934-6009
+                  </Text>
+                </Column>
+                <Column style={{ verticalAlign: "middle", textAlign: "right", width: "130px" }}>
                   <Img
                     src={LOGO_URL}
                     alt="Boston Community Pediatrics"
-                    width="125"
-                    height="34"
-                    style={{ display: "block" }}
+                    width="110"
+                    style={{ display: "block", marginLeft: "auto" }}
                   />
-                </td>
-              </tr>
-            </table>
+                </Column>
+              </Row>
+            </Section>
           </Container>
         </Body>
       </Tailwind>

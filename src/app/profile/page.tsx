@@ -438,13 +438,15 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
           <div className="min-w-0">
-            <div className="mb-6">
+            <div className="mb-6 pt-6">
               <h1 className="text-[28px] font-bold">Upcoming Events</h1>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 min-h-[300px] content-start">
               {upcoming.length === 0 ? (
-                <p className="text-lg text-gray-500">No upcoming events found.</p>
+                <div className="col-span-full flex items-center justify-center h-[300px]">
+                  <p className="text-lg text-gray-500">No upcoming events found.</p>
+                </div>
               ) : (
                 upcoming.map((reg) => {
                   const event = reg.position.event;
@@ -493,9 +495,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="max-h-[320px] overflow-y-auto">
+                <div className="min-h-[320px] max-h-[320px] overflow-y-auto">
                   {past.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
+                    <div className="flex items-center justify-center h-[320px] text-gray-500">
                       No past events found.
                     </div>
                   ) : (

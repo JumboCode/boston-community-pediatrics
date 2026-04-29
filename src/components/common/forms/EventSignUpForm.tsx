@@ -37,6 +37,7 @@ interface EventSignUpFormProps {
   eventName?: string;
   eventDate?: string;
   eventTime?: string;
+  eventImage?: string;
   initialGuests?: Guest[];
   initialRegistrationId?: string | null;
 }
@@ -47,6 +48,7 @@ export default function EventSignUpForm({
   eventName = "Event Name",
   eventDate = "00/00/0000",
   eventTime = "00:00 AM",
+  eventImage,
   initialGuests = [],
   initialRegistrationId = null,
 }: EventSignUpFormProps) {
@@ -254,9 +256,18 @@ export default function EventSignUpForm({
         <h2 className="text-3xl font-bold mb-2">Waitlist Confirmed</h2>
         <p className="text-blue-100 mb-8 text-lg">{waitlistMessage}</p>
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
-          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
-            EVENT
-          </div>
+          {eventImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={eventImage}
+              alt={eventName}
+              className="w-32 h-24 object-cover rounded-sm shrink-0 mx-auto sm:mx-0"
+            />
+          ) : (
+            <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
+              EVENT
+            </div>
+          )}
           <div className="space-y-1 text-sm flex-1">
             <p>
               <span className="font-bold text-gray-900">Event:</span>{" "}
@@ -300,9 +311,18 @@ export default function EventSignUpForm({
           A confirmation has been sent to your email.
         </p>
         <div className="bg-white text-left p-6 rounded-lg shadow-sm flex flex-col sm:flex-row gap-6 mb-8 max-w-2xl mx-auto text-gray-800">
-          <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
-            EVENT
-          </div>
+          {eventImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={eventImage}
+              alt={eventName}
+              className="w-32 h-24 object-cover rounded-sm shrink-0 mx-auto sm:mx-0"
+            />
+          ) : (
+            <div className="w-32 h-24 bg-gray-200 rounded-sm shrink-0 mx-auto sm:mx-0 flex items-center justify-center text-gray-400 font-bold border border-gray-300">
+              EVENT
+            </div>
+          )}
           <div className="space-y-1 text-sm flex-1 min-w-0">
             <p>
               <span className="font-bold text-gray-900">Event:</span>{" "}

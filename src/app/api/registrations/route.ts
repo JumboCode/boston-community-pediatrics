@@ -5,6 +5,7 @@ import { requireSelfOrAdmin, requireUser, route } from "@/lib/auth";
 import { sendSignupConfirmed } from "@/lib/email/sendSignupConfirmed";
 import { sendWaitlisted } from "@/lib/email/sendWaitlisted";
 import { sendRemoved } from "@/lib/email/sendRemoved";
+import { getPublicURL } from "@/lib/r2";
 
 // --- Configuration ---
 const MAX_GUESTS = 20;
@@ -84,7 +85,7 @@ type PendingEmail =
         city: string;
         state: string;
         zipCode: string;
-        event: { name: string };
+        event: { name: string; images: string[] };
       };
       filledSlotsAfter: number;
     }
@@ -102,7 +103,7 @@ type PendingEmail =
         city: string;
         state: string;
         zipCode: string;
-        event: { name: string };
+        event: { name: string; images: string[] };
       };
       waitlistPosition: number;
     }
@@ -120,7 +121,7 @@ type PendingEmail =
         city: string;
         state: string;
         zipCode: string;
-        event: { name: string };
+        event: { name: string; images: string[] };
       };
     };
 
@@ -129,6 +130,13 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
     try {
       const to = email.user.emailAddress;
       if (!to) continue;
+
+      const rawImage = email.position.event.images?.[0];
+      const eventImage = rawImage
+        ? rawImage.startsWith("http")
+          ? rawImage
+          : getPublicURL(rawImage)
+        : undefined;
 
       if (email.kind === "registered") {
         await sendSignupConfirmed({
@@ -142,6 +150,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           filledSlots: email.filledSlotsAfter,
           location: formatLocation(email.position),
           wasWaitlisted: email.wasWaitlisted ?? false,
+          eventImage,
         });
       } else if (email.kind === "waitlisted") {
         await sendWaitlisted({
@@ -155,6 +164,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           filledSlots: email.position.filledSlots,
           location: formatLocation(email.position),
           waitlistPosition: email.waitlistPosition,
+          eventImage,
         });
       } else if (email.kind === "removed") {
         await sendRemoved({
@@ -167,6 +177,7 @@ async function sendQueuedEmails(emails: PendingEmail[]) {
           endTime: fmtTime(email.position.endTime),
           location: formatLocation(email.position),
           wasWaitlisted: email.wasWaitlisted ?? false,
+          eventImage,
         });
       }
     } catch (e) {
@@ -242,7 +253,7 @@ export const POST = route(async (req: NextRequest) => {
           city: true,
           state: true,
           zipCode: true,
-          event: { select: { name: true } },
+          event: { select: { name: true, images: true } },
           eventId: true,
         },
       });
@@ -467,7 +478,7 @@ export const PUT = route(async (req: NextRequest) => {
             city: true,
             state: true,
             zipCode: true,
-            event: { select: { name: true } },
+            event: { select: { name: true, images: true } },
           },
         });
 
@@ -604,7 +615,7 @@ export const PUT = route(async (req: NextRequest) => {
             city: true,
             state: true,
             zipCode: true,
-            event: { select: { name: true } },
+            event: { select: { name: true, images: true } },
           },
         });
 
@@ -938,7 +949,7 @@ export const DELETE = route(async (req: NextRequest) => {
             city: true,
             state: true,
             zipCode: true,
-            event: { select: { name: true } },
+            event: { select: { name: true, images: true } },
           },
         });
 
@@ -1080,7 +1091,7 @@ export const DELETE = route(async (req: NextRequest) => {
               city: true,
               state: true,
               zipCode: true,
-              event: { select: { name: true } },
+              event: { select: { name: true, images: true } },
             },
           },
         },

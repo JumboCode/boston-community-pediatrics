@@ -11,6 +11,7 @@ export type SignupConfirmedArgs = {
   endTime: string;
   filledSlots: number;
   location: string;
+  eventImage?: string;
   wasWaitlisted?: boolean;
 };
 
@@ -30,6 +31,7 @@ export async function sendSignupConfirmed(args: SignupConfirmedArgs) {
       endTime: args.endTime,
       filledSlots: args.filledSlots,
       location: args.location,
+      eventImage: args.eventImage,
     },
   });
 }

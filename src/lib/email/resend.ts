@@ -72,6 +72,7 @@ export async function sendEmail(props: SendEmailProps) {
         date: d.eventDate ?? "TBD",
         filledSlots: d.filledSlots ?? 0,
         location: d.location ?? "TBD",
+        eventImage: d.eventImage,
       });
       break;
 
@@ -86,6 +87,7 @@ export async function sendEmail(props: SendEmailProps) {
         filledSlots: d.filledSlots ?? 0,
         location: d.location ?? "TBD",
         waitlistPosition: d.waitlistPosition ?? 0,
+        eventImage: d.eventImage,
       });
       break;
 
@@ -98,6 +100,7 @@ export async function sendEmail(props: SendEmailProps) {
         endTime: d.endTime ?? "TBD",
         date: d.eventDate ?? "TBD",
         location: d.location ?? "TBD",
+        eventImage: d.eventImage,
       });
       break;
 

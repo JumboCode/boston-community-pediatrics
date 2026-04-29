@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import BasicSkeleton from "@/components/ui/skeleton/BasicSkeleton";
+import EditProfileSkeleton from "@/components/ui/skeleton/EditProfileSkeleton";
 import DatePicker from "@/components/DatePicker";
 
 export default function EditProfilePage() {
@@ -225,7 +225,7 @@ export default function EditProfilePage() {
       if (selectedFile) {
         const uploadRes = await fetch("/api/upload-signup", {
           method: "POST",
-          body: JSON.stringify({ fileType: selectedFile.type }),
+          body: JSON.stringify({ fileType: selectedFile.type, fileSizeBytes: selectedFile.size }),
         });
 
         if (uploadRes.ok) {
@@ -283,7 +283,7 @@ export default function EditProfilePage() {
   }
 
   if (loading || !isLoaded) {
-    return <BasicSkeleton />;
+    return <EditProfileSkeleton />;
   }
 
   return (

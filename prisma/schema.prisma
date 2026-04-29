@@ -137,6 +137,10 @@ enum UserRole {
   ADMIN
 }
 
+model AppConfig {
+  id             String @id @default("singleton")
+  r2StorageBytes BigInt @default(0)
+}
 model SiteContent {
   key       String          @id
   type      SiteContentType

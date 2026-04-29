@@ -311,8 +311,8 @@ const EventForm = () => {
     if (!files) return;
     const newImages: StaticImageData[] = [];
     const newFiles: File[] = [];
-    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 2MB in bytes
-    const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    const ALLOWED_TYPES = ["image/jpeg"];
     const oversizedFiles: string[] = [];
     const invalidFiles: string[] = [];
     const TARGET_WIDTH = 1000;
@@ -362,11 +362,11 @@ const EventForm = () => {
         }
         ctx.drawImage(img, sX, sY, sW, sH, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
         const blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob(resolve, file.type, 0.92);
+          canvas.toBlob(resolve, "image/jpeg", 0.92);
         });
         URL.revokeObjectURL(objectUrl);
         if (!blob) continue;
-        const resizedFile = new File([blob], file.name, { type: file.type });
+        const resizedFile = new File([blob], file.name, { type: "image/jpeg" });
         newFiles.push(resizedFile);
         newImages.push(createStaticImageData(URL.createObjectURL(resizedFile)));
       } catch (error) {
@@ -375,7 +375,7 @@ const EventForm = () => {
     }
 
     if (invalidFiles.length > 0)
-      alert(`Not supported. Only JPG/PNG:\n\n${invalidFiles.join("\n")}`);
+      alert(`Not supported. Only JPG/JPEG images are allowed:\n\n${invalidFiles.join("\n")}`);
     if (oversizedFiles.length > 0)
       alert(`Exceed 10MB limit:\n\n${oversizedFiles.join("\n")}`);
     if (newFiles.length > 0) {
@@ -449,7 +449,7 @@ const EventForm = () => {
     const presignRes = await fetch("/api/images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "event", eventId }),
+      body: JSON.stringify({ type: "event", eventId, fileSizeBytes: file.size }),
     });
     if (!presignRes.ok)
       throw new Error(`Failed to get upload URL: ${presignRes.status}`);
@@ -460,7 +460,7 @@ const EventForm = () => {
     const putRes = await fetch(url, {
       method: "PUT",
       body: file,
-      headers: { "Content-Type": file.type || "application/octet-stream" },
+      headers: { "Content-Type": "image/jpeg" },
     });
     if (!putRes.ok)
       throw new Error(`Failed to upload file to R2: ${putRes.status}`);
@@ -885,7 +885,7 @@ const EventForm = () => {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".jpg, .jpeg, .png"
+          accept=".jpg,.jpeg"
           multiple
           className="hidden"
           onChange={handleFilesSelected}
@@ -1478,13 +1478,16 @@ const EventForm = () => {
                 htmlFor={`position-participants-${index}`}
                 className="mb-1 mt-10 text-base font-normal text-medium-gray"
               >
-                Maximum number of participants
+                Maximum number of participants{" "}
+                <span className="text-sm text-medium-gray">
+                  (max {EVENT_FIELD_LIMITS.participantsMax})
+                </span>
               </label>
               <input
                 id={`position-participants-${index}`}
                 type="number"
                 min={1}
-                max={10 ** EVENT_FIELD_LIMITS.participantsMaxDigits - 1}
+                max={EVENT_FIELD_LIMITS.participantsMax}
                 value={position.participants}
                 onChange={(e) => {
                   handlePositionChange(index, "participants", e.target.value);
@@ -1519,10 +1522,6 @@ const EventForm = () => {
       {/* bottom buttons */}
       <div className="mt-[56px] mb-[71px] flex flex-col items-center">
         <div className="flex flex-col md:flex-row items-center gap-3">
-          <Button
-            label="Save as draft"
-            altStyle="bg-white text-black text-[16px] w-[125px] h-[44px] font-medium rounded-lg border border-black hover:bg-[#f2f2f2]"
-          />
           <Button
             onClick={handleCreateEvent}
             label="Submit"

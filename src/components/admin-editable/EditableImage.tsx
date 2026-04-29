@@ -187,7 +187,11 @@ function EditableImageModal({
     try {
       const uploadRes = await fetch(
         `/api/site-content/${encodeURIComponent(contentKey)}/upload`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileSizeBytes: file.size }),
+        }
       );
       if (!uploadRes.ok) throw new Error("Failed to get upload URL");
       const { key: imageKey, url: presignedUrl } = (await uploadRes.json()) as {
