@@ -33,7 +33,7 @@ const Carousel = ({ images, onRemove }: CarouselProps) => {
   return (
     <div className="w-full max-w-[1000px] px-4 sm:px-0">
       {/* Image box */}
-      <div className="relative w-full h-[220px] sm:h-[360px] bg-white border border-gray-300 rounded-lg">
+      <div className="relative w-full h-[220px] sm:h-[360px] border border-gray-300 rounded-lg overflow-hidden">
         {hasImages ? (
           images.map((src, i) => (
             <div
@@ -47,7 +47,7 @@ const Carousel = ({ images, onRemove }: CarouselProps) => {
                 src={getSrcKey(src)}
                 alt={`Slide ${i + 1}`}
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
           ))

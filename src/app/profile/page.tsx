@@ -551,7 +551,7 @@ export default function ProfilePage() {
 
 
 
-          <div className="hidden lg:block">
+          <div className="hidden lg:block pt-6">
             <div className="w-full rounded-2xl bg-light-bcp-blue px-6 py-8">
               <div className="flex justify-center mb-4">
                 <Image
