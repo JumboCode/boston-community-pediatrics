@@ -12,6 +12,7 @@ interface EventVolunteerTableProps {
   description: string;
   totalSpots: number;
   positionId: string;
+  isRegistered: boolean;
 }
 
 async function EventVolunteerTable(props: EventVolunteerTableProps) {
@@ -23,6 +24,7 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
     description,
     totalSpots,
     positionId,
+    isRegistered,
   } = props;
 
   let volunteers: PublicUser[] = [];
@@ -96,9 +98,10 @@ async function EventVolunteerTable(props: EventVolunteerTableProps) {
 
         {!isPast && (
           <RegisterButton
-            disabled={isPast}
+            disabled={isPast || isRegistered}
             positionId={positionId}
             isFull={isFull}
+            isRegistered={isRegistered}
           />
         )}
       </div>

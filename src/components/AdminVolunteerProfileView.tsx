@@ -197,7 +197,7 @@ export default function AdminVolunteerProfileView({
         <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
           <p className="text-lg text-gray-700">Volunteer profile not found.</p>
           <button
-            onClick={() => router.push("/admin/manage")}
+            onClick={() => router.push("/admin/manage/roles")}
             className="mt-4 rounded-lg bg-bcp-blue px-4 py-2 text-white"
           >
             Back to Manage Roles
@@ -210,7 +210,7 @@ export default function AdminVolunteerProfileView({
   return (
     <main className="min-h-screen p-8">
       <div className="mt-[40px] ml-[120px]">
-        <Link href="/admin/manage" className="text-bcp-blue hover:underline">
+        <Link href="/admin/manage/roles" className="text-bcp-blue hover:underline">
           Back to Manage Roles
         </Link>
       </div>
@@ -317,7 +317,7 @@ export default function AdminVolunteerProfileView({
 
         <div className="flex justify-center gap-4 mt-[30.82px]">
           <button
-            onClick={() => router.push("/admin/manage")}
+            onClick={() => router.push("/admin/manage/roles")}
             className="h-[44px] w-[140px] rounded-lg bg-white text-black hover:bg-gray-300"
           >
             <div className="text-[16px]">Back to roles</div>

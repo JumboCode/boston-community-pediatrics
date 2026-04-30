@@ -12,6 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import arrowLeft from "@/assets/icons/arrow-left.svg";
 import EventNotFoundModal from "@/components/common/EventNotFoundModal";
+import { prisma } from "@/lib/prisma";
 
 export default async function EventDetailsPage(props: {
   params: { id: string };
@@ -25,6 +26,25 @@ export default async function EventDetailsPage(props: {
     ]);
 
     const user = await getCurrentUser();
+    let registeredPositionIds = new Set<string>();
+
+    if (user?.id && user.role !== UserRole.ADMIN) {
+      const [signups, waitlists] = await Promise.all([
+        prisma.eventSignup.findMany({
+          where: { userId: user.id, eventId },
+          select: { positionId: true },
+        }),
+        prisma.eventWaitlist.findMany({
+          where: { userId: user.id, position: { eventId } },
+          select: { positionId: true },
+        }),
+      ]);
+
+      registeredPositionIds = new Set([
+        ...signups.map((s) => s.positionId),
+        ...waitlists.map((w) => w.positionId),
+      ]);
+    }
 
     if (!event) {
       return <EventNotFoundModal />;
@@ -184,6 +204,7 @@ export default async function EventDetailsPage(props: {
                     totalSpots={item.totalSlots}
                     positionId={item.id}
                     streetAddress={location}
+                    isRegistered={registeredPositionIds.has(item.id)}
                   />
                 );
               }
