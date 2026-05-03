@@ -79,19 +79,21 @@ export const POST = route(async (req: Request) => {
       );
     }
 
-    // Check if there's room
-    const availableSlots = position.totalSlots - position.filledSlots;
-    
-    console.log("Capacity check:", {
-      totalSlots: position.totalSlots,
-      filledSlots: position.filledSlots,
-      availableSlots,
-      requestedToAdd: waitlistRows.length
+    // Count total people being promoted (1 per user + their guests)
+    const waitlistWithGuests = await prisma.eventWaitlist.findMany({
+      where: { id: { in: waitlistIds }, positionId },
+      include: { guests: true },
     });
-    
-    if (availableSlots < waitlistRows.length) {
-      const errorMsg = `Only ${availableSlots} spot(s) available, but trying to add ${waitlistRows.length} people`;      return NextResponse.json(
-        { error: errorMsg },
+    const totalPeopleToAdd = waitlistWithGuests.reduce(
+      (sum, row) => sum + 1 + row.guests.length,
+      0
+    );
+
+    // Check if there's room for everyone (users + guests)
+    const availableSlots = position.totalSlots - position.filledSlots;
+    if (availableSlots < totalPeopleToAdd) {
+      return NextResponse.json(
+        { error: `Only ${availableSlots} spot(s) available, but trying to add ${totalPeopleToAdd} people (including guests)` },
         { status: 400 }
       );
     }

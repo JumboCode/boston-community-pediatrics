@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
 import { checkAndIncrementStorage } from "@/lib/r2Storage";
+import { getCurrentUser } from "@/lib/auth";
 
 const s3 = new S3Client({
   region: "auto",
@@ -23,6 +24,11 @@ function joinPublicUrl(base: string, key: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { fileType, fileSizeBytes } = await req.json();
 
     if (fileType !== "image/jpeg") {

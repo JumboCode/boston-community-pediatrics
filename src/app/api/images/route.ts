@@ -157,6 +157,10 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: "Missing data" }, { status: 400 });
       }
 
+      if (!/^[\w\-./]+$/.test(body.imageKey)) {
+        return NextResponse.json({ error: "Invalid image key" }, { status: 400 });
+      }
+
       const event = await getEventById(body.eventId);
 
       if (!event || !event.images.includes(body.imageKey)) {

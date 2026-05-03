@@ -6,7 +6,27 @@ const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("Authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
+  const provided = authHeader ?? "";
+
+  const encoder = new TextEncoder();
+  const expectedBytes = encoder.encode(expected);
+  const providedBytes = encoder.encode(provided);
+
+  const match =
+    expectedBytes.length === providedBytes.length &&
+    crypto.subtle !== undefined
+      ? await crypto.subtle
+          .digest("SHA-256", expectedBytes)
+          .then(async (a) => {
+            const b = await crypto.subtle.digest("SHA-256", providedBytes);
+            return (
+              Buffer.from(a).toString("hex") === Buffer.from(b).toString("hex")
+            );
+          })
+      : expected === provided;
+
+  if (!match) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
