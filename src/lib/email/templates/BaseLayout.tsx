@@ -35,8 +35,16 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
 
         {/* Header */}
         <Body className="bg-[#f2f4f6] font-sans">
-          <Container className="w-[640px] max-w-full mx-auto bg-white my-8 border border-gray-200">
-            <Section style={{ backgroundColor: "#234254", padding: "4px 24px", textAlign: "center" }}>
+          <Container
+            style={{
+              width: "100%",
+              maxWidth: "640px",
+              margin: "32px auto",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            <Section style={{ backgroundColor: "#234254", padding: "14px 24px", textAlign: "center" }}>
               <Img
                 src={LOGO_URL}
                 alt="Boston Community Pediatrics"
@@ -44,6 +52,8 @@ export const BaseLayoutTemplate = ({ children }: BaseLayoutProps) => {
                 style={{
                   display: "block",
                   margin: "0 auto",
+                  maxWidth: "100%",
+                  height: "auto",
                 }}
               />
             </Section>
