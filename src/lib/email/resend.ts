@@ -5,6 +5,7 @@ import { SendEmailProps } from "./types";
 import { SignupConfirmedTemplate } from "./templates/SignupConfirmed";
 import { RemovedTemplate } from "./templates/RemovedFromEvent";
 import { WaitlistedTemplate } from "./templates/Waitlisted";
+import { ReminderTemplate } from "./templates/Reminder";
 import {
   Text as EmailText,
   Section as EmailSection,
@@ -94,6 +95,19 @@ export async function sendEmail(props: SendEmailProps) {
     case "removed":
       emailComponent = React.createElement(RemovedTemplate, {
         firstName: d.firstName ?? "Guest",
+        eventName: d.eventName ?? "Event",
+        position: d.position ?? "Position TBD",
+        startTime: d.startTime ?? "TBD",
+        endTime: d.endTime ?? "TBD",
+        date: d.eventDate ?? "TBD",
+        location: d.location ?? "TBD",
+        eventImage: d.eventImage,
+      });
+      break;
+
+    case "reminder":
+      emailComponent = React.createElement(ReminderTemplate, {
+        firstName: d.firstName ?? "Volunteer",
         eventName: d.eventName ?? "Event",
         position: d.position ?? "Position TBD",
         startTime: d.startTime ?? "TBD",

@@ -1,8 +1,7 @@
-
-import { Prisma, PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server"
-
-const prisma = new PrismaClient();
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { deleteObject } from "@/lib/r2";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("Authorization");
@@ -10,21 +9,14 @@ export async function POST(request: Request) {
   const provided = authHeader ?? "";
 
   const encoder = new TextEncoder();
-  const expectedBytes = encoder.encode(expected);
-  const providedBytes = encoder.encode(provided);
-
+  const [a, b] = [encoder.encode(expected), encoder.encode(provided)];
+  const [hashA, hashB] = await Promise.all([
+    crypto.subtle.digest("SHA-256", a),
+    crypto.subtle.digest("SHA-256", b),
+  ]);
   const match =
-    expectedBytes.length === providedBytes.length &&
-    crypto.subtle !== undefined
-      ? await crypto.subtle
-          .digest("SHA-256", expectedBytes)
-          .then(async (a) => {
-            const b = await crypto.subtle.digest("SHA-256", providedBytes);
-            return (
-              Buffer.from(a).toString("hex") === Buffer.from(b).toString("hex")
-            );
-          })
-      : expected === provided;
+    a.length === b.length &&
+    Buffer.from(hashA).toString("hex") === Buffer.from(hashB).toString("hex");
 
   if (!match) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,29 +31,15 @@ export async function POST(request: Request) {
     },
   });
 
-  const results = [];
+  const results: { id: string; status: string }[] = [];
 
   for (const event of expiredEvents) {
     try {
-      for (const imageUrl of event.images) {
-        const imageId = imageUrl.split("/").pop();
-        await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/images/v1/${imageId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
-            },
-          }
-        );
-      }
+      await Promise.all(event.images.map((key) => deleteObject(key)));
 
       await prisma.event.update({
         where: { id: event.id },
-        data: {
-          images: [],
-          imagesDeleted: true,
-        },
+        data: { images: [], imagesDeleted: true },
       });
 
       results.push({ id: event.id, status: "cleaned" });
@@ -71,5 +49,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ processed: results });
+  return NextResponse.json({ processed: results.length, results });
 }
