@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getPublicURL } from "@/lib/r2";
 
 export async function GET() {
   const pinnedEvents = await prisma.event.findMany({
@@ -15,10 +16,9 @@ export async function GET() {
     },
   });
 
-  // Normalize image field for frontend
   const formatted = pinnedEvents.map((event) => ({
     ...event,
-    image: event.images[0] ?? "/event-placeholder.jpg",
+    image: getPublicURL(event.images[0]) ?? "/event-placeholder.jpg",
   }));
 
   return Response.json(formatted);
