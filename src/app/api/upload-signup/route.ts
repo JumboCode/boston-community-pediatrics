@@ -2,7 +2,6 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
 import { checkAndIncrementStorage } from "@/lib/r2Storage";
-import { getCurrentUser } from "@/lib/auth";
 
 const s3 = new S3Client({
   region: "auto",
@@ -15,6 +14,11 @@ const s3 = new S3Client({
 
 const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN!;
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+const ALLOWED_FILE_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 function joinPublicUrl(base: string, key: string) {
   const cleanBase = base.replace(/\/+$/, "");
@@ -24,16 +28,15 @@ function joinPublicUrl(base: string, key: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { fileType, fileSizeBytes } = await req.json();
 
-    if (fileType !== "image/jpeg") {
+    if (typeof fileType !== "string" || !(fileType in ALLOWED_FILE_TYPES)) {
       return NextResponse.json(
-        { error: "Unsupported file type. Only JPEG images are allowed." },
+        {
+          error:
+            "Unsupported file type. Allowed: " +
+            Object.keys(ALLOWED_FILE_TYPES).join(", "),
+        },
         { status: 400 }
       );
     }
@@ -53,12 +56,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const key = `profilePictures/signup-${crypto.randomUUID()}.jpg`;
+    const extension = ALLOWED_FILE_TYPES[fileType];
+    const key = `profilePictures/signup-${crypto.randomUUID()}.${extension}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET,
       Key: key,
-      ContentType: "image/jpeg",
+      ContentType: fileType,
     });
 
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 });

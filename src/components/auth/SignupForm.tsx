@@ -46,7 +46,6 @@ const SignupForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
-  if (!isLoaded) return <BasicSkeleton />;
 
   const todayYmd = new Date().toISOString().slice(0, 10);
 
@@ -68,9 +67,9 @@ const SignupForm = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ALLOWED_TYPES = ["image/jpeg", "image/jpg"];
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError("Only JPG/JPEG images are allowed.");
+      setError("Only JPG, PNG, or WEBP images are allowed.");
       e.target.value = "";
       return;
     }
@@ -738,7 +737,7 @@ const SignupForm = () => {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".jpg,.jpeg"
+            accept=".jpg,.jpeg,.png,.webp"
             className="hidden"
           />
 
