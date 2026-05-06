@@ -9,6 +9,7 @@ import {
 } from "./controller";
 import { getCurrentUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
+import { getPublicURL } from "@/lib/r2";
 
 function isSameLocalDay(a: Date, b: Date) {
   return (
@@ -39,14 +40,21 @@ export async function GET(req: NextRequest) {
     // CASE 1: Fetch Single Position by ID
     if (id) {
       const position = await getPositionById(id);
-      
+
       if (!position) {
         return NextResponse.json(
           { error: "Position not found" },
           { status: 404 }
         );
       }
-      // Returns a single object, e.g. { position: "Gate", description: "..." }
+
+      // Resolve event image keys to full public URLs server-side
+      if (position.event?.images) {
+        (position.event as { images: string[] }).images = position.event.images.map((key) =>
+          key.startsWith("http") ? key : getPublicURL(key)
+        );
+      }
+
       return NextResponse.json(position, { status: 200 });
     }
     
