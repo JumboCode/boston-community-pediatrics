@@ -54,15 +54,21 @@ export async function POST(request: Request) {
   }
 
   const now = new Date();
-  const in23h = new Date(now.getTime() + 23 * 60 * 60 * 1000);
-  const in25h = new Date(now.getTime() + 25 * 60 * 60 * 1000);
 
-  // Find all signups for positions starting in ~24 hours
+  // Tomorrow in UTC — catches every event on the next day regardless of start time
+  const startOfTomorrow = new Date(now);
+  startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
+  startOfTomorrow.setUTCHours(0, 0, 0, 0);
+
+  const startOfDayAfter = new Date(startOfTomorrow);
+  startOfDayAfter.setUTCDate(startOfDayAfter.getUTCDate() + 1);
+
+  // Find all signups for positions starting anywhere tomorrow
   const signups = await prisma.eventSignup.findMany({
     where: {
       userId: { not: null },
       position: {
-        startTime: { gte: in23h, lte: in25h },
+        startTime: { gte: startOfTomorrow, lt: startOfDayAfter },
       },
     },
     include: {
