@@ -121,9 +121,9 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ALLOWED_TYPES = ["image/jpeg"];
+    const ALLOWED_TYPES = ["image/jpeg", "image/png"];
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError("Only JPG/JPEG images are allowed.");
+      setError("Only JPG/JPEG and PNG images are allowed.");
       e.target.value = "";
       return;
     }
@@ -521,7 +521,7 @@ export default function EditProfilePage() {
                 type="file"
                 hidden
                 ref={fileInputRef}
-                accept=".jpg,.jpeg"
+                accept=".jpg,.jpeg,.png"
                 onChange={handleFileChange}
               />
 
