@@ -8,7 +8,6 @@ import aboutus from "@/assets/images/aboutus.jpg";
 import Image from "next/image";
 import Button from "@/components/common/buttons/Button";
 import { useRouter } from "next/navigation";
-import { getPublicURL } from "@/lib/r2";
 import EditableImage from "@/components/admin-editable/EditableImage";
 import EditableText from "@/components/admin-editable/EditableText";
 import { DEFAULT_ABOUT_TEXT } from "@/lib/siteContent";
@@ -156,17 +155,7 @@ const Home: React.FC = () => {
                   </div>
                 ))
               : pinnedEvents.map((event) => {
-                  const hasValidImage =
-                    event.images &&
-                    event.images.length > 0 &&
-                    event.images[0] &&
-                    event.images[0].trim() !== "";
-
-                  const imageSrc = hasValidImage
-                    ? event.images[0].startsWith("/")
-                      ? event.images[0]
-                      : `${getPublicURL(event.images[0])}`
-                    : "/event1.jpg";
+                  const imageSrc = (event as any).image || "/event1.jpg";
 
                   return (
                     <div

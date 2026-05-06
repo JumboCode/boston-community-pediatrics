@@ -407,17 +407,18 @@ const EventAdminTable = (props: EventAdminTableProps) => {
                 {location ? location : "No location"}
               </p>
               <p className="text-[16px]">
-                {new Date(startTime).toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: true,
-                })}{" "}
-                -{" "}
-                {new Date(endTime).toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: true,
-                })}
+                {(() => {
+                  const s = new Date(startTime);
+                  const e = new Date(endTime);
+                  const tz = "America/New_York";
+                  const sameDay = s.toDateString() === e.toDateString();
+                  const sDate = s.toLocaleDateString("en-US", { timeZone: tz, month: "long", day: "numeric" });
+                  const sTime = s.toLocaleTimeString("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true });
+                  const eDate = e.toLocaleDateString("en-US", { timeZone: tz, month: "long", day: "numeric" });
+                  const eTime = e.toLocaleTimeString("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true });
+                  if (sameDay) return `${sDate}, ${sTime} - ${eTime}`;
+                  return `${sDate} ${sTime} – ${eDate} ${eTime}`;
+                })()}
               </p>
             </div>
 

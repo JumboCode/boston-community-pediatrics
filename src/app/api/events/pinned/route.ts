@@ -18,7 +18,7 @@ export async function GET() {
 
   const formatted = pinnedEvents.map((event) => ({
     ...event,
-    image: getPublicURL(event.images[0]) ?? "/event-placeholder.jpg",
+    image: event.images[0] ? getPublicURL(event.images[0]) : "/event1.jpg",
   }));
 
   return Response.json(formatted);
