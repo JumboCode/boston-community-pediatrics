@@ -10,10 +10,10 @@ import {
 } from "../events/controller";
 import { checkAndIncrementStorage } from "@/lib/r2Storage";
 
-const MAX_PROFILE_SIZE = 1 * 1024 * 1024;   // 1 MB
-const MAX_EVENT_SIZE   = 10 * 1024 * 1024;  // 10 MB
+const MAX_PROFILE_SIZE = 1 * 1024 * 1024; // 1 MB
+const MAX_EVENT_SIZE = 10 * 1024 * 1024; // 10 MB
 
-const R2_PUBLIC_DOMAIN = "https://pub-d899e9b4014047699cafc4710a50477f.r2.dev";
+const R2_PUBLIC_DOMAIN = process.env.R2_PUBLIC_DOMAIN!;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -158,7 +158,10 @@ export async function DELETE(req: NextRequest) {
       }
 
       if (!/^[\w\-./]+$/.test(body.imageKey)) {
-        return NextResponse.json({ error: "Invalid image key" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid image key" },
+          { status: 400 }
+        );
       }
 
       const event = await getEventById(body.eventId);

@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -39,6 +40,17 @@ export function getPublicURL(filename: string) {
   const cleanFilename = filename.startsWith("/") ? filename.slice(1) : filename;
 
   return `${PUBLIC_R2}/${cleanFilename}`;
+}
+
+export async function getObjectSize(filename: string): Promise<number> {
+  try {
+    const res = await S3.send(
+      new HeadObjectCommand({ Bucket: BUCKET, Key: filename })
+    );
+    return res.ContentLength ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 export async function deleteObject(filename: string) {
