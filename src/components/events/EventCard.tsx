@@ -168,6 +168,7 @@ const EventCard = ({
           width={600}
           height={600}
           className="w-full aspect-video object-cover rounded-xl border border-gray-300"
+          unoptimized={!!image}
         />
 
         {isAdmin && pinned && <PinnedIndicator />}

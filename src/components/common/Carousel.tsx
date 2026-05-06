@@ -39,7 +39,9 @@ const Carousel = ({ images, onRemove }: CarouselProps) => {
             <div
               key={`${getSrcKey(src)}-${i}`}
               className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                index === i ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+                index === i
+                  ? "opacity-100 z-10"
+                  : "opacity-0 pointer-events-none z-0"
               }`}
               aria-hidden={index !== i}
             >
@@ -48,6 +50,7 @@ const Carousel = ({ images, onRemove }: CarouselProps) => {
                 alt={`Slide ${i + 1}`}
                 fill
                 className="object-cover"
+                unoptimized={!!getSrcKey(src)}
               />
             </div>
           ))
@@ -57,43 +60,44 @@ const Carousel = ({ images, onRemove }: CarouselProps) => {
             alt="Event image placeholder"
             fill
             className="object-contain"
+            unoptimized={!!placeholder}
           />
         )}
       </div>
 
       {/* Dots + Remove button */}
-<div className="mt-[24px] flex items-center justify-center relative min-h-[26px]">
-  {showDots && (
-    <div className="flex justify-center gap-3">
-      {images.map((_, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => goTo(i)}
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          className={`h-[10px] w-[10px] rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#7B8B97] ${
-            index === i ? "bg-[#7B8B97]" : "bg-[#CBD3D8]"
-          }`}
-          aria-label={`Go to slide ${i + 1}`}
-          aria-current={index === i}
-        />
-      ))}
-    </div>
-  )}
-  {onRemove && hasImages && (
-    <button
-      type="button"
-      onClick={() => {
-        onRemove(index);
-        setIndex((prev) => (prev > 0 ? prev - 1 : 0));
-      }}
-      className="absolute right-4 text-sm border border-medium-gray rounded px-3 py-1 text-medium-gray hover:bg-gray-100"
-    >
-      Remove photo
-    </button>
-  )}
-</div>
+      <div className="mt-[24px] flex items-center justify-center relative min-h-[26px]">
+        {showDots && (
+          <div className="flex justify-center gap-3">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                onMouseEnter={() => setPaused(true)}
+                onMouseLeave={() => setPaused(false)}
+                className={`h-[10px] w-[10px] rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#7B8B97] ${
+                  index === i ? "bg-[#7B8B97]" : "bg-[#CBD3D8]"
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+                aria-current={index === i}
+              />
+            ))}
+          </div>
+        )}
+        {onRemove && hasImages && (
+          <button
+            type="button"
+            onClick={() => {
+              onRemove(index);
+              setIndex((prev) => (prev > 0 ? prev - 1 : 0));
+            }}
+            className="absolute right-4 text-sm border border-medium-gray rounded px-3 py-1 text-medium-gray hover:bg-gray-100"
+          >
+            Remove photo
+          </button>
+        )}
+      </div>
     </div>
   );
 };

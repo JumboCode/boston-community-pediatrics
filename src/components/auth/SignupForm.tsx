@@ -763,6 +763,7 @@ const SignupForm = () => {
                 width={264}
                 height={264}
                 className="w-full h-full object-cover"
+                unoptimized={!!ProfilePlaceholder}
               />
             )}
           </div>

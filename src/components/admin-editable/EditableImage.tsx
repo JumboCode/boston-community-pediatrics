@@ -310,7 +310,8 @@ function EditableImageModal({
               className="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-[#234254] file:text-white hover:file:bg-[#1b3443]"
             />
             <p className="text-xs text-gray-500 mt-1">
-              JPG/JPEG only, max 5MB. Preview will appear above. Click Save to publish.
+              JPG/JPEG only, max 5MB. Preview will appear above. Click Save to
+              publish.
             </p>
           </div>
 

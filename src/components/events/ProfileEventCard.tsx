@@ -15,7 +15,7 @@ interface ProfileEventCardProps {
   userRole: string;
   date: Date;
   id: string;
-   positionName: string;
+  positionName: string;
   onEdit?: () => void;
   onRemove?: () => void;
   onVolunteer?: () => void;
@@ -39,7 +39,6 @@ const ProfileEventCard = ({
 }: ProfileEventCardProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  
 
   const isAdmin = userRole === "ADMIN";
   const hasMenuActions = isAdmin
@@ -93,7 +92,13 @@ const ProfileEventCard = ({
     >
       {/* Image */}
       <div className="w-full h-[165px] relative overflow-hidden rounded-xl bg-gray-200 border border-gray-300">
-        <Image src={image} alt={title} fill className="object-cover" />
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className="object-cover"
+          unoptimized={!!image}
+        />
       </div>
 
       {/* Title + 3 Dots Menu */}
@@ -176,7 +181,9 @@ const ProfileEventCard = ({
 
       {/* Time and Location Info */}
       <div className="flex flex-col gap-1 text-[16px] text-black">
-        <p className="text-[14px] font-medium text-gray-600 truncate">{positionName}</p>
+        <p className="text-[14px] font-medium text-gray-600 truncate">
+          {positionName}
+        </p>
         <p>{formattedDate}</p>
         <p className="line-clamp-1">{location}</p>
       </div>

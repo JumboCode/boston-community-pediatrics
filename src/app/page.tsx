@@ -97,22 +97,26 @@ const Home: React.FC = () => {
         />
 
         <Image
-  src={welcome}
-  alt="Welcome Message"
-  className="absolute left-0 top-[40%] origin-left"
-  style={{ transform: isMobile ? `scale(${scale * 1.8})` : `scale(${scale})` }}
-/>
+          src={welcome}
+          alt="Welcome Message"
+          className="absolute left-0 top-[40%] origin-left"
+          style={{
+            transform: isMobile ? `scale(${scale * 1.8})` : `scale(${scale})`,
+          }}
+        />
 
         <div
-  className="absolute left-1/2 top-[70%] origin-center transition-transform duration-150"
-  style={{ transform: `translateX(-50%) scale(${isMobile ? scale * 1.8 : scale})` }}
->
-  <Button
-    label="Volunteer"
-    onClick={() => router.push("/event")}
-    altStyle="w-[550px] h-[70px] text-white bg-bcp-blue rounded-lg font-large flex items-center justify-center hover:bg-light-bcp-blue"
-  />
-</div>
+          className="absolute left-1/2 top-[70%] origin-center transition-transform duration-150"
+          style={{
+            transform: `translateX(-50%) scale(${isMobile ? scale * 1.8 : scale})`,
+          }}
+        >
+          <Button
+            label="Volunteer"
+            onClick={() => router.push("/event")}
+            altStyle="w-[550px] h-[70px] text-white bg-bcp-blue rounded-lg font-large flex items-center justify-center hover:bg-light-bcp-blue"
+          />
+        </div>
       </div>
 
       {(loading || pinnedEvents.length > 0) && (
@@ -134,41 +138,11 @@ const Home: React.FC = () => {
               transition: "gap 0.5s",
             }}
           >
-            {loading ? (
-              [0, 1].map((i) => (
-                <div key={i} className="text-center">
-                  <div
-                    className={`animate-pulse bg-gray-200 rounded ${isMobile ? "w-[337px] h-[300px]" : ""}`}
-                    style={
-                      isMobile
-                        ? {}
-                        : { width: `${486 * scale}px`, height: `${391 * scale}px` }
-                    }
-                  />
-                  <div className="mt-8 animate-pulse bg-gray-200 h-5 rounded w-40 mx-auto" />
-                </div>
-              ))
-            ) : (
-              pinnedEvents.map((event) => {
-                const hasValidImage =
-                  event.images &&
-                  event.images.length > 0 &&
-                  event.images[0] &&
-                  event.images[0].trim() !== "";
-
-                const imageSrc = hasValidImage
-                  ? event.images[0].startsWith("/")
-                    ? event.images[0]
-                    : `${getPublicURL(event.images[0])}`
-                  : "/event1.jpg";
-
-                return (
-                  <div
-                    key={event.id}
-                    className="text-center text-bcp-blue text-lg font-bold"
-                  >
+            {loading
+              ? [0, 1].map((i) => (
+                  <div key={i} className="text-center">
                     <div
-                      className={`relative group ${isMobile ? "w-[337px] h-[300px]" : ""}`}
+                      className={`animate-pulse bg-gray-200 rounded ${isMobile ? "w-[337px] h-[300px]" : ""}`}
                       style={
                         isMobile
                           ? {}
@@ -177,27 +151,59 @@ const Home: React.FC = () => {
                               height: `${391 * scale}px`,
                             }
                       }
+                    />
+                    <div className="mt-8 animate-pulse bg-gray-200 h-5 rounded w-40 mx-auto" />
+                  </div>
+                ))
+              : pinnedEvents.map((event) => {
+                  const hasValidImage =
+                    event.images &&
+                    event.images.length > 0 &&
+                    event.images[0] &&
+                    event.images[0].trim() !== "";
+
+                  const imageSrc = hasValidImage
+                    ? event.images[0].startsWith("/")
+                      ? event.images[0]
+                      : `${getPublicURL(event.images[0])}`
+                    : "/event1.jpg";
+
+                  return (
+                    <div
+                      key={event.id}
+                      className="text-center text-bcp-blue text-lg font-bold"
                     >
-                      <Image
-                        src={imageSrc}
-                        alt={event.name}
-                        width={450}
-                        height={400}
-                        className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue transition-all duration-300 group-hover:blur-[3px]"
-                      />
-                      <Button
-                        label="More Details"
-                        onClick={() => router.push(`/event/${event.id}`)}
-                        altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-bcp-blue rounded-lg
+                      <div
+                        className={`relative group ${isMobile ? "w-[337px] h-[300px]" : ""}`}
+                        style={
+                          isMobile
+                            ? {}
+                            : {
+                                width: `${486 * scale}px`,
+                                height: `${391 * scale}px`,
+                              }
+                        }
+                      >
+                        <Image
+                          src={imageSrc}
+                          alt={event.name}
+                          width={450}
+                          height={400}
+                          className="w-full h-full object-cover object-top drop-shadow-xl drop-shadow-bcp-blue transition-all duration-300 group-hover:blur-[3px]"
+                          unoptimized={!!imageSrc}
+                        />
+                        <Button
+                          label="More Details"
+                          onClick={() => router.push(`/event/${event.id}`)}
+                          altStyle="absolute inset-0 w-[160px] h-[55px] text-white bg-bcp-blue rounded-lg
             flex items-center justify-center opacity-0 text-md font-normal
             transition-opacity duration-300 group-hover:opacity-100 top-[85%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:bg-light-bcp-blue"
-                      />
+                        />
+                      </div>
+                      <div className="mt-8">{event.name}</div>
                     </div>
-                    <div className="mt-8">{event.name}</div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })}
           </div>
         </>
       )}
