@@ -200,7 +200,24 @@ export const POST = route(async (req: NextRequest) => {
   }
 
   // Caller may only register themselves; admins may register anyone.
-  await requireSelfOrAdmin(userId);
+  const caller = await requireSelfOrAdmin(userId);
+
+  // Rate limit: max 10 registrations per user per hour (skip for admins)
+  if (caller.role !== UserRole.ADMIN) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentCount = await prisma.eventSignup.count({
+      where: {
+        userId,
+        createdAt: { gte: oneHourAgo },
+      },
+    });
+    if (recentCount >= 10) {
+      return NextResponse.json(
+        { error: "Too many registrations. Please try again later." },
+        { status: 429 }
+      );
+    }
+  }
 
   // 1. LIMIT CHECK
   if (guests && guests.length > MAX_GUESTS) {

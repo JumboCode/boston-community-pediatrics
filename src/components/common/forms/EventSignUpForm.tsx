@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import blankProfile from "@/assets/icons/Group 1.svg";
-import { useRef } from "react";
 import DatePicker from "@/components/DatePicker";
 
 // --- Types ---

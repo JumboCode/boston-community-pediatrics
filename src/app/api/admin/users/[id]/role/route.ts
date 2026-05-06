@@ -12,6 +12,10 @@ export const PATCH = route(async (req: NextRequest) => {
   if (!id || typeof id !== "string") {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
   }
+
+  if (!role || !Object.values(UserRole).includes(role)) {
+    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  }
   if (admin.id === id) {
     return NextResponse.json(
       { error: "Cannot change own role" },

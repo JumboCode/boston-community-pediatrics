@@ -59,9 +59,12 @@ export async function GET(req: NextRequest) {
         );
       return NextResponse.json(eventPositions, { status: 200 });
     } else {
+      const user = await getCurrentUser();
+      if (!user || user.role !== UserRole.ADMIN) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       const all = await getAllPositions();
       return NextResponse.json(all, { status: 200 });
-      // return NextResponse.json({ error: "Wrong event query" }, { status: 400 });
     }
   } catch (err) {
     console.error(err);

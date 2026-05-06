@@ -20,7 +20,12 @@ export const PATCH = route(async function PATCH(
   }
 
   const def = SITE_CONTENT_KEYS[key];
-  const body = await req.json().catch(() => ({}));
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   let nextValue: string;
   if (def.kind === "TEXT") {

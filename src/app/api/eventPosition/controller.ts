@@ -49,8 +49,8 @@ export const deleteEventPosition = async (id: string) => {
 
 // Decrement filledSlots, used when a signup is deleted
 export async function decrementEventPositionCount(positionId: string) {
-  return prisma.eventPosition.update({
-    where: { id: positionId },
+  return prisma.eventPosition.updateMany({
+    where: { id: positionId, filledSlots: { gt: 0 } },
     data: {
       filledSlots: { decrement: 1 },
     },
