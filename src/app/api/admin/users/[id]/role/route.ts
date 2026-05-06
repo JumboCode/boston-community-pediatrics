@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminUpdateUserRole } from "./controller";
 import { getUserById } from "../../../../users/controller";
 import { requireAdmin, requireSelfOrAdmin, route } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export const PATCH = route(async (req: NextRequest) => {
   const admin = await requireAdmin();
