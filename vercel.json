@@ -1,1 +1,12 @@
-{}
+{
+  "crons": [
+    {
+      "path": "/api/cron/cleanup-events",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/remind-volunteers",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
