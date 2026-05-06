@@ -10,7 +10,7 @@ const ACCESS_KEY_ID = process.env.R2_ACCESS_KEY!;
 const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const ENDPOINT = process.env.R2_ENDPOINT!;
 const BUCKET = process.env.R2_BUCKET!;
-const PUBLIC_R2 = process.env.R2_BUCKET!;
+const PUBLIC_R2 = process.env.R2_PUBLIC_DOMAIN!;
 
 export const S3 = new S3Client({
   region: "auto",
