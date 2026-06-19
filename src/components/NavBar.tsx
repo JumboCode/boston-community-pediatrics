@@ -29,10 +29,17 @@ function NavBar() {
     async function fetchUser() {
       try {
         const res = await fetch("/api/users?id=" + user?.id);
-        if (res.status === 404) {
-          router.push("/onboarding");
+        // A signed-in Clerk user with no DB row gets 401 (requireUser() throws
+        // before the route's 404 check) — or 404 in other cases. Either way
+        // they exist in Clerk but not in Postgres, so route them to onboarding
+        // to create the record. This is the global safety net for every signup
+        // path (Google login, abandoned onboarding, failed email signup, etc.).
+        if (res.status === 401 || res.status === 404) {
+          if (pathname !== "/onboarding" && pathname !== "/sso-callback") {
+            router.push("/onboarding");
+          }
           return;
-        }  
+        }
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setIsAdmin(data?.role === "ADMIN");
