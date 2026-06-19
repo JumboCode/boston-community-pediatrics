@@ -282,31 +282,42 @@ const SignupForm = () => {
 
       await setActive({ session: completeSignUp.createdSessionId });
 
-      if (clerkUserId && savedFormData) {
-        const dbResponse = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user: {
-              id: clerkUserId,
-              firstName: savedFormData.firstName,
-              lastName: savedFormData.lastName,
-              emailAddress: savedFormData.email,
-              phoneNumber: savedFormData.phone,
-              dateOfBirth: savedFormData.dob,
-              speaksSpanish: savedFormData.speaksSpanish,
-              streetAddress: savedFormData.street,
-              city: savedFormData.city,
-              state: savedFormData.state,
-              zipCode: savedFormData.zip,
-              profileImage: savedFormData.profileImageUrl,
-              role: "VOLUNTEER",
-              clerkId: clerkUserId,
-            },
-          }),
-        });
+      // The Clerk account now exists. We must not land the user on /event
+      // unless their Postgres row was actually created — otherwise they'd be
+      // "in Clerk but not in the DB". If anything is missing or the write
+      // fails, send them to /onboarding so the record still gets created.
+      if (!clerkUserId || !savedFormData) {
+        router.push("/onboarding");
+        return;
+      }
 
-        if (!dbResponse.ok) console.error("Failed to sync user to DB");
+      const dbResponse = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: {
+            id: clerkUserId,
+            firstName: savedFormData.firstName,
+            lastName: savedFormData.lastName,
+            emailAddress: savedFormData.email,
+            phoneNumber: savedFormData.phone,
+            dateOfBirth: savedFormData.dob,
+            speaksSpanish: savedFormData.speaksSpanish,
+            streetAddress: savedFormData.street,
+            city: savedFormData.city,
+            state: savedFormData.state,
+            zipCode: savedFormData.zip,
+            profileImage: savedFormData.profileImageUrl,
+            role: "VOLUNTEER",
+            clerkId: clerkUserId,
+          },
+        }),
+      });
+
+      if (!dbResponse.ok) {
+        console.error("Failed to sync user to DB");
+        router.push("/onboarding");
+        return;
       }
 
       router.push("/event");
